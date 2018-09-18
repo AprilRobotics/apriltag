@@ -10,6 +10,8 @@ AprilTag 3 supports a wide variety of possible tag layouts in addition to the cl
 * Two families of circular tags.
 * One family which has a hole in the middle. This could be used for example for drone applications by placing different sized tags inside of each other to allow detection over a wide range of distances.
 
+You can generate your own tag families using TODO add link.
+
 Upgrading from AprilTag 3
 =========================
 For most use-cases this should be a drop in replacement.
