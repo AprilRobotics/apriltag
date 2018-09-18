@@ -1,4 +1,27 @@
-INSTALL
+AprilTag 3
+==========
+AprilTags are a visual fiducial system popular in robotics research. This repository contains the most recent version of AprilTags, AprilTag 3, which includes a faster (>2x) detector, improved detection rate on small tags, and flexible tag layouts. 
+
+Flexible Layouts
+================
+AprilTag 3 supports a wide variety of possible tag layouts in addition to the classic layout supported in AprilTag 2. The tag's data bits can now go outside of the tag border, and it is also possible to define layouts with "holes" inside of the tag border where there are no data bits. In this repo we have included:
+
+* Two families of the new standard layout. This layout adds a layer of data bits around the outside of the tag border, increasing data density, and the number of possible tags, at the cost of a slight decrease in detection distance.
+* Two families of circular tags.
+* One family which has a hole in the middle. This could be used for example for drone applications by placing different sized tags inside of each other to allow detection over a wide range of distances.
+
+You can generate your own tag families using TODO add link.
+
+Upgrading from AprilTag 3
+=========================
+For most use-cases this should be a drop in replacement.
+
+* The options refine_decode, refine_pose, and black_border have been removed.
+* If you have generated your own families, you will need to regenerate the c code for those families. The java code however does not need to be regenerated so this should be quick and easy.
+
+
+
+Install
 =======
 
 The default installation will place headers in /usr/local/include and
@@ -13,7 +36,7 @@ To install to a different directory than /usr/local:
     $ PREFIX=/some/path sudo make install
 
 
-USAGE
+Usage
 =====
 
 A basic AprilTag application can be seen in example/apriltag_demo.c.
@@ -28,11 +51,10 @@ Initialization: instantiate a detector and at least one tag family.
 Some tag detector parameters can be set at this time.
 The default parameters are the recommended starting point.
 
-    td->quad_decimate = 1.0;
+    td->quad_decimate = 2.0;
     td->quad_sigma = 0.0;
     td->refine_edges = 1;
-    td->refine_decode = 0;
-    td->refine_pose = 0;
+    td->decode_sharpening = 0.25;
 
 Increase the image decimation if faster processing is required; the
 trade-off is a slight decrease in detection range. A factor of 1.0
@@ -69,7 +91,7 @@ Cleanup: free the detector and tag family when done.
     tag36h11_destroy(tf);
 
 
-OPENCV INTEGRATION
+OpenCV Integration
 ==================
 
 Note that this library has no external dependencies. Most applications
