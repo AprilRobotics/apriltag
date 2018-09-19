@@ -53,7 +53,6 @@ struct image_u8_lut
 image_u8_t *image_u8_create_stride(unsigned int width, unsigned int height, unsigned int stride);
 image_u8_t *image_u8_create(unsigned int width, unsigned int height);
 image_u8_t *image_u8_create_alignment(unsigned int width, unsigned int height, unsigned int alignment);
-image_u8_t *image_u8_create_from_rgb3(int width, int height, uint8_t *rgb, int stride);
 image_u8_t *image_u8_create_from_f32(image_f32_t *fim);
 
 image_u8_t *image_u8_create_from_pnm(const char *path);
