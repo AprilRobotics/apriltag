@@ -64,9 +64,8 @@ int main(int argc, char *argv[])
     getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
     getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
     getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
-    getopt_add_int(getopt, '\0', "border", "1", "Set tag family border size");
     getopt_add_int(getopt, 'i', "iters", "1", "Repeat processing on input set this many times");
-    getopt_add_int(getopt, 't', "threads", "4", "Use this many CPU threads");
+    getopt_add_int(getopt, 't', "threads", "1", "Use this many CPU threads");
     getopt_add_double(getopt, 'x', "decimate", "1.0", "Decimate input image by this factor");
     getopt_add_double(getopt, 'b', "blur", "0.0", "Apply low-pass blur to input; negative sharpens");
     getopt_add_bool(getopt, '0', "refine-edges", 1, "Spend more time trying to align edges of tags");
