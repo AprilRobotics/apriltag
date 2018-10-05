@@ -20,9 +20,6 @@ install: libapriltag.so
 	@chmod +x install.sh
 	@./install.sh $(PREFIX)/lib libapriltag.so
 	@./install.sh $(PREFIX)/include/apriltag $(APRILTAG_HEADERS)
-	@sed 's:^prefix=$$:prefix=$(PREFIX):' < apriltag.pc.in > apriltag.pc
-	@./install.sh $(PREFIX)/lib/pkgconfig apriltag.pc
-	@rm apriltag.pc
 	@ldconfig
 
 libapriltag.a: $(APRILTAG_OBJS)

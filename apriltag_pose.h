@@ -1,6 +1,6 @@
 #pragma once
 
-#include "apriltag/apriltag.h"
+#include "apriltag.h"
 #include "common/matd.h"
 
 typedef struct {
