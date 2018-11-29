@@ -31,6 +31,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 apriltag_family_t *tagCircle21h7_create()
 {
    apriltag_family_t *tf = calloc(1, sizeof(apriltag_family_t));
+   tf->name = strdup("tagCircle21h7");
    tf->h = 7;
    tf->ncodes = 38;
    tf->codes = calloc(38, sizeof(uint64_t));
