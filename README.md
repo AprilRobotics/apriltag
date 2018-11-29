@@ -51,10 +51,12 @@ Install
 
 The default installation will place headers in /usr/local/include and
 shared library in /usr/local/lib. It also installs a pkg-config script
-into /usr/local/lib/pkgconfig.
+into /usr/local/lib/pkgconfig. Be aware that there are some larger tag families which may take a long time to build. If you do not want to use these tag families then you can speed up the installation by deleting the files tagCircle49h12.c, tagCircle49h12.h, tagCustom48h12.c, tagCustom48h12.h, tagStandard52h13.c, and tagStandard52h13.h before installing.
 
     $ make
     $ sudo make install
+    
+ 
 
 To install to a different directory than /usr/local:
 
