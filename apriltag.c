@@ -900,7 +900,7 @@ static void quad_decode_task(void *_u)
                 det->hamming = entry.hamming;
                 det->decision_margin = decision_margin;
 
-                double theta = -entry.rotation * M_PI / 2.0;
+                double theta = entry.rotation * M_PI / 2.0;
                 double c = cos(theta), s = sin(theta);
 
                 // Fix the rotation of our homography to properly orient the tag
