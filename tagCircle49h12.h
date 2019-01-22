@@ -28,6 +28,15 @@ either expressed or implied, of the Regents of The University of Michigan.
 #ifndef _TAGCircle49H12
 #define _TAGCircle49H12
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 apriltag_family_t *tagCircle49h12_create();
 void tagCircle49h12_destroy(apriltag_family_t *tf);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
