@@ -59,6 +59,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 # define M_PI 3.141592653589793238462643383279502884196
 #endif
 
+#define APRILTAG_U64_ONE ((uint64_t) 1)
+
 extern zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im);
 
 // Regresses a model of the form:
@@ -134,7 +136,7 @@ static uint64_t rotate90(uint64_t w, int numBits)
 	l = 1;
     }
     w = ((w >> l) << (p/4 + l)) | (w >> (3 * p/ 4 + l) << l) | (w & l);
-    w &= ((1L << numBits) - 1);
+    w &= ((APRILTAG_U64_ONE << numBits) - 1);
     return w;
 }
 
@@ -225,14 +227,14 @@ void quick_decode_init(apriltag_family_t *family, int maxhamming)
         if (maxhamming >= 1) {
             // add hamming 1
             for (int j = 0; j < nbits; j++)
-                quick_decode_add(qd, code ^ (1L << j), i, 1);
+                quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j), i, 1);
         }
 
         if (maxhamming >= 2) {
             // add hamming 2
             for (int j = 0; j < nbits; j++)
                 for (int k = 0; k < j; k++)
-                    quick_decode_add(qd, code ^ (1L << j) ^ (1L << k), i, 2);
+                    quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j) ^ (APRILTAG_U64_ONE << k), i, 2);
         }
 
         if (maxhamming >= 3) {
@@ -240,7 +242,7 @@ void quick_decode_init(apriltag_family_t *family, int maxhamming)
             for (int j = 0; j < nbits; j++)
                 for (int k = 0; k < j; k++)
                     for (int m = 0; m < k; m++)
-                        quick_decode_add(qd, code ^ (1L << j) ^ (1L << k) ^ (1L << m), i, 3);
+                        quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j) ^ (APRILTAG_U64_ONE << k) ^ (APRILTAG_U64_ONE << m), i, 3);
         }
 
         if (maxhamming > 3) {
@@ -1401,7 +1403,7 @@ image_u8_t *apriltag_to_image(apriltag_family_t *fam, int idx)
 
     int border_start = (fam->total_width - fam->width_at_border)/2;
     for (int i = 0; i < fam->nbits; i++) {
-        if (code & (1L << (fam->nbits - i - 1))) {
+        if (code & (APRILTAG_U64_ONE << (fam->nbits - i - 1))) {
             im->buf[(fam->bit_y[i] + border_start)*im->stride + fam->bit_x[i] + border_start] = 255;
         }
     }
