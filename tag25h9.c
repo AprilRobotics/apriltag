@@ -134,5 +134,6 @@ void tag25h9_destroy(apriltag_family_t *tf)
    free(tf->codes);
    free(tf->bit_x);
    free(tf->bit_y);
+   free(tf->name);
    free(tf);
 }
