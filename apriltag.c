@@ -188,7 +188,7 @@ void quick_decode_uninit(apriltag_family_t *fam)
 void quick_decode_init(apriltag_family_t *family, int maxhamming)
 {
     assert(family->impl == NULL);
-    assert(family->ncodes < 65535);
+    assert(family->ncodes < 65536);
 
     struct quick_decode *qd = calloc(1, sizeof(struct quick_decode));
     int capacity = family->ncodes;

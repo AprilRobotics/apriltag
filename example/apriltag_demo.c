@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
     getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
     getopt_add_int(getopt, 'i', "iters", "1", "Repeat processing on input set this many times");
     getopt_add_int(getopt, 't', "threads", "1", "Use this many CPU threads");
+    getopt_add_int(getopt, 'a', "hamming", "1", "Detect tags with up to this many bit errors.");
     getopt_add_double(getopt, 'x', "decimate", "1.0", "Decimate input image by this factor");
     getopt_add_double(getopt, 'b', "blur", "0.0", "Apply low-pass blur to input; negative sharpens");
     getopt_add_bool(getopt, '0', "refine-edges", 1, "Spend more time trying to align edges of tags");
@@ -101,7 +102,7 @@ int main(int argc, char *argv[])
     }
 
     apriltag_detector_t *td = apriltag_detector_create();
-    apriltag_detector_add_family(td, tf);
+    apriltag_detector_add_family_bits(td, tf, getopt_get_int(getopt, "hamming"));
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");

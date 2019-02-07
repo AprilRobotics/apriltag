@@ -33,8 +33,8 @@ apriltag_family_t __attribute__((optimize("O0"))) *tagCircle49h12_create()
    apriltag_family_t *tf = calloc(1, sizeof(apriltag_family_t));
    tf->name = strdup("tagCircle49h12");
    tf->h = 12;
-   tf->ncodes = 65536;
-   tf->codes = calloc(65536, sizeof(uint64_t));
+   tf->ncodes = 65535;
+   tf->codes = calloc(65535, sizeof(uint64_t));
    tf->codes[0] = 0x0000c6c921d8614aUL;
    tf->codes[1] = 0x0000c6c95c67670fUL;
    tf->codes[2] = 0x0000c6c996f66cd4UL;
@@ -65570,7 +65570,6 @@ apriltag_family_t __attribute__((optimize("O0"))) *tagCircle49h12_create()
    tf->codes[65532] = 0x0000333ab7d7726dUL;
    tf->codes[65533] = 0x0001719f5eec237fUL;
    tf->codes[65534] = 0x0001e520c2997b43UL;
-   tf->codes[65535] = 0x0000a786f286ba05UL;
    tf->nbits = 49;
    tf->bit_x = calloc(49, sizeof(uint32_t));
    tf->bit_y = calloc(49, sizeof(uint32_t));
