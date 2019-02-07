@@ -28,7 +28,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdlib.h>
 #include "apriltag.h"
 
-apriltag_family_t *tagStandard52h13_create()
+apriltag_family_t __attribute__((optimize("O0"))) *tagStandard52h13_create()
 {
    apriltag_family_t *tf = calloc(1, sizeof(apriltag_family_t));
    tf->name = strdup("tagStandard52h13");
