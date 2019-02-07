@@ -217,8 +217,8 @@ struct apriltag_detection
     float decision_margin;
 
     // The 3x3 homography matrix describing the projection from an
-    // "ideal" tag (with corners at (-1,-1), (1,-1), (1,1), and (-1,
-    // 1)) to pixels in the image. This matrix will be freed by
+    // "ideal" tag (with corners at (-1,1), (1,1), (1,-1), and (-1,
+    // -1)) to pixels in the image. This matrix will be freed by
     // apriltag_detection_destroy.
     matd_t *H;
 
