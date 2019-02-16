@@ -4,6 +4,10 @@ AprilTags are a visual fiducial system popular in robotics research. This reposi
 
 You can find tag images for the pre-generated layouts [here](https://github.com/AprilRobotics/apriltag-imgs).
 
+Support
+=======
+Please create an issue on this github for any questions instead of sending a private message. This allows other people with the same question to find your answer.
+
 Flexible Layouts
 ================
 AprilTag 3 supports a wide variety of possible tag layouts in addition to the classic layout supported in AprilTag 2. The tag's data bits can now go outside of the tag border, and it is also possible to define layouts with "holes" inside of the tag border where there are no data bits. In this repo we have included:
