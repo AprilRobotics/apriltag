@@ -1885,18 +1885,42 @@ zarray_t* fit_quads(apriltag_detector_t *td, int w, int h, zarray_t* clusters, i
     return quads;
 }
 
-int comp_ch_dbg(const void *_a, const void *_b)
-{
-    struct cluster_hash* a = *(struct cluster_hash**) _a;
-    struct cluster_hash* b = *(struct cluster_hash**) _b;
+int comp_size(const void *_a, const void *_b) {
+    zarray_t* a = *(zarray_t**) _a;
+    zarray_t* b = *(zarray_t**) _b;
 
-    if (a->id < b->id) {
+    if (zarray_size(a) < zarray_size(b)) {
         return -1;
-    } else if (a->id > b->id) {
+    } else if (zarray_size(a) > zarray_size(b)) {
         return 1;
     } else {
-        return 0;
+        struct pt p1;
+        zarray_get(a, 0, &p1);
+        struct pt p2;
+        zarray_get(b, 0, &p2);
+
+        if (p1.y < p2.y) {
+            return -1;
+        } else if ( p1.y > p2.y) {
+            return 1;
+        } else {
+            if (p1.x < p2.x) {
+                return -1;
+            } else if ( p1.x > p2.x) {
+                return 1;
+            } else {
+                if (p1.gy < p2.gy) {
+                    return -1;
+                } else if ( p1.gy > p2.gy) {
+                    return 1;
+                } else {
+                    // This shouldn't happen.
+                    assert(false);
+                }
+            }
+        }
     }
+    return 0;
 }
 
 
@@ -1966,43 +1990,28 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
     uint64_t t2 = utime_now();
     printf("c1: %ld, c2: %ld\n", t1 - t0, t2 - t1);
 
-    //zarray_sort(clusters, comp_ch_dbg);
-    //zarray_sort(clusters2, comp_ch_dbg);
+    zarray_sort(clusters_old, comp_size);
+    zarray_sort(clusters, comp_size);
 
-    //for (int i = 0; i < zarray_size(clusters2); i++) {
-    //    int total_old = 0;
-    //    int total_new = 0;
-    //    struct cluster_hash* cluster2;
-    //    zarray_get(clusters2, i, &cluster2);
-    //    total_new += zarray_size(cluster2->data);
-    //    struct cluster_hash* cluster1;
-    //    zarray_get(clusters, i, &cluster1);
-    //    total_old += zarray_size(cluster1->data);
-    //    if (zarray_size(cluster1->data) != zarray_size(cluster2->data)) {
-    //        printf("%ld,%ld,%d,%d\n", cluster1->id, cluster2->id, total_old, total_new);
-    //    }
-    //}
-
-    //assert(zarray_size(clusters) == zarray_size(clusters2));
-    //for (int i = 0; i < zarray_size(clusters); i++) {
-    //    struct cluster_hash* cluster1;
-    //    zarray_get(clusters, i, &cluster1);
-    //    struct cluster_hash* cluster2;
-    //    zarray_get(clusters2, i, &cluster2);
-    //    assert(zarray_size(cluster1->data) == zarray_size(cluster2->data));
-    //    for (int j = 0; j < zarray_size(cluster1->data); j++) {
-    //        struct pt p1;
-    //        zarray_get(cluster1->data, j, &p1);
-    //        struct pt p2;
-    //        zarray_get(cluster2->data, j, &p2);
-    //        assert(p1.x == p2.x);
-    //        assert(p1.y == p2.y);
-    //        assert(p1.gx == p2.gx);
-    //        assert(p1.gy == p2.gy);
-    //        assert(p1.slope == p2.slope);
-    //    }
-    //}
-    //assert(1 == 0);
+    assert(zarray_size(clusters_old) == zarray_size(clusters));
+    for (int i = 0; i < zarray_size(clusters); i++) {
+        zarray_t* cluster1;
+        zarray_get(clusters_old, i, &cluster1);
+        zarray_t* cluster2;
+        zarray_get(clusters, i, &cluster2);
+        assert(zarray_size(cluster1) == zarray_size(cluster2));
+        for (int j = 0; j < zarray_size(cluster1); j++) {
+            struct pt p1;
+            zarray_get(cluster1, j, &p1);
+            struct pt p2;
+            zarray_get(cluster2, j, &p2);
+            assert(p1.x == p2.x);
+            assert(p1.y == p2.y);
+            assert(p1.gx == p2.gx);
+            assert(p1.gy == p2.gy);
+            assert(p1.slope == p2.slope);
+        }
+    }
 
     if (td->debug) {
         image_u8x3_t *d = image_u8x3_create(w, h);
@@ -2094,5 +2103,14 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
     }
 
     zarray_destroy(clusters);
+
+    for (int i = 0; i < zarray_size(clusters_old); i++) {
+        zarray_t *cluster;
+        zarray_get(clusters_old, i, &cluster);
+        zarray_destroy(cluster);
+    }
+
+    zarray_destroy(clusters_old);
+
     return quads;
 }
