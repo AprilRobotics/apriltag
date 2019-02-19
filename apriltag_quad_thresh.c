@@ -70,7 +70,7 @@ struct pt
     float slope;
 };
 
-struct unionfind_task2
+struct unionfind_task
 {
     int y0, y1;
     int w, h, s;
@@ -90,6 +90,19 @@ struct quad_task
     int tag_width;
     bool normal_border;
     bool reversed_border;
+};
+
+
+struct cluster_task
+{
+    int y0;
+    int y1;
+    int w;
+    int s;
+    int nclustermap;
+    unionfind_t* uf;
+    image_u8_t* im;
+    zarray_t* clusters;
 };
 
 struct remove_vertex
@@ -114,6 +127,13 @@ struct line_fit_pt
     double Mx, My;
     double Mxx, Myy, Mxy;
     double W; // total weight
+};
+
+struct cluster_hash
+{
+    uint32_t hash;
+    uint64_t id;
+    zarray_t* data;
 };
 
 
@@ -1021,7 +1041,7 @@ static void do_unionfind_line2(unionfind_t *uf, image_u8_t *im, int h, int w, in
 
 static void do_unionfind_task2(void *p)
 {
-    struct unionfind_task2 *task = (struct unionfind_task2*) p;
+    struct unionfind_task *task = (struct unionfind_task*) p;
 
     for (int y = task->y0; y < task->y1; y++) {
         do_unionfind_line2(task->uf, task->im, task->h, task->w, task->s, y);
@@ -1422,7 +1442,7 @@ unionfind_t* connected_components(apriltag_detector_t *td, image_u8_t* threshim,
 
         int sz = h;
         int chunksize = 1 + sz / (APRILTAG_TASKS_PER_THREAD_TARGET * td->nthreads);
-        struct unionfind_task2 tasks[sz / chunksize + 1];
+        struct unionfind_task tasks[sz / chunksize + 1];
 
         int ntasks = 0;
 
@@ -1452,6 +1472,260 @@ unionfind_t* connected_components(apriltag_detector_t *td, image_u8_t* threshim,
         }
     }
     return uf;
+}
+
+zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int w, int nclustermap, unionfind_t* uf, zarray_t* clusters) {
+    struct uint64_zarray_entry **clustermap = calloc(nclustermap, sizeof(struct uint64_zarray_entry*));
+
+    int mem_chunk_size = 2048;
+    struct uint64_zarray_entry* mem_pools[2*nclustermap/mem_chunk_size];
+    int mem_pool_idx = 0;
+    int mem_pool_loc = 0;
+    mem_pools[mem_pool_idx] = calloc(mem_chunk_size, sizeof(struct uint64_zarray_entry));
+
+    for (int y = y0; y < y1; y++) {
+        for (int x = 1; x < w-1; x++) {
+
+            uint8_t v0 = threshim->buf[y*ts + x];
+            if (v0 == 127)
+                continue;
+
+            // XXX don't query this until we know we need it?
+            uint64_t rep0 = unionfind_get_representative(uf, y*w + x);
+            if (unionfind_get_set_size(uf, rep0) < 25) {
+                continue;
+            }
+
+            // whenever we find two adjacent pixels such that one is
+            // white and the other black, we add the point half-way
+            // between them to a cluster associated with the unique
+            // ids of the white and black regions.
+            //
+            // We additionally compute the gradient direction (i.e., which
+            // direction was the white pixel?) Note: if (v1-v0) == 255, then
+            // (dx,dy) points towards the white pixel. if (v1-v0) == -255, then
+            // (dx,dy) points towards the black pixel. p.gx and p.gy will thus
+            // be -255, 0, or 255.
+            //
+            // Note that any given pixel might be added to multiple
+            // different clusters. But in the common case, a given
+            // pixel will be added multiple times to the same cluster,
+            // which increases the size of the cluster and thus the
+            // computational costs.
+            //
+            // A possible optimization would be to combine entries
+            // within the same cluster.
+
+#define DO_CONN(dx, dy)                                                 \
+            if (1) {                                                    \
+                uint8_t v1 = threshim->buf[(y + dy)*ts + x + dx];       \
+                                                                        \
+                if (v0 + v1 == 255) {                                   \
+                    uint64_t rep1 = unionfind_get_representative(uf, (y + dy)*w + x + dx); \
+                    if (unionfind_get_set_size(uf, rep1) > 24) {        \
+                        uint64_t clusterid;                                 \
+                        if (rep0 < rep1)                                    \
+                            clusterid = (rep1 << 32) + rep0;                \
+                        else                                                \
+                            clusterid = (rep0 << 32) + rep1;                \
+                                                                            \
+                        /* XXX lousy hash function */                       \
+                        uint32_t clustermap_bucket = u64hash_2(clusterid) % nclustermap; \
+                        struct uint64_zarray_entry *entry = clustermap[clustermap_bucket]; \
+                        while (entry && entry->id != clusterid) {           \
+                            entry = entry->next;                            \
+                        }                                                   \
+                                                                            \
+                        if (!entry) {                                       \
+                            if (mem_pool_loc == mem_chunk_size) {           \
+                                mem_pool_loc = 0;                           \
+                                mem_pool_idx++;                             \
+                                mem_pools[mem_pool_idx] = calloc(mem_chunk_size, sizeof(struct uint64_zarray_entry)); \
+                            }                                               \
+                            entry = mem_pools[mem_pool_idx] + mem_pool_loc; \
+                            mem_pool_loc++;                                 \
+                                                                            \
+                            entry->id = clusterid;                          \
+                            entry->cluster = zarray_create(sizeof(struct pt)); \
+                            entry->next = clustermap[clustermap_bucket];    \
+                            clustermap[clustermap_bucket] = entry;          \
+                        }                                                   \
+                                                                            \
+                        struct pt p = { .x = 2*x + dx, .y = 2*y + dy, .gx = dx*((int) v1-v0), .gy = dy*((int) v1-v0)}; \
+                        zarray_add(entry->cluster, &p);                     \
+                    }                                                   \
+                }                                                       \
+            }
+
+            // do 4 connectivity. NB: Arguments must be [-1, 1] or we'll overflow .gx, .gy
+            DO_CONN(1, 0);
+            DO_CONN(0, 1);
+
+            // do 8 connectivity
+            DO_CONN(-1, 1);
+            DO_CONN(1, 1);
+        }
+    }
+#undef DO_CONN
+
+    for (int i = 0; i < nclustermap; i++) {
+        int start = zarray_size(clusters);
+        for (struct uint64_zarray_entry *entry = clustermap[i]; entry; entry = entry->next) {
+            struct cluster_hash* cluster_hash = malloc(sizeof(struct cluster_hash));
+            cluster_hash->hash = u64hash_2(entry->id) % nclustermap;
+            cluster_hash->id = entry->id;
+            cluster_hash->data = entry->cluster;
+            zarray_add(clusters, &cluster_hash);
+        }
+        int end = zarray_size(clusters);
+
+        // Do a quick bubblesort on the secondary key.
+        int n = end - start;
+        for (int j = 0; j < n - 1; j++) {
+            for (int k = 0; k < n - j - 1; k++) {
+                struct cluster_hash* hash1;
+                struct cluster_hash* hash2;
+                zarray_get(clusters, start + k, &hash1);
+                zarray_get(clusters, start + k + 1, &hash2);
+                if (hash1->id > hash2->id) {
+                    struct cluster_hash tmp = *hash2;
+                    *hash2 = *hash1;
+                    *hash1 = tmp;
+                }
+            }
+        }
+    }
+    for (int i = 0; i <= mem_pool_idx; i++) {
+        free(mem_pools[i]);
+    }
+    free(clustermap);
+
+    return clusters;
+}
+
+static void do_cluster_task(void *p)
+{
+    struct cluster_task *task = (struct cluster_task*) p;
+
+    do_gradient_clusters(task->im, task->s, task->y0, task->y1, task->w, task->nclustermap, task->uf, task->clusters);
+}
+
+zarray_t* merge_clusters(zarray_t* c1, zarray_t* c2) {
+    zarray_t* ret = zarray_create(sizeof(struct cluster_hash*));
+    zarray_ensure_capacity(ret, zarray_size(c1) + zarray_size(c2));
+
+    int i1 = 0;
+    int i2 = 0;
+    int l1 = zarray_size(c1);
+    int l2 = zarray_size(c2);
+
+    while (i1 < l1 && i2 < l2) {
+        struct cluster_hash* h1;
+        struct cluster_hash* h2;
+        zarray_get(c1, i1, &h1);
+        zarray_get(c2, i2, &h2);
+
+        if (h1->hash == h2->hash && h1->id == h2->id) {
+            zarray_add_all(h1->data, h2->data);
+            zarray_add(ret, &h1);
+            i1++;
+            i2++;
+            free(h2);
+        } else if (h2->hash < h1->hash || (h2->hash == h1->hash && h2->id < h1->id)) {
+            zarray_add(ret, &h2);
+            i2++;
+        } else {
+            zarray_add(ret, &h1);
+            i1++;
+        }
+    }
+
+    for (; i1 < l1; i1++) {
+        struct cluster_hash* h1;
+        zarray_get(c1, i1, &h1);
+        zarray_add(ret, &h1);
+    }
+
+    for (; i2 < l2; i2++) {
+        struct cluster_hash* h2;
+        zarray_get(c2, i2, &h2);
+        zarray_add(ret, &h2);
+    }
+
+    zarray_destroy(c1);
+    zarray_destroy(c2);
+
+    return ret;
+}
+
+zarray_t* gradient_clusters2(apriltag_detector_t *td, image_u8_t* threshim, int w, int h, int ts, unionfind_t* uf) {
+    zarray_t* clusters;
+    if (td->nthreads <= 0 /*1 FIXME*/) {
+        // TODO TODO TODO
+        //int nclustermap = ;
+        //gradient_clusters...;
+    } else {
+        int nclustermap = 0.2*w*h;
+
+        int sz = h - 1;
+        int chunksize = 1 + sz / (1 * td->nthreads);
+        struct cluster_task tasks[sz / chunksize + 1];
+
+        int ntasks = 0;
+
+        for (int i = 1; i < sz; i += chunksize) {
+            // each task will process [y0, y1). Note that this processes
+            // each cell to the right and down.
+            tasks[ntasks].y0 = i;
+            tasks[ntasks].y1 = imin(sz, i + chunksize);
+            tasks[ntasks].w = w;
+            tasks[ntasks].s = ts;
+            tasks[ntasks].uf = uf;
+            tasks[ntasks].im = threshim;
+            tasks[ntasks].nclustermap = nclustermap/(sz / chunksize + 1);
+            tasks[ntasks].clusters = zarray_create(sizeof(struct cluster_hash*));
+
+            workerpool_add_task(td->wp, do_cluster_task, &tasks[ntasks]);
+            ntasks++;
+        }
+
+        uint64_t t0 = utime_now();
+        workerpool_run(td->wp);
+        printf("mtt: %ld\n", utime_now() - t0);
+
+        zarray_t* clusters_list[ntasks];
+        for (int i = 0; i < ntasks; i++) {
+            clusters_list[i] = tasks[i].clusters;
+        }
+
+        uint64_t t1 = utime_now();
+        int length = ntasks;
+        while (length > 1) {
+            int write = 0;
+            for (int i = 0; i < length - 1; i += 2) {
+                clusters_list[write] = merge_clusters(clusters_list[i], clusters_list[i + 1]);
+                write++;
+            }
+
+            if (length % 2) {
+                clusters_list[write] = clusters_list[length - 1];
+            }
+
+            length = (length >> 1) + length % 2;
+        }
+        printf("mt: %ld\n", utime_now() - t1);
+
+        clusters = zarray_create(sizeof(zarray_t*));
+        zarray_ensure_capacity(clusters, zarray_size(clusters_list[0]));
+        for (int i = 0; i < zarray_size(clusters_list[0]); i++) {
+            struct cluster_hash* h;
+            zarray_get(clusters_list[0], i, &h);
+            zarray_add(clusters, &h->data);
+            free(h);
+        }
+        zarray_destroy(clusters_list[0]);
+    }
+    return clusters;
 }
 
 zarray_t* gradient_clusters(apriltag_detector_t *td, image_u8_t* threshim, int w, int h, int ts, unionfind_t* uf) {
@@ -1611,6 +1885,21 @@ zarray_t* fit_quads(apriltag_detector_t *td, int w, int h, zarray_t* clusters, i
     return quads;
 }
 
+int comp_ch_dbg(const void *_a, const void *_b)
+{
+    struct cluster_hash* a = *(struct cluster_hash**) _a;
+    struct cluster_hash* b = *(struct cluster_hash**) _b;
+
+    if (a->id < b->id) {
+        return -1;
+    } else if (a->id > b->id) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
 zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
 {
     ////////////////////////////////////////////////////////
@@ -1670,9 +1959,52 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
 
     timeprofile_stamp(td->tp, "unionfind");
 
-    zarray_t* clusters = gradient_clusters(td, threshim, w, h, ts, uf);
+    uint64_t t0 = utime_now();
+    zarray_t* clusters_old = gradient_clusters(td, threshim, w, h, ts, uf);
+    uint64_t t1 = utime_now();
+    zarray_t* clusters = gradient_clusters2(td, threshim, w, h, ts, uf);
+    uint64_t t2 = utime_now();
+    printf("c1: %ld, c2: %ld\n", t1 - t0, t2 - t1);
 
-        if (td->debug) {
+    //zarray_sort(clusters, comp_ch_dbg);
+    //zarray_sort(clusters2, comp_ch_dbg);
+
+    //for (int i = 0; i < zarray_size(clusters2); i++) {
+    //    int total_old = 0;
+    //    int total_new = 0;
+    //    struct cluster_hash* cluster2;
+    //    zarray_get(clusters2, i, &cluster2);
+    //    total_new += zarray_size(cluster2->data);
+    //    struct cluster_hash* cluster1;
+    //    zarray_get(clusters, i, &cluster1);
+    //    total_old += zarray_size(cluster1->data);
+    //    if (zarray_size(cluster1->data) != zarray_size(cluster2->data)) {
+    //        printf("%ld,%ld,%d,%d\n", cluster1->id, cluster2->id, total_old, total_new);
+    //    }
+    //}
+
+    //assert(zarray_size(clusters) == zarray_size(clusters2));
+    //for (int i = 0; i < zarray_size(clusters); i++) {
+    //    struct cluster_hash* cluster1;
+    //    zarray_get(clusters, i, &cluster1);
+    //    struct cluster_hash* cluster2;
+    //    zarray_get(clusters2, i, &cluster2);
+    //    assert(zarray_size(cluster1->data) == zarray_size(cluster2->data));
+    //    for (int j = 0; j < zarray_size(cluster1->data); j++) {
+    //        struct pt p1;
+    //        zarray_get(cluster1->data, j, &p1);
+    //        struct pt p2;
+    //        zarray_get(cluster2->data, j, &p2);
+    //        assert(p1.x == p2.x);
+    //        assert(p1.y == p2.y);
+    //        assert(p1.gx == p2.gx);
+    //        assert(p1.gy == p2.gy);
+    //        assert(p1.slope == p2.slope);
+    //    }
+    //}
+    //assert(1 == 0);
+
+    if (td->debug) {
         image_u8x3_t *d = image_u8x3_create(w, h);
 
         for (int i = 0; i < zarray_size(clusters); i++) {
