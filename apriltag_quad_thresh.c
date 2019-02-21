@@ -1630,6 +1630,7 @@ zarray_t* merge_clusters(zarray_t* c1, zarray_t* c2) {
             zarray_add(ret, &h1);
             i1++;
             i2++;
+            zarray_destroy(h2->data);
             free(h2);
         } else if (h2->hash < h1->hash || (h2->hash == h1->hash && h2->id < h1->id)) {
             zarray_add(ret, &h2);
@@ -1914,7 +1915,7 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
         zarray_get(clusters, i, &cluster);
         zarray_destroy(cluster);
     }
-
     zarray_destroy(clusters);
+
     return quads;
 }
