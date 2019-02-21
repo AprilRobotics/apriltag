@@ -1983,35 +1983,35 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
 
     timeprofile_stamp(td->tp, "unionfind");
 
-    uint64_t t0 = utime_now();
-    zarray_t* clusters_old = gradient_clusters(td, threshim, w, h, ts, uf);
-    uint64_t t1 = utime_now();
+    //uint64_t t0 = utime_now();
+    //zarray_t* clusters_old = gradient_clusters(td, threshim, w, h, ts, uf);
+    //uint64_t t1 = utime_now();
     zarray_t* clusters = gradient_clusters2(td, threshim, w, h, ts, uf);
-    uint64_t t2 = utime_now();
-    printf("c1: %ld, c2: %ld\n", t1 - t0, t2 - t1);
+    //uint64_t t2 = utime_now();
+    //printf("c1: %ld, c2: %ld\n", t1 - t0, t2 - t1);
 
-    zarray_sort(clusters_old, comp_size);
-    zarray_sort(clusters, comp_size);
+    //zarray_sort(clusters_old, comp_size);
+    //zarray_sort(clusters, comp_size);
 
-    assert(zarray_size(clusters_old) == zarray_size(clusters));
-    for (int i = 0; i < zarray_size(clusters); i++) {
-        zarray_t* cluster1;
-        zarray_get(clusters_old, i, &cluster1);
-        zarray_t* cluster2;
-        zarray_get(clusters, i, &cluster2);
-        assert(zarray_size(cluster1) == zarray_size(cluster2));
-        for (int j = 0; j < zarray_size(cluster1); j++) {
-            struct pt p1;
-            zarray_get(cluster1, j, &p1);
-            struct pt p2;
-            zarray_get(cluster2, j, &p2);
-            assert(p1.x == p2.x);
-            assert(p1.y == p2.y);
-            assert(p1.gx == p2.gx);
-            assert(p1.gy == p2.gy);
-            assert(p1.slope == p2.slope);
-        }
-    }
+    //assert(zarray_size(clusters_old) == zarray_size(clusters));
+    //for (int i = 0; i < zarray_size(clusters); i++) {
+    //    zarray_t* cluster1;
+    //    zarray_get(clusters_old, i, &cluster1);
+    //    zarray_t* cluster2;
+    //    zarray_get(clusters, i, &cluster2);
+    //    assert(zarray_size(cluster1) == zarray_size(cluster2));
+    //    for (int j = 0; j < zarray_size(cluster1); j++) {
+    //        struct pt p1;
+    //        zarray_get(cluster1, j, &p1);
+    //        struct pt p2;
+    //        zarray_get(cluster2, j, &p2);
+    //        assert(p1.x == p2.x);
+    //        assert(p1.y == p2.y);
+    //        assert(p1.gx == p2.gx);
+    //        assert(p1.gy == p2.gy);
+    //        assert(p1.slope == p2.slope);
+    //    }
+    //}
 
     if (td->debug) {
         image_u8x3_t *d = image_u8x3_create(w, h);
@@ -2104,13 +2104,13 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
 
     zarray_destroy(clusters);
 
-    for (int i = 0; i < zarray_size(clusters_old); i++) {
-        zarray_t *cluster;
-        zarray_get(clusters_old, i, &cluster);
-        zarray_destroy(cluster);
-    }
+    //for (int i = 0; i < zarray_size(clusters_old); i++) {
+    //    zarray_t *cluster;
+    //    zarray_get(clusters_old, i, &cluster);
+    //    zarray_destroy(cluster);
+    //}
 
-    zarray_destroy(clusters_old);
+    //zarray_destroy(clusters_old);
 
     return quads;
 }
