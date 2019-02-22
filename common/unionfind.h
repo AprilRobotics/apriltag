@@ -95,19 +95,6 @@ static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id
         root = uf->data[root].parent;
     }
 
-    //if (uf->data[root.parent] != root) {
-    //    root = uf->data[root].parent;
-    //    if (uf->data[root.parent] != root) {
-    //        root = uf->data[root].parent;
-    //        if (uf->data[root.parent] != root) {
-    //            root = uf->data[root].parent;
-    //            while (uf->data[root].parent != root) {
-    //                root = uf->data[root].parent;
-    //            }
-    //        }
-    //    }
-    //}
-
     // go back and collapse the tree.
     while (uf->data[id].parent != root) {
         uint32_t tmp = uf->data[id].parent;

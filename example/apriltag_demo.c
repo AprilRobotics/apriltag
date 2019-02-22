@@ -258,5 +258,7 @@ int main(int argc, char *argv[])
         tagStandard52h13_destroy(tf);
     }
 
+    getopt_destroy(getopt);
+
     return 0;
 }
