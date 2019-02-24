@@ -1,3 +1,5 @@
+*.a
+*.so
 *.o
 *.swp
 example/opencv_demo
