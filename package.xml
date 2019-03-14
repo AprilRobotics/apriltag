@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>apriltag</name>
+  <version>0.10.0</version>
+  <description>AprilTag detector library</description>
+
+  <maintainer email="mkrogius@umich.edu">Max Krogius</maintainer>
+
+  <author email="ebolson@umich.edu">Edwin Olson</author>
+  <author email="mkrogius@umich.edu">Max Krogius</author>
+
+  <license>BSD</license>
+  <url>https://april.eecs.umich.edu/software/apriltag.html</url>
+
+  <buildtool_depend>cmake</buildtool_depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,10 @@
+prefix=
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: apriltag
+Description: AprilTag detector library
+Version: 0.10.0
+Cflags: -I${includedir}
+Libs: -L${libdir} -lapriltag
