@@ -4,52 +4,6 @@ AprilTags are a visual fiducial system popular in robotics research. This reposi
 
 You can find tag images for the pre-generated layouts [here](https://github.com/AprilRobotics/apriltag-imgs).
 
-Support
-=======
-Please create an issue on this github for any questions instead of sending a private message. This allows other people with the same question to find your answer.
-
-Flexible Layouts
-================
-AprilTag 3 supports a wide variety of possible tag layouts in addition to the classic layout supported in AprilTag 2. The tag's data bits can now go outside of the tag border, and it is also possible to define layouts with "holes" inside of the tag border where there are no data bits. In this repo we have included:
-
-* Two families of the new standard layout. This layout adds a layer of data bits around the outside of the tag border, increasing data density, and the number of possible tags, at the cost of a slight decrease in detection distance.
-* Two families of circular tags.
-* One family which has a hole in the middle. This could be used for example for drone applications by placing different sized tags inside of each other to allow detection over a wide range of distances.
-
-You can generate your own tag families using our other repo, [AprilTag-Generation](https://github.com/AprilRobotics/apriltag-generation).
-
-Pose Estimation
-===============
-We have added methods to estimate the 3d pose of the AprilTag given camera parameters and the size of the tag. Sample code is as follows:
-
-    // First create an apriltag_detection_info_t struct using your known parameters.
-    apriltag_detection_info_t info;
-    info.det = det;
-    info.tagsize = tagsize;
-    info.fx = fx;
-    info.fy = fy;
-    info.cx = cx;
-    info.cy = cy;
-
-    // Then call estimate_tag_pose.
-    apriltag_pose_t pose;
-    double err = estimate_tag_pose(&info, &pose);
-    
-    // Do something with pose.
-    ...
-    
-You can also call <code>estimate_tag_pose_orthogonal_iteration</code> which allows the user to specify the number of iterations used and also returns both possible solutions for the tag pose along with their errors.
-
-
-Upgrading from AprilTag 3
-=========================
-For most use-cases this should be a drop in replacement.
-
-* The options refine_decode, refine_pose, and black_border have been removed.
-* If you have generated your own families, you will need to regenerate the c code for those families. The java code however does not need to be regenerated so this should be quick and easy.
-
-
-
 Install
 =======
 
@@ -57,11 +11,16 @@ The default installation will place headers in /usr/local/include and
 shared library in /usr/local/lib. It also installs a pkg-config script
 into /usr/local/lib/pkgconfig. Be aware that there are some larger tag families which may take a long time to build. If you do not want to use these tag families then you can speed up the installation by deleting the files tagCircle49h12.c, tagCircle49h12.h, tagCustom48h12.c, tagCustom48h12.h, tagStandard52h13.c, and tagStandard52h13.h before installing.
 
+If you have CMake installed or it is not difficult to install, then do:
+
+    $ cmake .
+    $ sudo make install
+    
+Otherwise, we have a handwritten makefile you can use (be warned it will do slightly different things):
+
     $ make
     $ sudo make install
     
- 
-
 To install to a different directory than /usr/local:
 
     $ PREFIX=/some/path sudo make install
@@ -120,6 +79,52 @@ Cleanup: free the detector and tag family when done.
 
     apriltag_detector_destroy(td);
     tag36h11_destroy(tf);
+
+Support
+=======
+Please create an issue on this github for any questions instead of sending a private message. This allows other people with the same question to find your answer.
+
+Flexible Layouts
+================
+AprilTag 3 supports a wide variety of possible tag layouts in addition to the classic layout supported in AprilTag 2. The tag's data bits can now go outside of the tag border, and it is also possible to define layouts with "holes" inside of the tag border where there are no data bits. In this repo we have included:
+
+* Two families of the new standard layout. This layout adds a layer of data bits around the outside of the tag border, increasing data density, and the number of possible tags, at the cost of a slight decrease in detection distance.
+* Two families of circular tags.
+* One family which has a hole in the middle. This could be used for example for drone applications by placing different sized tags inside of each other to allow detection over a wide range of distances.
+
+You can generate your own tag families using our other repo, [AprilTag-Generation](https://github.com/AprilRobotics/apriltag-generation).
+
+Pose Estimation
+===============
+We have added methods to estimate the 3d pose of the AprilTag given camera parameters and the size of the tag. Sample code is as follows:
+
+    // First create an apriltag_detection_info_t struct using your known parameters.
+    apriltag_detection_info_t info;
+    info.det = det;
+    info.tagsize = tagsize;
+    info.fx = fx;
+    info.fy = fy;
+    info.cx = cx;
+    info.cy = cy;
+
+    // Then call estimate_tag_pose.
+    apriltag_pose_t pose;
+    double err = estimate_tag_pose(&info, &pose);
+    
+    // Do something with pose.
+    ...
+    
+You can also call <code>estimate_tag_pose_orthogonal_iteration</code> which allows the user to specify the number of iterations used and also returns both possible solutions for the tag pose along with their errors.
+
+
+Upgrading from AprilTag 2
+=========================
+For most use-cases this should be a drop in replacement.
+
+* The options refine_decode, refine_pose, and black_border have been removed.
+* If you have generated your own families, you will need to regenerate the c code for those families. The java code however does not need to be regenerated so this should be quick and easy.
+
+
 
 
 OpenCV Integration
