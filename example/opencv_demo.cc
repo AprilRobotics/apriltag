@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
     getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
     getopt_add_int(getopt, 't', "threads", "1", "Use this many CPU threads");
-    getopt_add_double(getopt, 'x', "decimate", "1.0", "Decimate input image by this factor");
+    getopt_add_double(getopt, 'x', "decimate", "2.0", "Decimate input image by this factor");
     getopt_add_double(getopt, 'b', "blur", "0.0", "Apply low-pass blur to input");
     getopt_add_bool(getopt, '0', "refine-edges", 1, "Spend more time trying to align edges of tags");
 
@@ -90,6 +90,8 @@ int main(int argc, char *argv[])
         tf = tagStandard41h12_create();
     } else if (!strcmp(famname, "tagStandard52h13")) {
         tf = tagStandard52h13_create();
+    } else if (!strcmp(famname, "tagCustom48h12")) {
+        tf = tagCustom48h12_create();
     } else {
         printf("Unrecognized tag family name. Use e.g. \"tag36h11\".\n");
         exit(-1);
@@ -171,6 +173,8 @@ int main(int argc, char *argv[])
         tagStandard41h12_destroy(tf);
     } else if (!strcmp(famname, "tagStandard52h13")) {
         tagStandard52h13_destroy(tf);
+    } else if (!strcmp(famname, "tagCustom48h12")) {
+        tagCustom48h12_destroy(tf);
     }
 
 
