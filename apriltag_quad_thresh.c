@@ -208,7 +208,7 @@ void fit_line(struct line_fit_pt *lfps, int sz, int i0, int i1, double *lineparm
     //    nx_old = cosf(normal_theta);
     //    ny_old = sinf(normal_theta);
     //}
-    
+
     // Instead of using the above cos/sin method, pose it as an eigenvalue problem.
     double eig_small = 0.5*(Cxx + Cyy - sqrtf((Cxx - Cyy)*(Cxx - Cyy) + 4*Cxy*Cxy));
 
@@ -568,7 +568,7 @@ int quad_segment_agg(apriltag_detector_t *td, zarray_t *cluster, struct line_fit
 
     return 1;
 }
-    
+
 /**
  * Compute statistics that allow line fit queries to be
  * efficiently computed for any contiguous range of indices.
@@ -1882,7 +1882,9 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
         fprintf(f, "0 %d translate\n", im2->height);
         fprintf(f, "1 -1 scale\n");
 
-        postscript_image(f, im);
+        postscript_image(f, im2);
+
+        image_u8_destroy(im2);
 
         for (int i = 0; i < zarray_size(quads); i++) {
             struct quad *q;
