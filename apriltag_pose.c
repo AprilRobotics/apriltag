@@ -124,6 +124,7 @@ double orthogonal_iteration(matd_t** v, matd_t** p, matd_t** t, matd_t** R, int 
         matd_destroy(p_res[i]);
         matd_destroy(F[i]);
     }
+    matd_destroy(p_mean);
     return prev_error;
 }
 
@@ -280,7 +281,7 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
             r31/hypotenuse, -r32/hypotenuse, 0,
             r32/hypotenuse, r31/hypotenuse, 0,
             0, 0, 1});
-    
+
     // 3. Calculate parameters of Eos
     matd_t* R_trans = matd_multiply(R_1_prime, R_z);
     double sin_gamma = -MATD_EL(R_trans, 0, 1);
@@ -323,13 +324,21 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
     matd_t* b1 = matd_create(3, 1);
     matd_t* b2 = matd_create(3, 1);
     for (int i = 0; i < n_points; i++) {
-        matd_add_inplace(b0, matd_op("(M-M)MM", F_trans[i], I3, R_gamma, p_trans[i]));
-        matd_add_inplace(b1, matd_op("(M-M)MMM", F_trans[i], I3, R_gamma, M1, p_trans[i]));
-        matd_add_inplace(b2, matd_op("(M-M)MMM", F_trans[i], I3, R_gamma, M2, p_trans[i]));
+        matd_t* op_tmp1 = matd_op("(M-M)MM", F_trans[i], I3, R_gamma, p_trans[i]);
+        matd_t* op_tmp2 = matd_op("(M-M)MMM", F_trans[i], I3, R_gamma, M1, p_trans[i]);
+        matd_t* op_tmp3 = matd_op("(M-M)MMM", F_trans[i], I3, R_gamma, M2, p_trans[i]);
+
+        matd_add_inplace(b0, op_tmp1);
+        matd_add_inplace(b1, op_tmp2);
+        matd_add_inplace(b2, op_tmp3);
+
+        matd_destroy(op_tmp1);
+        matd_destroy(op_tmp2);
+        matd_destroy(op_tmp3);
     }
-    b0 = matd_multiply(G, b0);
-    b1 = matd_multiply(G, b1);
-    b2 = matd_multiply(G, b2);
+    matd_t* b0_ = matd_multiply(G, b0);
+    matd_t* b1_ = matd_multiply(G, b1);
+    matd_t* b2_ = matd_multiply(G, b2);
 
     double a0 = 0;
     double a1 = 0;
@@ -337,9 +346,9 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
     double a3 = 0;
     double a4 = 0;
     for (int i = 0; i < n_points; i++) {
-        matd_t* c0 = matd_op("(M-M)(MM+M)", I3, F_trans[i], R_gamma, p_trans[i], b0);
-        matd_t* c1 = matd_op("(M-M)(MMM+M)", I3, F_trans[i], R_gamma, M1, p_trans[i], b1);
-        matd_t* c2 = matd_op("(M-M)(MMM+M)", I3, F_trans[i], R_gamma, M2, p_trans[i], b2);
+        matd_t* c0 = matd_op("(M-M)(MM+M)", I3, F_trans[i], R_gamma, p_trans[i], b0_);
+        matd_t* c1 = matd_op("(M-M)(MMM+M)", I3, F_trans[i], R_gamma, M1, p_trans[i], b1_);
+        matd_t* c2 = matd_op("(M-M)(MMM+M)", I3, F_trans[i], R_gamma, M2, p_trans[i], b2_);
 
         a0 += matd_to_double(matd_op("M'M", c0, c0));
         a1 += matd_to_double(matd_op("2M'M", c0, c1));
@@ -352,6 +361,13 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
         matd_destroy(c2);
     }
 
+    matd_destroy(b0);
+    matd_destroy(b1);
+    matd_destroy(b2);
+    matd_destroy(b0_);
+    matd_destroy(b1_);
+    matd_destroy(b2_);
+
     for (int i = 0; i < n_points; i++) {
         matd_destroy(p_trans[i]);
         matd_destroy(v_trans[i]);
@@ -359,7 +375,7 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
     }
     matd_destroy(avg_F_trans);
     matd_destroy(G);
-   
+
 
     // 4. Solve for minima of Eos.
     double p0 = a1;
@@ -384,7 +400,7 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
         if (a2 - 2*a0 + (3*a3 - 6*a1)*t1 + (6*a4 - 8*a2 + 10*a0)*t2 + (-8*a3 + 6*a1)*t3 + (-6*a4 + 3*a2)*t4 + a3*t5 >= 0) {
             // And that it corresponds to an angle different than the known minimum.
             double t = 2*atan(roots[i]);
-            // We only care about finding a second local minima which is qualitatively 
+            // We only care about finding a second local minima which is qualitatively
             // different than the first.
             if (fabs(t - t_initial) > 0.1) {
                 minima[n_minima++] = roots[i];
@@ -484,6 +500,11 @@ void estimate_tag_pose_orthogonal_iteration(
     } else {
         *err2 = HUGE_VAL;
     }
+
+    for (int i = 0; i < 4; i++) {
+        matd_destroy(p[i]);
+        matd_destroy(v[i]);
+    }
 }
 
 /**
@@ -496,10 +517,14 @@ double estimate_tag_pose(apriltag_detection_info_t* info, apriltag_pose_t* pose)
     if (err1 <= err2) {
         pose->R = pose1.R;
         pose->t = pose1.t;
+        matd_destroy(pose2.R);
+        matd_destroy(pose2.t);
         return err1;
     } else {
         pose->R = pose2.R;
         pose->t = pose2.t;
+        matd_destroy(pose1.R);
+        matd_destroy(pose1.t);
         return err2;
     }
 }
