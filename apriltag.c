@@ -1045,7 +1045,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         image_u8_write_pnm(quad_im, "debug_preprocess.pnm");
 
     zarray_t *quads = apriltag_quad_thresh(td, quad_im);
-    
+
     // adjust centers of pixels so that they correspond to the
     // original full-resolution image.
     if (td->quad_decimate > 1) {
@@ -1285,6 +1285,8 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
                 out->buf[y*out->stride + 3*x + 2] = darker->buf[y*darker->stride + x];
             }
         }
+
+        image_u8_destroy(darker);
 
         for (int i = 0; i < zarray_size(detections); i++) {
             apriltag_detection_t *det;
