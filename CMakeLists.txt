@@ -9,11 +9,45 @@ aux_source_directory(common COMMON_SRC)
 aux_source_directory(. APRILTAG_SRCS)
 
 # Library
-add_library(apriltag SHARED ${APRILTAG_SRCS} ${COMMON_SRC})
-target_link_libraries(apriltag Threads::Threads m)
-file(GLOB_RECURSE HEADER_FILES RELATIVE ${CMAKE_SOURCE_DIR} *.h)
-set_target_properties(apriltag PROPERTIES SOVERSION 3 VERSION 3.0.0)
+add_library(${PROJECT_NAME} SHARED ${APRILTAG_SRCS} ${COMMON_SRC})
+target_link_libraries(${PROJECT_NAME} Threads::Threads m)
 
+set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION 3.0.0)
+
+include(GNUInstallDirs)
+target_include_directories(${PROJECT_NAME} PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>"
+    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
+)
+
+# install library
+install(TARGETS ${PROJECT_NAME} EXPORT apriltag
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+# install header file hierarchy
+file(GLOB_RECURSE HEADER_FILES RELATIVE ${CMAKE_SOURCE_DIR} *.h)
+foreach(HEADER ${HEADER_FILES})
+    string(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
+    install(FILES ${HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${DIR})
+endforeach()
+
+# export library
+install(EXPORT apriltag
+    DESTINATION share/apriltag/cmake
+    FILE apriltagConfig.cmake
+)
+
+FILE(READ apriltag.pc.in PKGC)
+STRING(REGEX REPLACE "^prefix=" "prefix=${CMAKE_INSTALL_PREFIX}" PKGC_CONF "${PKGC}" )
+FILE(WRITE ${PROJECT_BINARY_DIR}/apriltag.pc ${PKGC_CONF})
+install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
 
 # Examples
 # apriltag_demo
@@ -27,20 +61,6 @@ if(OpenCV_FOUND)
     install(TARGETS opencv_demo RUNTIME DESTINATION bin)
 endif(OpenCV_FOUND)
 
-# install library and example programs
-install(TARGETS apriltag apriltag_demo
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
-)
+# install example programs
+install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
 
-# install headers
-foreach(HEADER ${HEADER_FILES})
-    string(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
-    install(FILES ${HEADER} DESTINATION include/${PROJECT_NAME}/${DIR})
-endforeach()
-
-FILE(READ apriltag.pc.in PKGC)
-STRING(REGEX REPLACE "^prefix=" "prefix=${CMAKE_INSTALL_PREFIX}" PKGC_CONF "${PKGC}" )
-FILE(WRITE ${PROJECT_BINARY_DIR}/apriltag.pc ${PKGC_CONF})
-install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
