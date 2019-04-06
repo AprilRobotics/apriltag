@@ -517,8 +517,10 @@ double estimate_tag_pose(apriltag_detection_info_t* info, apriltag_pose_t* pose)
     if (err1 <= err2) {
         pose->R = pose1.R;
         pose->t = pose1.t;
+        if (pose2.R) {
+            matd_destroy(pose2.t);
+        }
         matd_destroy(pose2.R);
-        matd_destroy(pose2.t);
         return err1;
     } else {
         pose->R = pose2.R;
