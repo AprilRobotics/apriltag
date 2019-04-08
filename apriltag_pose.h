@@ -10,11 +10,11 @@ extern "C" {
 
 typedef struct {
     apriltag_detection_t* det;
-    double tagsize;
-    double fx;
-    double fy;
-    double cx;
-    double cy;
+    double tagsize; // In meters.
+    double fx; // In pixels.
+    double fy; // In pixels.
+    double cx; // In pixels.
+    double cy; // In pixels.
 } apriltag_detection_info_t;
 
 typedef struct {
