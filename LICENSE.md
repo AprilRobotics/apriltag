@@ -1,6 +1,6 @@
 BSD 2-Clause License
 
-Copyright (c) 2019, AprilRobotics
+Copyright (C) 2013-2016, The Regents of The University of Michigan.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
