@@ -32,7 +32,11 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "workerpool.h"
 #include "timeprofile.h"
@@ -202,5 +206,11 @@ void workerpool_run(workerpool_t *wp)
 
 int workerpool_get_nprocs()
 {
+#ifdef WIN32
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    return sysinfo.dwNumberOfProcessors;
+#else
     return sysconf (_SC_NPROCESSORS_ONLN);
+#endif
 }

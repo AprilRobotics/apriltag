@@ -56,7 +56,11 @@ struct string_feeder
  * formatted string which it returns. It is the caller's responsibility to call
  * free() on the returned string when it is no longer needed.
  */
-char *sprintf_alloc(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+char *sprintf_alloc(const char *fmt, ...)
+#ifndef _MSC_VER
+__attribute__ ((format (printf, 1, 2)))
+#endif
+;
 
 /**
  * Similar to vsprintf(), except that it will malloc() enough space for the
@@ -286,7 +290,11 @@ void string_buffer_append_string(string_buffer_t *sb, const char *str);
  * Formats the supplied string and arguments in a manner akin to printf(), and
  * appends the resulting string to the end of the supplied string buffer.
  */
-void string_buffer_appendf(string_buffer_t *sb, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+void string_buffer_appendf(string_buffer_t *sb, const char *fmt, ...)
+#ifndef _MSC_VER
+__attribute__ ((format (printf, 2, 3)))
+#endif
+;
 
 /**
  * Determines whether the character contents held by the supplied string buffer

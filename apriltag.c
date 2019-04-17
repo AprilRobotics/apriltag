@@ -38,7 +38,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <string.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include <sys/time.h>
 
 #include "common/image_u8.h"
 #include "common/image_u8x3.h"
@@ -57,6 +56,18 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #ifndef M_PI
 # define M_PI 3.141592653589793238462643383279502884196
+#endif
+
+#ifdef _WIN32
+static inline void srandom(unsigned int seed)
+{
+        srand(seed);
+}
+
+static inline long int random(void)
+{
+        return rand();
+}
 #endif
 
 #define APRILTAG_U64_ONE ((uint64_t) 1)
@@ -512,7 +523,7 @@ double value_for_pixel(image_u8_t *im, double px, double py) {
 }
 
 void sharpen(apriltag_detector_t* td, double* values, int size) {
-    double sharpened[size*size];
+    double *sharpened = malloc(sizeof(double)*size*size);
     double kernel[9] = {
         0, -1, 0,
         -1, 4, -1,
@@ -539,6 +550,8 @@ void sharpen(apriltag_detector_t* td, double* values, int size) {
             values[y*size + x] = values[y*size + x] + td->decode_sharpening*sharpened[y*size + x];
         }
     }
+
+    free(sharpened);
 }
 
 // returns the decision margin. Return < 0 if the detection should be rejected.
@@ -652,8 +665,7 @@ float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, image_u8_t
     float black_score = 0, white_score = 0;
     float black_score_count = 1, white_score_count = 1;
 
-    double values[family->total_width*family->total_width];
-    memset(values, 0, family->total_width*family->total_width*sizeof(double));
+    double *values = calloc(family->total_width*family->total_width, sizeof(double));
 
     int min_coord = (family->width_at_border - family->total_width)/2;
     for (int i = 0; i < family->nbits; i++) {
@@ -706,6 +718,7 @@ float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, image_u8_t
     }
 
     quick_decode_codeword(family, rcode, entry);
+    free(values);
     return fmin(white_score / white_score_count, black_score / black_score_count);
 }
 
@@ -1105,7 +1118,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 
         int chunksize = 1 + zarray_size(quads) / (APRILTAG_TASKS_PER_THREAD_TARGET * td->nthreads);
 
-        struct quad_decode_task tasks[zarray_size(quads) / chunksize + 1];
+        struct quad_decode_task *tasks = malloc(sizeof(struct quad_decode_task)*(zarray_size(quads) / chunksize + 1));
 
         int ntasks = 0;
         for (int i = 0; i < zarray_size(quads); i+= chunksize) {
@@ -1123,6 +1136,8 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         }
 
         workerpool_run(td->wp);
+
+        free(tasks);
 
         if (im_samples != NULL) {
             image_u8_write_pnm(im_samples, "debug_samples.pnm");

@@ -688,10 +688,11 @@ static inline void TFN(s_mat_ABC)(const TNAME *A, int Arows, int Acols,
                                   const TNAME *C, int Crows, int Ccols,
                                   TNAME *R, int Rrows, int Rcols)
 {
-    TNAME tmp[Arows*Bcols];
+    TNAME *tmp = malloc(sizeof(TNAME)*Arows*Bcols);
 
     TFN(s_mat_AB)(A, Arows, Acols, B, Brows, Bcols, tmp, Arows, Bcols);
     TFN(s_mat_AB)(tmp, Arows, Bcols, C, Crows, Ccols, R, Rrows, Rcols);
+    free(tmp);
 }
 
 static inline void TFN(s_mat_Ab)(const TNAME *A, int Arows, int Acols,

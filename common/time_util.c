@@ -77,15 +77,25 @@ void utime_to_timespec(int64_t v, struct timespec *ts)
 
 int32_t timeutil_usleep(int64_t useconds)
 {
+#ifdef _WIN32
+    Sleep(useconds/1000);
+    return 0;
+#else
     // unistd.h function, but usleep is obsoleted in POSIX.1-2008.
     // TODO: Eventually, rewrite this to use nanosleep
     return usleep(useconds);
+#endif
 }
 
 uint32_t timeutil_sleep(unsigned int seconds)
 {
+#ifdef _WIN32
+    Sleep(seconds*1000);
+    return 0;
+#else
     // unistd.h function
     return sleep(seconds);
+#endif
 }
 
 int32_t timeutil_sleep_hz(timeutil_rest_t *rest, double hz)

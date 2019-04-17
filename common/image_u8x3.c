@@ -210,7 +210,7 @@ void image_u8x3_gaussian_blur(image_u8x3_t *im, double sigma, int ksz)
     assert((ksz & 1) == 1); // ksz must be odd.
 
     // build the kernel.
-    double dk[ksz];
+    double *dk = malloc(sizeof(double)*ksz);
 
     // for kernel of length 5:
     // dk[0] = f(-2), dk[1] = f(-1), dk[2] = f(0), dk[3] = f(1), dk[4] = f(2)
@@ -228,7 +228,7 @@ void image_u8x3_gaussian_blur(image_u8x3_t *im, double sigma, int ksz)
     for (int i = 0; i < ksz; i++)
         dk[i] /= acc;
 
-    uint8_t k[ksz];
+    uint8_t *k = malloc(sizeof(uint8_t)*ksz);
     for (int i = 0; i < ksz; i++)
         k[i] = dk[i]*255;
 
@@ -236,33 +236,39 @@ void image_u8x3_gaussian_blur(image_u8x3_t *im, double sigma, int ksz)
         for (int i = 0; i < ksz; i++)
             printf("%d %15f %5d\n", i, dk[i], k[i]);
     }
+    free(dk);
 
     for (int c = 0; c < 3; c++) {
         for (int y = 0; y < im->height; y++) {
 
-            uint8_t in[im->stride];
-            uint8_t out[im->stride];
+            uint8_t *in = malloc(sizeof(uint8_t)*im->stride);
+            uint8_t *out = malloc(sizeof(uint8_t)*im->stride);
 
             for (int x = 0; x < im->width; x++)
                 in[x] = im->buf[y*im->stride + 3 * x + c];
 
             convolve(in, out, im->width, k, ksz);
+            free(in);
 
             for (int x = 0; x < im->width; x++)
                 im->buf[y*im->stride + 3 * x + c] = out[x];
+            free(out);
         }
 
         for (int x = 0; x < im->width; x++) {
-            uint8_t in[im->height];
-            uint8_t out[im->height];
+            uint8_t *in = malloc(sizeof(uint8_t)*im->height);
+            uint8_t *out = malloc(sizeof(uint8_t)*im->height);
 
             for (int y = 0; y < im->height; y++)
                 in[y] = im->buf[y*im->stride + 3*x + c];
 
             convolve(in, out, im->height, k, ksz);
+            free(in);
 
             for (int y = 0; y < im->height; y++)
                 im->buf[y*im->stride + 3*x + c] = out[y];
+            free(out);
         }
     }
+    free(k);
 }

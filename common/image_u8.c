@@ -320,23 +320,26 @@ void image_u8_convolve_2D(image_u8_t *im, const uint8_t *k, int ksz)
 
     for (int y = 0; y < im->height; y++) {
 
-        uint8_t x[im->stride];
+        uint8_t *x = malloc(sizeof(uint8_t)*im->stride);
         memcpy(x, &im->buf[y*im->stride], im->stride);
 
         convolve(x, &im->buf[y*im->stride], im->width, k, ksz);
+        free(x);
     }
 
     for (int x = 0; x < im->width; x++) {
-        uint8_t xb[im->height];
-        uint8_t yb[im->height];
+        uint8_t *xb = malloc(sizeof(uint8_t)*im->height);
+        uint8_t *yb = malloc(sizeof(uint8_t)*im->height);
 
         for (int y = 0; y < im->height; y++)
             xb[y] = im->buf[y*im->stride + x];
 
         convolve(xb, yb, im->height, k, ksz);
+        free(xb);
 
         for (int y = 0; y < im->height; y++)
             im->buf[y*im->stride + x] = yb[y];
+        free(yb);
     }
 }
 
@@ -348,7 +351,7 @@ void image_u8_gaussian_blur(image_u8_t *im, double sigma, int ksz)
     assert((ksz & 1) == 1); // ksz must be odd.
 
     // build the kernel.
-    double dk[ksz];
+    double *dk = malloc(sizeof(double)*ksz);
 
     // for kernel of length 5:
     // dk[0] = f(-2), dk[1] = f(-1), dk[2] = f(0), dk[3] = f(1), dk[4] = f(2)
@@ -366,7 +369,7 @@ void image_u8_gaussian_blur(image_u8_t *im, double sigma, int ksz)
     for (int i = 0; i < ksz; i++)
         dk[i] /= acc;
 
-    uint8_t k[ksz];
+    uint8_t *k = malloc(sizeof(uint8_t)*ksz);
     for (int i = 0; i < ksz; i++)
         k[i] = dk[i]*255;
 
@@ -374,8 +377,10 @@ void image_u8_gaussian_blur(image_u8_t *im, double sigma, int ksz)
         for (int i = 0; i < ksz; i++)
             printf("%d %15f %5d\n", i, dk[i], k[i]);
     }
+    free(dk);
 
     image_u8_convolve_2D(im, k, ksz);
+    free(k);
 }
 
 image_u8_t *image_u8_rotate(const image_u8_t *in, double rad, uint8_t pad)
