@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
                                        det->c[1]+textsize.height/2),
                     fontface, fontscale, Scalar(0xff, 0x99, 0), 2);
         }
-        zarray_destroy(detections);
+        apriltag_detections_destroy(detections);
 
         imshow("Tag Detections", frame);
         if (waitKey(30) >= 0)
