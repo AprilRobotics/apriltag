@@ -34,6 +34,13 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #include "zmaxheap.h"
 
+#ifdef _WIN32
+static inline long int random(void)
+{
+        return rand();
+}
+#endif
+
 //                 0
 //         1               2
 //      3     4        5       6
@@ -65,10 +72,11 @@ static inline void swap_default(zmaxheap_t *heap, int a, int b)
     heap->values[a] = heap->values[b];
     heap->values[b] = t;
 
-    char tmp[heap->el_sz];
+    char *tmp = malloc(sizeof(char)*heap->el_sz);
     memcpy(tmp, &heap->data[a*heap->el_sz], heap->el_sz);
     memcpy(&heap->data[a*heap->el_sz], &heap->data[b*heap->el_sz], heap->el_sz);
     memcpy(&heap->data[b*heap->el_sz], tmp, heap->el_sz);
+    free(tmp);
 }
 
 static inline void swap_pointer(zmaxheap_t *heap, int a, int b)

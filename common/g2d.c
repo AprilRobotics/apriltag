@@ -33,6 +33,13 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "g2d.h"
 #include "common/math_util.h"
 
+#ifdef _WIN32
+static inline long int random(void)
+{
+        return rand();
+}
+#endif
+
 double g2d_distance(const double a[2], const double b[2])
 {
     return sqrtf(sq(a[0]-b[0]) + sq(a[1]-b[1]));

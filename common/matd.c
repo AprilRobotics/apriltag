@@ -811,7 +811,7 @@ matd_t *matd_op(const char *expr, ...)
     va_list ap;
     va_start(ap, expr);
 
-    matd_t *args[nargs];
+    matd_t **args = malloc(sizeof(matd_t*)*nargs);
     for (int i = 0; i < nargs; i++) {
         args[i] = va_arg(ap, matd_t*);
         // XXX: sanity check argument; emit warning/error if args[i]
@@ -824,10 +824,12 @@ matd_t *matd_op(const char *expr, ...)
     int argpos = 0;
     int garbpos = 0;
 
-    matd_t *garb[2*exprlen]; // can't create more than 2 new result per character
-                             // one result, and possibly one argument to free
+    // can't create more than 2 new result per character
+    // one result, and possibly one argument to free
+    matd_t **garb = malloc(sizeof(matd_t*)*2*exprlen);
 
     matd_t *res = matd_op_recurse(expr, &pos, NULL, args, &argpos, garb, &garbpos, 0);
+    free(args);
 
     // 'res' may need to be freed as part of garbage collection (i.e. expr = "F")
     matd_t *res_copy = (res ? matd_copy(res) : NULL);
@@ -835,6 +837,7 @@ matd_t *matd_op(const char *expr, ...)
     for (int i = 0; i < garbpos; i++) {
         matd_destroy(garb[i]);
     }
+    free(garb);
 
     return res_copy;
 }
@@ -1021,7 +1024,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
             //
             int vlen = A->nrows - hhidx;
 
-            double v[vlen];
+            double *v = malloc(sizeof(double)*vlen);
 
             double mag2 = 0;
             for (int i = 0; i < vlen; i++) {
@@ -1073,12 +1076,14 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
                 for (int j = 0; j < vlen; j++)
                     MATD_EL(B, hhidx+j, i) -= 2*dot*v[j];
             }
+
+            free(v);
         }
 
         if (hhidx+2 < A->ncols) {
             int vlen = A->ncols - hhidx - 1;
 
-            double v[vlen];
+            double *v = malloc(sizeof(double)*vlen);
 
             double mag2 = 0;
             for (int i = 0; i < vlen; i++) {
@@ -1127,6 +1132,8 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
                 for (int j = 0; j < vlen; j++)
                     MATD_EL(B, i, hhidx+1+j) -= 2*dot*v[j];
             }
+
+            free(v);
         }
     }
 
@@ -1147,7 +1154,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
 
     // for each of the first B->ncols rows, which index has the
     // maximum absolute value? (used by method 1)
-    int maxrowidx[B->ncols];
+    int *maxrowidx = malloc(sizeof(int)*B->ncols);
     int lastmaxi, lastmaxj;
 
     if (find_max_method == 1) {
@@ -1361,6 +1368,8 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
         }
     }
 
+    free(maxrowidx);
+
     if (!(flags & MATD_SVD_NO_WARNINGS) && iter == maxiters) {
         printf("WARNING: maximum iters (maximum = %d, matrix %d x %d, max=%.15f)\n",
                iter, A->nrows, A->ncols, maxv);
@@ -1370,8 +1379,8 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
 
     // them all positive by flipping the corresponding columns of
     // U/LS.
-    int idxs[A->ncols];
-    double vals[A->ncols];
+    int *idxs = malloc(sizeof(int)*A->ncols);
+    double *vals = malloc(sizeof(double)*A->ncols);
     for (int i = 0; i < A->ncols; i++) {
         idxs[i] = i;
         vals[i] = MATD_EL(B, i, i);
@@ -1407,6 +1416,8 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
         MATD_EL(LP, idxs[i], i) = vals[i] < 0 ? -1 : 1;
         MATD_EL(RP, idxs[i], i) = 1; //vals[i] < 0 ? -1 : 1;
     }
+    free(idxs);
+    free(vals);
 
     // we've factored:
     // LP*(something)*RP'
@@ -1531,7 +1542,7 @@ matd_plu_t *matd_plu(const matd_t *a)
 
         // swap rows p and j?
         if (p != j) {
-            TYPE tmp[lu->ncols];
+            TYPE *tmp = malloc(sizeof(TYPE)*lu->ncols);
             memcpy(tmp, &MATD_EL(lu, p, 0), sizeof(TYPE) * lu->ncols);
             memcpy(&MATD_EL(lu, p, 0), &MATD_EL(lu, j, 0), sizeof(TYPE) * lu->ncols);
             memcpy(&MATD_EL(lu, j, 0), tmp, sizeof(TYPE) * lu->ncols);
@@ -1539,6 +1550,7 @@ matd_plu_t *matd_plu(const matd_t *a)
             piv[p] = piv[j];
             piv[j] = k;
             pivsign = -pivsign;
+            free(tmp);
         }
 
         double LUjj = MATD_EL(lu, j, j);

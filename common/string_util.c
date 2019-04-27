@@ -572,7 +572,10 @@ bool str_ends_with(const char *haystack, const char *needle)
     return !strncmp(&haystack[lens - lenneedle], needle, lenneedle);
 }
 
-inline bool str_starts_with(const char *haystack, const char *needle)
+#ifndef _MSC_VER
+inline
+#endif
+bool str_starts_with(const char *haystack, const char *needle)
 {
     assert(haystack != NULL);
     assert(needle != NULL);

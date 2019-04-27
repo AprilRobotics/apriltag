@@ -44,6 +44,12 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/postscript_utils.h"
 #include "common/math_util.h"
 
+#ifdef _WIN32
+static inline long int random(void)
+{
+        return rand();
+}
+#endif
 
 static inline uint32_t u64hash_2(uint64_t x) {
     return (2654435761 * x) >> 32;
@@ -306,7 +312,7 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
     if (ksz < 2)
         return 0;
 
-    double errs[sz];
+    double *errs = malloc(sizeof(double)*sz);
 
     for (int i = 0; i < sz; i++) {
         fit_line(lfps, sz, (i + sz - ksz) % sz, (i + ksz) % sz, NULL, &errs[i], NULL);
@@ -314,7 +320,7 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
 
     // apply a low-pass filter to errs
     if (1) {
-        double y[sz];
+        double *y = malloc(sizeof(double)*sz);
 
         // how much filter to apply?
 
@@ -336,7 +342,7 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
 
         // For default values of cutoff = 0.05, sigma = 3,
         // we have fsz = 17.
-        float f[fsz];
+        float *f = malloc(sizeof(float)*fsz);
 
         for (int i = 0; i < fsz; i++) {
             int j = i - fsz / 2;
@@ -352,11 +358,13 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
             y[iy] = acc;
         }
 
-        memcpy(errs, y, sizeof(y));
+        memcpy(errs, y, sizeof(double)*sz);
+        free(y);
+        free(f);
     }
 
-    int maxima[sz];
-    double maxima_errs[sz];
+    int *maxima = malloc(sizeof(int)*sz);
+    double *maxima_errs = malloc(sizeof(double)*sz);
     int nmaxima = 0;
 
     for (int i = 0; i < sz; i++) {
@@ -366,6 +374,7 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
             nmaxima++;
         }
     }
+    free(errs);
 
     // if we didn't get at least 4 maxima, we can't fit a quad.
     if (nmaxima < 4)
@@ -375,8 +384,8 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
     int max_nmaxima = td->qtp.max_nmaxima;
 
     if (nmaxima > max_nmaxima) {
-        double maxima_errs_copy[nmaxima];
-        memcpy(maxima_errs_copy, maxima_errs, sizeof(maxima_errs_copy));
+        double *maxima_errs_copy = malloc(sizeof(double)*nmaxima);
+        memcpy(maxima_errs_copy, maxima_errs, sizeof(double)*nmaxima);
 
         // throw out all but the best handful of maxima. Sorts descending.
         qsort(maxima_errs_copy, nmaxima, sizeof(double), err_compare_descending);
@@ -389,7 +398,9 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
             maxima[out++] = maxima[in];
         }
         nmaxima = out;
+        free(maxima_errs_copy);
     }
+    free(maxima_errs);
 
     int best_indices[4];
     double best_error = HUGE_VALF;
@@ -446,6 +457,8 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
             }
         }
     }
+
+    free(maxima);
 
     if (best_error == HUGE_VALF)
         return 0;
@@ -670,18 +683,7 @@ static inline void ptsort(struct pt *pts, int sz)
 
     // a merge sort with temp storage.
 
-    // Use stack storage if it's not too big.
-    int stacksz = sz;
-    if (stacksz > 1024)
-        stacksz = 0;
-
-    struct pt _tmp_stack[stacksz];
-    struct pt *tmp = _tmp_stack;
-
-    if (stacksz == 0) {
-        // it was too big, malloc it instead.
-        tmp = malloc(sizeof(struct pt) * sz);
-    }
+    struct pt *tmp = malloc(sizeof(struct pt) * sz);
 
     memcpy(tmp, pts, sizeof(struct pt) * sz);
 
@@ -715,8 +717,7 @@ static inline void ptsort(struct pt *pts, int sz)
     if (bpos < bsz)
         memcpy(&pts[outpos], &bs[bpos], (bsz-bpos)*sizeof(struct pt));
 
-    if (stacksz == 0)
-        free(tmp);
+    free(tmp);
 
 #undef MERGE
 }
@@ -1442,7 +1443,7 @@ unionfind_t* connected_components(apriltag_detector_t *td, image_u8_t* threshim,
 
         int sz = h;
         int chunksize = 1 + sz / (APRILTAG_TASKS_PER_THREAD_TARGET * td->nthreads);
-        struct unionfind_task tasks[sz / chunksize + 1];
+        struct unionfind_task *tasks = malloc(sizeof(struct unionfind_task)*(sz / chunksize + 1));
 
         int ntasks = 0;
 
@@ -1470,6 +1471,8 @@ unionfind_t* connected_components(apriltag_detector_t *td, image_u8_t* threshim,
         for (int i = 1; i < ntasks; i++) {
             do_unionfind_line2(uf, threshim, h, w, ts, tasks[i].y0 - 1);
         }
+
+        free(tasks);
     }
     return uf;
 }
@@ -1478,7 +1481,7 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
     struct uint64_zarray_entry **clustermap = calloc(nclustermap, sizeof(struct uint64_zarray_entry*));
 
     int mem_chunk_size = 2048;
-    struct uint64_zarray_entry* mem_pools[2*nclustermap/mem_chunk_size];
+    struct uint64_zarray_entry** mem_pools = malloc(sizeof(struct uint64_zarray_entry *)*2*nclustermap/mem_chunk_size);
     int mem_pool_idx = 0;
     int mem_pool_loc = 0;
     mem_pools[mem_pool_idx] = calloc(mem_chunk_size, sizeof(struct uint64_zarray_entry));
@@ -1598,6 +1601,7 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
     for (int i = 0; i <= mem_pool_idx; i++) {
         free(mem_pools[i]);
     }
+    free(mem_pools);
     free(clustermap);
 
     return clusters;
@@ -1665,7 +1669,7 @@ zarray_t* gradient_clusters(apriltag_detector_t *td, image_u8_t* threshim, int w
 
     int sz = h - 1;
     int chunksize = 1 + sz / td->nthreads;
-    struct cluster_task tasks[sz / chunksize + 1];
+    struct cluster_task *tasks = malloc(sizeof(struct cluster_task)*(sz / chunksize + 1));
 
     int ntasks = 0;
 
@@ -1687,7 +1691,7 @@ zarray_t* gradient_clusters(apriltag_detector_t *td, image_u8_t* threshim, int w
 
     workerpool_run(td->wp);
 
-    zarray_t* clusters_list[ntasks];
+    zarray_t** clusters_list = malloc(sizeof(zarray_t *)*ntasks);
     for (int i = 0; i < ntasks; i++) {
         clusters_list[i] = tasks[i].clusters;
     }
@@ -1716,6 +1720,8 @@ zarray_t* gradient_clusters(apriltag_detector_t *td, image_u8_t* threshim, int w
         free(h);
     }
     zarray_destroy(clusters_list[0]);
+    free(clusters_list);
+    free(tasks);
     return clusters;
 }
 
@@ -1741,7 +1747,7 @@ zarray_t* fit_quads(apriltag_detector_t *td, int w, int h, zarray_t* clusters, i
 
     int sz = zarray_size(clusters);
     int chunksize = 1 + sz / (APRILTAG_TASKS_PER_THREAD_TARGET * td->nthreads);
-    struct quad_task tasks[sz / chunksize + 1];
+    struct quad_task *tasks = malloc(sizeof(struct quad_task)*(sz / chunksize + 1));
 
     int ntasks = 0;
     for (int i = 0; i < sz; i += chunksize) {
@@ -1762,6 +1768,8 @@ zarray_t* fit_quads(apriltag_detector_t *td, int w, int h, zarray_t* clusters, i
     }
 
     workerpool_run(td->wp);
+
+    free(tasks);
 
     return quads;
 }
