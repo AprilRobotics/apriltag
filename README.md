@@ -151,3 +151,10 @@ a deep copy. Simply create an image_u8_t header for the cv::Mat data buffer:
         .stride = img.cols,
         .buf = img.data
     };
+    
+Wrappers
+========
+Third-party wrappers of the apriltag code for other languages.
+ 
+[Python](https://github.com/duckietown/apriltags3-py)
+[Matlab](https://github.com/alddiaz/MATLAB_AprilTag3)
