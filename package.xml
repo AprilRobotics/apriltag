@@ -2,10 +2,11 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
   <name>apriltag</name>
-  <version>0.10.0</version>
+  <version>3.1.0</version>
   <description>AprilTag detector library</description>
 
   <maintainer email="mkrogius@umich.edu">Max Krogius</maintainer>
+  <maintainer email="w.merkt+oss@gmail.com">Wolfgang Merkt</maintainer>
 
   <author email="ebolson@umich.edu">Edwin Olson</author>
   <author email="mkrogius@umich.edu">Max Krogius</author>
