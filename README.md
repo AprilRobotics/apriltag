@@ -31,6 +31,8 @@ To install to a different directory than /usr/local:
 Usage
 =====
 
+We recommend using the tagStandard41h12 family for all new application.
+
 A basic AprilTag application can be seen in example/apriltag_demo.c.
 
 
