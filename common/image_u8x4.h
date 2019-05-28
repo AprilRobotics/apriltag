@@ -28,7 +28,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #pragma once
 
 #include <stdint.h>
-#include "common/image_types.h"
+#include "image_types.h"
 
 #ifdef __cplusplus
 extern "C" {

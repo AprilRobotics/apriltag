@@ -32,7 +32,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdbool.h>
 #include <ctype.h>
 
-#include "common/zarray.h"
+#include "zarray.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -31,7 +31,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 extern "C" {
 #endif
 
-#include "common/zarray.h"
+#include "zarray.h"
 
 // This library tries to avoid needless proliferation of types.
 //
