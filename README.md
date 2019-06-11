@@ -1,8 +1,8 @@
 AprilTag 3
 ==========
-AprilTags are a visual fiducial system popular in robotics research. This repository contains the most recent version of AprilTags, AprilTag 3, which includes a faster (>2x) detector, improved detection rate on small tags, flexible tag layouts, and pose estimation.
+AprilTag is a visual fiducial system popular in robotics research. This repository contains the most recent version of AprilTag, AprilTag 3, which includes a faster (>2x) detector, improved detection rate on small tags, flexible tag layouts, and pose estimation. AprilTag consists of a small C library with minimal dependencies. Officially only linux operating systems are supported.
 
-You can find tag images for the pre-generated layouts [here](https://github.com/AprilRobotics/apriltag-imgs).
+You can find tag images for the pre-generated layouts [here](https://github.com/AprilRobotics/apriltag-imgs). We recommend using the tagStandard41h12 layout.
 
 [![Build Status](https://travis-ci.org/AprilRobotics/apriltag.svg?branch=master)](https://travis-ci.org/AprilRobotics/apriltag)
 
