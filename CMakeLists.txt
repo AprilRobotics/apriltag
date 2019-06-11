@@ -7,6 +7,8 @@ include_directories(.)
 aux_source_directory(common COMMON_SRC)
 aux_source_directory(. APRILTAG_SRCS)
 
+set(CMAKE_BUILD_TYPE Release)
+
 # Library
 add_library(${PROJECT_NAME} SHARED ${APRILTAG_SRCS} ${COMMON_SRC})
 if (MSVC)
