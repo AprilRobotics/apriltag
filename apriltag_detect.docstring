@@ -1,0 +1,60 @@
+AprilTag detector
+
+SYNOPSIS
+
+    import cv2
+    import numpy as np
+    from apriltag import apriltag
+
+    imagepath = '/tmp/tst.jpg'
+    image     = cv2.imread(imagepath, cv2.IMREAD_GRAYSCALE)
+    detector = apriltag("tag36h11")
+
+    detections = detector.detect(image)
+
+    print("Saw tags {} at\n{}". \
+          format([d['id']     for d in detections],
+                 np.array([d['center'] for d in detections])))
+
+    ----> Saw tags [3, 5, 7, 8, 10, 10, 14] at
+          [[582.42911184 172.90587335]
+           [703.32149701 271.50587376]
+           [288.1462089  227.01502779]
+           [463.63679264 227.91185418]
+           [ 93.88534443 241.61109765]
+           [121.94062798 237.97010936]
+           [356.46940849 260.20169159]]
+
+DESCRIPTION
+
+The AprilTags visual fiducial system project page is here:
+https://april.eecs.umich.edu/software/apriltag
+
+This is a Python class to provide AprilTags functionality in Python programs. To
+run the detector you
+
+1. Construct an object of type apriltag.apriltag()
+
+2. Invoke the detect() method on this object
+
+The detect() method takes a single argument: an image array. The return value is
+a tuple containing the detections. Each detection is a dict with keys:
+
+- id: integer identifying each detected tag
+
+- center: pixel coordinates of the center of each detection
+
+- lb-rb-rt-lt: pixel coordinates of the 4 corners of each detection. The order
+  is left-bottom, right-bottom, right-top, left-top
+
+- hamming: How many error bits were corrected? Note: accepting large numbers of
+  corrected errors leads to greatly increased false positive rates. NOTE: As of
+  this implementation, the detector cannot detect tags with a hamming distance
+  greater than 2.
+
+- margin: A measure of the quality of the binary decoding process: the average
+  difference between the intensity of a data bit versus the decision threshold.
+  Higher numbers roughly indicate better decodes. This is a reasonable measure
+  of detection accuracy only for very small tags-- not effective for larger tags
+  (where we could have sampled anywhere within a bit cell and still gotten a
+  good detection.)
