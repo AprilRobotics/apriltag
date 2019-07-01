@@ -63,16 +63,16 @@ install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
 
 # Examples
 # apriltag_demo
-add_executable(apriltag_demo example/apriltag_demo.c)
-target_link_libraries(apriltag_demo apriltag)
+# add_executable(apriltag_demo example/apriltag_demo.c)
+# target_link_libraries(apriltag_demo apriltag)
 
 # opencv_demo
-if(OpenCV_FOUND)
-    add_executable(opencv_demo example/opencv_demo.cc)
-    target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
-    install(TARGETS opencv_demo RUNTIME DESTINATION bin)
-endif(OpenCV_FOUND)
+#if(OpenCV_FOUND)
+#    add_executable(opencv_demo example/opencv_demo.cc)
+#    target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
+#    install(TARGETS opencv_demo RUNTIME DESTINATION bin)
+#endif(OpenCV_FOUND)
 
 # install example programs
-install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
+# install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
 
