@@ -65,28 +65,14 @@ install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
 # Python wrapper
 execute_process(COMMAND which python3 RESULT_VARIABLE Python3_NOT_FOUND)
 if (NOT Python3_NOT_FOUND)
-message("Starting py wrapper")
 # TODO deal with both python2/3
 execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
-message("PY_OUT: " ${PY_OUT})
-list(LENGTH PY_OUT PY_OUT_LEN)
-message("LEN: " ${PY_OUT_LEN})
 set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
 cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
 separate_arguments(PY_CFLAGS)
-message("PY_CFLAGS: " ${PY_CFLAGS})
-message("PY_LINKER: " ${PY_LINKER})
 separate_arguments(PY_LDFLAGS)
-message("PY_LDFLAGS: " ${PY_LDFLAGS})
-message("PY_EXT_SUFFIX: " ${PY_EXT_SUFFIX})
-
 set(LIB_APRILTAG_PATH ${PROJECT_BINARY_DIR}/lib)
-message("libapriltag path: " ${LIB_APRILTAG_PATH})
 
-#add_library(apriltag_python apriltag_pywrap.c)
-#set_source_files_properties(SOURCE ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c PROPERTIES COMPILE_FLAGS "${PY_CFLAGS}")
-
-#configure_file(${CMAKE_SOURCE_DIR}/apriltag_detect.docstring ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h COPYONLY)
 foreach(X detect py_type)
 set_source_files_properties(SOURCE ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c PROPERTIES OBJECT_DEPENDS ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h)
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
@@ -97,7 +83,7 @@ add_custom_command(OUTPUT apriltag_pywrap.o
     COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c
     DEPENDS ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
 add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
-    COMMAND ${PY_LINKER} ${PY_LDFLAGS} apriltag_pywrap.o ${LIB_APRILTAG_PATH}/libapriltag.so -o apriltag${PY_EXT_SUFFIX}
+    COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath=lib apriltag_pywrap.o ${LIB_APRILTAG_PATH}/libapriltag.so -o apriltag${PY_EXT_SUFFIX}
     DEPENDS ${PROJECT_NAME} apriltag_pywrap.o)
 add_custom_target(apriltag_python ALL
     DEPENDS apriltag${PY_EXT_SUFFIX})
@@ -105,7 +91,7 @@ add_custom_target(apriltag_python ALL
 execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
 string(STRIP ${PY_DEST} PY_DEST)
 message(${PY_DEST}/alksjdflks)
-install(FILES ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} DESTINATION ${PY_DEST})
+install(CODE "execute_process(COMMAND cp  ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
 
 endif (NOT Python3_NOT_FOUND)
 
