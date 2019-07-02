@@ -11,7 +11,7 @@ Install
 
 The default installation will place headers in /usr/local/include and
 shared library in /usr/local/lib. It also installs a pkg-config script
-into /usr/local/lib/pkgconfig. Be aware that there are some larger tag families which may take a long time to build. If you do not want to use these tag families then you can speed up the installation by deleting the files tagCircle49h12.c, tagCircle49h12.h, tagCustom48h12.c, tagCustom48h12.h, tagStandard52h13.c, and tagStandard52h13.h before installing.
+into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed. Be aware that there are some larger tag families which may take a long time to build. If you do not want to use these tag families then you can speed up the installation by deleting the files tagCircle49h12.c, tagCircle49h12.h, tagCustom48h12.c, tagCustom48h12.h, tagStandard52h13.c, and tagStandard52h13.h before installing.
 
 If you have CMake installed or it is not difficult to install, then do:
 
@@ -83,6 +83,21 @@ Cleanup: free the detector and tag family when done.
 
     apriltag_detector_destroy(td);
     tag36h11_destroy(tf);
+
+Python
+======
+The python wrapper will be installed if the system has python3 installed. Usage is as follows:
+
+    import cv2
+    import numpy as np
+    from apriltag import apriltag
+
+    imagepath = '/tmp/tst.jpg'
+    image     = cv2.imread(imagepath, cv2.IMREAD_GRAYSCALE)
+    detector = apriltag("tag36h11")
+
+    detections = detector.detect(image)
+
 
 Support
 =======
