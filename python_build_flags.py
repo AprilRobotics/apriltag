@@ -3,11 +3,6 @@ import sysconfig
 import re
 conf = sysconfig.get_config_vars()
 
-#for v in ('CC', 'CFLAGS', 'CCSHARED', 'INCLUDEPY', 'BLDSHARED', 'BLDLIBRARY', 'LDFLAGS', 'EXT_SUFFIX', 'MULTIARCH'):
-    #print("{};{}".format(v, re.sub("[\t ]+", "\\ ", conf.get(v, ''))), end=';')
-    #vals[v] = re.sub("[\t ]+", "\\ ", conf.get(v, ''))
-
-
 print('CFLAGS', end=';')
 c_flags = []
 # Grab compiler flags minus the compiler itself.
@@ -35,4 +30,3 @@ elif 'MULTIARCH' in conf:
 
 print(ext_suffix, end=';')
 
-# TODO: Strip out -g from 1 and 3. Strip out -O2 from 3.
