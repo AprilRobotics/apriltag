@@ -63,7 +63,7 @@ install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
 
 
 # Python wrapper
-execute_process(COMMAND which python3 RESULT_VARIABLE Python3_NOT_FOUND)
+execute_process(COMMAND which python3 OUTPUT_QUIET RESULT_VARIABLE Python3_NOT_FOUND)
 if (NOT Python3_NOT_FOUND)
 # TODO deal with both python2/3
 execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
@@ -74,11 +74,11 @@ separate_arguments(PY_LDFLAGS)
 set(LIB_APRILTAG_PATH ${PROJECT_BINARY_DIR}/lib)
 
 foreach(X detect py_type)
-set_source_files_properties(SOURCE ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c PROPERTIES OBJECT_DEPENDS ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h)
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
     COMMAND < ${CMAKE_SOURCE_DIR}/apriltag_${X}.docstring sed 's/\"/\\\\\"/g\; s/^/\"/\; s/$$/\\\\n\"/\;' > apriltag_${X}.docstring.h
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 endforeach()
+
 add_custom_command(OUTPUT apriltag_pywrap.o
     COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c
     DEPENDS ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
@@ -90,8 +90,7 @@ add_custom_target(apriltag_python ALL
 
 execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
 string(STRIP ${PY_DEST} PY_DEST)
-message(${PY_DEST}/alksjdflks)
-install(CODE "execute_process(COMMAND cp  ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
+install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
 
 endif (NOT Python3_NOT_FOUND)
 
