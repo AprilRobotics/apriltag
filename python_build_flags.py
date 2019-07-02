@@ -19,19 +19,19 @@ c_flags.append('-Wno-strict-prototypes')
 c_flags = [x for x in c_flags if not x.startswith('-O')]
 print(' '.join(c_flags), end=';')
 
-print('LDFLAGS', end=';')
-print(conf.get('LDFLAGS', ''), end=';')
 
-# Linker command.
 print('LINKER', end=';')
-print(conf.get('BLDSHARED', '') + conf.get('BLDLIBRARY', ''), end=';')
+print(conf.get('BLDSHARED', '').split()[0], end=';')
+
+print('LDFLAGS', end=';')
+print(' '.join(conf.get('BLDSHARED', '').split()[1:]) + ' ' + conf.get('BLDLIBRARY', '') + ' ' + conf.get('LDFLAGS', ''), end=';')
 
 print('EXT_SUFFIX', end=';')
 ext_suffix = '.so'
-if conf.has_key('EXT_SUFFIX'):
+if 'EXT_SUFFIX' in conf:
     ext_suffix = conf['EXT_SUFFIX']
-elif conf.has_key('MULTIARCH'):
-    ext_suffix = conf['MULTIARCH'] + '.so'
+elif 'MULTIARCH' in conf:
+    ext_suffix = '.' + conf['MULTIARCH'] + '.so'
 
 print(ext_suffix, end=';')
 
