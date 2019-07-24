@@ -63,8 +63,10 @@ install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
 
 
 # Python wrapper
+SET(Python_ADDITIONAL_VERSIONS 3)
+find_package(PythonLibs)
 execute_process(COMMAND which python3 OUTPUT_QUIET RESULT_VARIABLE Python3_NOT_FOUND)
-if (NOT Python3_NOT_FOUND)
+if (NOT Python3_NOT_FOUND AND PYTHONLIBS_FOUND)
 # TODO deal with both python2/3
 execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
 set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
@@ -92,7 +94,7 @@ execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
 string(STRIP ${PY_DEST} PY_DEST)
 install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
 
-endif (NOT Python3_NOT_FOUND)
+endif (NOT Python3_NOT_FOUND AND PYTHONLIBS_FOUND)
 
 
 # Examples
