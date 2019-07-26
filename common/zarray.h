@@ -231,17 +231,14 @@ inline static void zarray_truncate(zarray_t *za, int sz)
  * elements to the address pointed by 'buffer'. It is the caller's responsibility
  * to allocate zarray_size()*el_sz bytes for the copy to be stored and
  * to free the memory when no longer needed. The memory allocated at 'buffer'
- * and the internal zarray storage must not overlap. 'buffer_bytes' should be
- * the size of the 'buffer' memory space, in bytes, and must be at least
- * zarray_size()*el_sz.
+ * and the internal zarray storage must not overlap.
  *
  * Returns the number of bytes copied into 'buffer'.
  */
-static inline size_t zarray_copy_data(const zarray_t *za, void *buffer, size_t buffer_bytes)
+static inline size_t zarray_copy_data(const zarray_t *za, void *buffer)
 {
     assert(za != NULL);
     assert(buffer != NULL);
-    assert(buffer_bytes >= za->el_sz * za->size);
     memcpy(buffer, za->data, za->el_sz * za->size);
     return za->el_sz * za->size;
 }
