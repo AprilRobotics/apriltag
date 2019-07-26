@@ -69,7 +69,7 @@ double orthogonal_iteration(matd_t** v, matd_t** p, matd_t** t, matd_t** R, int 
 
     double prev_error = HUGE_VAL;
     // Iterate.
-    for (int iter = 0; iter < n_steps; iter++) {
+    for (int i = 0; i < n_steps; i++) {
         // Calculate translation.
         matd_t *M2 = matd_create(3, 1);
         for (int j = 0; j < n_points; j++) {
@@ -110,8 +110,8 @@ double orthogonal_iteration(matd_t** v, matd_t** p, matd_t** t, matd_t** R, int 
         }
 
         double error = 0;
-        for (int i = 0; i < 4; i++) {
-            matd_t* err_vec = matd_op("(M-M)(MM+M)", I3, F[i], *R, p[i], *t);
+        for (int j = 0; j < 4; j++) {
+            matd_t* err_vec = matd_op("(M-M)(MM+M)", I3, F[j], *R, p[j], *t);
             error += matd_to_double(matd_op("M'M", err_vec, err_vec));
             matd_destroy(err_vec);
         }

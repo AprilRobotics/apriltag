@@ -1062,17 +1062,17 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
     // adjust centers of pixels so that they correspond to the
     // original full-resolution image.
     if (td->quad_decimate > 1) {
-        for (int idx = 0; idx < zarray_size(quads); idx++) {
+        for (int i = 0; i < zarray_size(quads); i++) {
             struct quad *q;
-            zarray_get_volatile(quads, idx, &q);
+            zarray_get_volatile(quads, i, &q);
 
-            for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
                 if (td->quad_decimate == 1.5) {
-                    q->p[i][0] *= td->quad_decimate;
-                    q->p[i][1] *= td->quad_decimate;
+                    q->p[j][0] *= td->quad_decimate;
+                    q->p[j][1] *= td->quad_decimate;
                 } else {
-                    q->p[i][0] = (q->p[i][0] - 0.5)*td->quad_decimate + 0.5;
-                    q->p[i][1] = (q->p[i][1] - 0.5)*td->quad_decimate + 0.5;
+                    q->p[j][0] = (q->p[j][0] - 0.5)*td->quad_decimate + 0.5;
+                    q->p[j][1] = (q->p[j][1] - 0.5)*td->quad_decimate + 0.5;
                 }
             }
         }
@@ -1264,15 +1264,16 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 
         image_u8_destroy(darker);
 
-        for (int idx = 0; idx < zarray_size(detections); idx++) {
+        for (int i = 0; i < zarray_size(detections); i++) {
             apriltag_detection_t *det;
-            zarray_get(detections, idx, &det);
+            zarray_get(detections, i, &det);
 
             float rgb[3];
             int bias = 100;
 
-            for (int i = 0; i < 3; i++)
-                rgb[i] = bias + (random() % (255-bias));
+            for (int j = 0; j < 3; j++) {
+                rgb[j] = bias + (random() % (255-bias));
+            }
 
             fprintf(f, "%f %f %f setrgbcolor\n", rgb[0]/255.0f, rgb[1]/255.0f, rgb[2]/255.0f);
             fprintf(f, "%f %f moveto %f %f lineto %f %f lineto %f %f lineto %f %f lineto stroke\n",
@@ -1303,15 +1304,16 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 
         image_u8_destroy(darker);
 
-        for (int idx = 0; idx < zarray_size(detections); idx++) {
+        for (int i = 0; i < zarray_size(detections); i++) {
             apriltag_detection_t *det;
-            zarray_get(detections, idx, &det);
+            zarray_get(detections, i, &det);
 
             float rgb[3];
             int bias = 100;
 
-            for (int i = 0; i < 3; i++)
-                rgb[i] = bias + (random() % (255-bias));
+            for (int j = 0; j < 3; j++) {
+                rgb[j] = bias + (random() % (255-bias));
+            }
 
             for (int j = 0; j < 4; j++) {
                 int k = (j + 1) & 3;
@@ -1345,15 +1347,16 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 
         image_u8_destroy(darker);
 
-        for (int idx = 0; idx < zarray_size(quads); idx++) {
+        for (int i = 0; i < zarray_size(quads); i++) {
             struct quad *q;
-            zarray_get_volatile(quads, idx, &q);
+            zarray_get_volatile(quads, i, &q);
 
             float rgb[3];
             int bias = 100;
 
-            for (int i = 0; i < 3; i++)
-                rgb[i] = bias + (random() % (255-bias));
+            for (int j = 0; j < 3; j++) {
+                rgb[j] = bias + (random() % (255-bias));
+            }
 
             fprintf(f, "%f %f %f setrgbcolor\n", rgb[0]/255.0f, rgb[1]/255.0f, rgb[2]/255.0f);
             fprintf(f, "%f %f moveto %f %f lineto %f %f lineto %f %f lineto %f %f lineto stroke\n",

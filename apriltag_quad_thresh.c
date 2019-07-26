@@ -1894,15 +1894,15 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
 
         image_u8_destroy(im2);
 
-        for (int idx = 0; idx < zarray_size(quads); idx++) {
+        for (int i = 0; i < zarray_size(quads); i++) {
             struct quad *q;
-            zarray_get_volatile(quads, idx, &q);
+            zarray_get_volatile(quads, i, &q);
 
             float rgb[3];
             int bias = 100;
 
-            for (int i = 0; i < 3; i++)
-                rgb[i] = bias + (random() % (255-bias));
+            for (int j = 0; j < 3; j++)
+                rgb[j] = bias + (random() % (255-bias));
 
             fprintf(f, "%f %f %f setrgbcolor\n", rgb[0]/255.0f, rgb[1]/255.0f, rgb[2]/255.0f);
             fprintf(f, "%.15f %.15f moveto %.15f %.15f lineto %.15f %.15f lineto %.15f %.15f lineto %.15f %.15f lineto stroke\n",
