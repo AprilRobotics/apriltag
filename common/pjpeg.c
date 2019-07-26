@@ -558,7 +558,7 @@ static int pjpeg_decode_buffer(struct pjpeg_decode_state *pjd)
                             pjd->reset_count = 0;
                             pjd->reset_next = (pjd->reset_next + 1) & 0x7;
 
-                            memset(dcpred, 0, sizeof(dcpred));
+                            memset(dcpred, 0, sizeof(*dcpred));
                         }
 
                         for (int nsidx = 0; nsidx < ns; nsidx++) {
