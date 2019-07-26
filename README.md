@@ -177,3 +177,4 @@ Third-party wrappers of the apriltag code for other languages.
 
 [Matlab](https://github.com/alddiaz/MATLAB_AprilTag3)
 
+[Julia](https://github.com/JuliaRobotics/AprilTags.jl)
