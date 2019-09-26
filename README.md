@@ -6,6 +6,10 @@ You can find tag images for the pre-generated layouts [here](https://github.com/
 
 [![Build Status](https://travis-ci.com/AprilRobotics/apriltag.svg?branch=master)](https://travis-ci.com/AprilRobotics/apriltag)
 
+Usage
+=====
+[User Guide](https://github.com/AprilRobotics/apriltag/wiki/AprilTag-User-Guide)
+
 Install
 =======
 
@@ -28,77 +32,6 @@ To install to a different directory than /usr/local:
     $ PREFIX=/some/path sudo make install
 
 
-Usage
-=====
-
-We recommend using the tagStandard41h12 family for all new application.
-
-A basic AprilTag application can be seen in example/apriltag_demo.c.
-
-
-Initialization: instantiate a detector and at least one tag family.
-
-    apriltag_detector_t *td = apriltag_detector_create();
-    apriltag_family_t *tf = tag36h11_create();
-    apriltag_detector_add_family(td, tf);
-
-Some tag detector parameters can be set at this time.
-The default parameters are the recommended starting point.
-
-    td->quad_decimate = 2.0;
-    td->quad_sigma = 0.0;
-    td->refine_edges = 1;
-    td->decode_sharpening = 0.25;
-
-Increase the image decimation if faster processing is required; the
-trade-off is a slight decrease in detection range. A factor of 1.0
-means the full-size input image is used.
-
-Some Gaussian blur (quad_sigma) may help with noisy input images.
-
-
-Detection: a single one-line call will process an input image
-and return a list of detections.
-
-    zarray_t *detections = apriltag_detector_detect(td, im);
-
-    for (int i = 0; i < zarray_size(detections); i++) {
-        apriltag_detection_t *det;
-        zarray_get(detections, i, &det);
-
-        // Do something with det here
-    }
-
-    apriltag_detections_destroy(detections);
-
-zarray is a container class which is included with apriltag.
-To process through the list of detections, use zarray_get,
-as illustrated above.
-
-The caller is responsible for freeing detections by calling
-apriltag_detections_destroy().
-
-
-Cleanup: free the detector and tag family when done.
-
-    apriltag_detector_destroy(td);
-    tag36h11_destroy(tf);
-
-Python
-======
-The python wrapper will be installed if the system has python3 installed. Usage is as follows:
-
-    import cv2
-    import numpy as np
-    from apriltag import apriltag
-
-    imagepath = '/tmp/tst.jpg'
-    image     = cv2.imread(imagepath, cv2.IMREAD_GRAYSCALE)
-    detector = apriltag("tag36h11")
-
-    detections = detector.detect(image)
-
-
 Support
 =======
 Please create an issue on this github for any questions instead of sending a private message. This allows other people with the same question to find your answer.
@@ -113,28 +46,6 @@ AprilTag 3 supports a wide variety of possible tag layouts in addition to the cl
 
 You can generate your own tag families using our other repo, [AprilTag-Generation](https://github.com/AprilRobotics/apriltag-generation).
 
-Pose Estimation
-===============
-We have added methods to estimate the 3d pose of the AprilTag given camera parameters and the size of the tag. Sample code is as follows:
-
-    // First create an apriltag_detection_info_t struct using your known parameters.
-    apriltag_detection_info_t info;
-    info.det = det;
-    info.tagsize = tagsize;
-    info.fx = fx;
-    info.fy = fy;
-    info.cx = cx;
-    info.cy = cy;
-
-    // Then call estimate_tag_pose.
-    apriltag_pose_t pose;
-    double err = estimate_tag_pose(&info, &pose);
-    
-    // Do something with pose.
-    ...
-    
-You can also call <code>estimate_tag_pose_orthogonal_iteration</code> which allows the user to specify the number of iterations used and also returns both possible solutions for the tag pose along with their errors.
-
 
 Upgrading from AprilTag 2
 =========================
@@ -142,8 +53,6 @@ For most use-cases this should be a drop in replacement.
 
 * The options refine_decode, refine_pose, and black_border have been removed.
 * If you have generated your own families, you will need to regenerate the c code for those families. The java code however does not need to be regenerated so this should be quick and easy.
-
-
 
 
 OpenCV Integration
@@ -168,13 +77,4 @@ a deep copy. Simply create an image_u8_t header for the cv::Mat data buffer:
         .stride = img.cols,
         .buf = img.data
     };
-    
-Wrappers
-========
-Third-party wrappers of the apriltag code for other languages.
- 
-[Python](https://github.com/duckietown/apriltags3-py)
 
-[Matlab](https://github.com/alddiaz/MATLAB_AprilTag3)
-
-[Julia](https://github.com/JuliaRobotics/AprilTags.jl)
