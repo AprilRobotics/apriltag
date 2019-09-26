@@ -32,10 +32,6 @@ To install to a different directory than /usr/local:
     $ PREFIX=/some/path sudo make install
 
 
-Support
-=======
-Please create an issue on this github for any questions instead of sending a private message. This allows other people with the same question to find your answer.
-
 Flexible Layouts
 ================
 AprilTag 3 supports a wide variety of possible tag layouts in addition to the classic layout supported in AprilTag 2. The tag's data bits can now go outside of the tag border, and it is also possible to define layouts with "holes" inside of the tag border where there are no data bits. In this repo we have included:
@@ -45,6 +41,11 @@ AprilTag 3 supports a wide variety of possible tag layouts in addition to the cl
 * One family which has a hole in the middle. This could be used for example for drone applications by placing different sized tags inside of each other to allow detection over a wide range of distances.
 
 You can generate your own tag families using our other repo, [AprilTag-Generation](https://github.com/AprilRobotics/apriltag-generation).
+
+
+Support
+=======
+Please create an issue on this github for any questions instead of sending a private message. This allows other people with the same question to find your answer.
 
 
 Upgrading from AprilTag 2
