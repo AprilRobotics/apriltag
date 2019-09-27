@@ -26,7 +26,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #include <stdlib.h>
-#include "apriltag.h"
+#include "tagCircle21h7.h"
 
 apriltag_family_t *tagCircle21h7_create()
 {

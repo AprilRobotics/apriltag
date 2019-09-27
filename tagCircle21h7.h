@@ -28,6 +28,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 #ifndef _TAGCircle21H7
 #define _TAGCircle21H7
 
+#include "apriltag.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
