@@ -648,8 +648,15 @@ float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, image_u8_t
         }
     }
 
-    graymodel_solve(&whitemodel);
-    graymodel_solve(&blackmodel);
+    if (family->width_at_border > 1) {
+        graymodel_solve(&whitemodel);
+        graymodel_solve(&blackmodel);
+    } else {
+        graymodel_solve(&whitemodel);
+        blackmodel.C[0] = 0;
+        blackmodel.C[1] = 0;
+        blackmodel.C[2] = blackmodel.B[2]/4;
+    }
 
     // XXX Tunable
     if ((graymodel_interpolate(&whitemodel, 0, 0) - graymodel_interpolate(&blackmodel, 0, 0) < 0) != family->reversed_border) {
