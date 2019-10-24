@@ -1,10 +1,22 @@
 AprilTag 3
 ==========
-AprilTag is a visual fiducial system popular in robotics research. This repository contains the most recent version of AprilTag, AprilTag 3, which includes a faster (>2x) detector, improved detection rate on small tags, flexible tag layouts, and pose estimation. AprilTag consists of a small C library with minimal dependencies. Officially only linux operating systems are supported.
+AprilTag is a visual fiducial system popular in robotics research. This repository contains the most recent version of AprilTag, AprilTag 3, which includes a faster (>2x) detector, improved detection rate on small tags, flexible tag layouts, and pose estimation. AprilTag consists of a small C library with minimal dependencies.
 
 You can find tag images for the pre-generated layouts [here](https://github.com/AprilRobotics/apriltag-imgs). We recommend using the tagStandard41h12 layout.
 
 [![Build Status](https://travis-ci.com/AprilRobotics/apriltag.svg?branch=master)](https://travis-ci.com/AprilRobotics/apriltag)
+
+Papers
+======
+AprilTag is the subject of the following papers.
+
+[AprilTag: A robust and flexible visual fiducial system](https://april.eecs.umich.edu/papers/details.php?name=olson2011tags)
+
+[AprilTag 2: Efficient and robust fiducial detection](https://april.eecs.umich.edu/papers/details.php?name=wang2016iros)
+
+[Flexible Layouts for Fiducial Tags](https://april.eecs.umich.edu/papers/details.php?name=krogius2019iros)
+
+
 
 Usage
 =====
@@ -13,7 +25,9 @@ Usage
 Install
 =======
 
-The default installation will place headers in /usr/local/include and
+ Officially only linux operating systems are supported, although users have had success installing on windows too.
+ 
+ The default installation will place headers in /usr/local/include and
 shared library in /usr/local/lib. It also installs a pkg-config script
 into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed. Be aware that there are some larger tag families which may take a long time to build. If you do not want to use these tag families then you can speed up the installation by deleting the files tagCircle49h12.c, tagCircle49h12.h, tagCustom48h12.c, tagCustom48h12.h, tagStandard52h13.c, and tagStandard52h13.h before installing.
 
