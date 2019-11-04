@@ -6,6 +6,7 @@
 #include "common/homography.h"
 #include "common/image_u8x3.h"
 
+#include "solve_square.h"
 
 /**
  * Calculate projection operator from image points.
@@ -524,7 +525,9 @@ double estimate_tag_pose(apriltag_detection_info_t* info, apriltag_pose_t* pose)
     double err1, err2;
     apriltag_pose_t pose1, pose2;
     estimate_tag_pose_orthogonal_iteration(info, &err1, &pose1, &err2, &pose2, 50);
-    if (err1 <= err2) {
+    if (!pose2.R) {
+        return estimate_tag_pose_solve_square(info, pose);
+    } else if (err1 <= err2) {
         pose->R = pose1.R;
         pose->t = pose1.t;
         if (pose2.R) {
