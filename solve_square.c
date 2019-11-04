@@ -264,14 +264,14 @@ double solve_square(
 
     // got x y z a b c p q r
     matd_put(xyz, 0, 0, x);
-    matd_put(xyz, 0, 1, y);
-    matd_put(xyz, 0, 2, z);
+    matd_put(xyz, 1, 0, y);
+    matd_put(xyz, 2, 0, z);
     matd_put(abc, 0, 0, a);
-    matd_put(abc, 0, 1, b);
-    matd_put(abc, 0, 2, c);
+    matd_put(abc, 1, 0, b);
+    matd_put(abc, 2, 0, c);
     matd_put(pqr, 0, 0, p);
-    matd_put(pqr, 0, 1, q);
-    matd_put(pqr, 0, 2, r);
+    matd_put(pqr, 1, 0, q);
+    matd_put(pqr, 2, 0, r);
 
     return ret;
 }
@@ -279,8 +279,8 @@ double solve_square(
 matd_t* create_rotation_matrix(double th, matd_t *axis)
 {
     double x = matd_get(axis, 0, 0);
-    double y = matd_get(axis, 0, 1);
-    double z = matd_get(axis, 0, 2);
+    double y = matd_get(axis, 1, 0);
+    double z = matd_get(axis, 2, 0);
 
     matd_t *r = matd_create(3, 3);
 
@@ -303,12 +303,12 @@ matd_t* create_square_rotation(matd_t *abc, matd_t *pqr)
 {
     matd_t *X = matd_create(3, 1);
     matd_put(X, 0, 0, 1);
-    matd_put(X, 0, 1, 0);
-    matd_put(X, 0, 2, 0);
+    matd_put(X, 1, 0, 0);
+    matd_put(X, 2, 0, 0);
     matd_t *Y = matd_create(3, 1);
     matd_put(Y, 0, 0, 0);
-    matd_put(Y, 0, 1, 1);
-    matd_put(Y, 0, 2, 0);
+    matd_put(Y, 1, 0, 1);
+    matd_put(Y, 2, 0, 0);
     matd_scale_inplace(abc, 1/matd_vec_mag(abc));
     matd_scale_inplace(pqr, 1/matd_vec_mag(pqr));
 
