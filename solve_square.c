@@ -1,5 +1,6 @@
-#include <math.h> // for sqrt  use -lm if use gcc to compile
+#include <math.h>
 #include "apriltag_pose.h"
+
 double solve_double_quadratic(
     double a1, double b1, double c1, double d1, double e1, double f1,
     double a2, double b2, double c2, double d2, double e2, double f2,
@@ -139,22 +140,18 @@ double solve_square(
 
     // a b p q x y c r z
     // 6 rows left
-    //double Ks[6] = {-ku-ku, -kv-kv, ku+ku, kv+kv, -ku-ku, -kv-kv};
     double Ks[6] = {-0.5/ku,-0.5/kv,0.5/ku,0.5/kv,-0.5/ku,-0.5/kv};
-    //double Cs[6] = { u3+u2-u0-u0,   v3+v2-v0-v0,
-    double Cs[6] = { u3+u2-u0*2,v3+v2-v0*2,
+    double Cs[6] = { u3+u2-u0-u0,   v3+v2-v0-v0,
                      u2-u1,         v2-v1,
                     -u3+u1,        -v3+v1
                   };
     double Rs[6] = { u3-u2,         v3-v2,
-                    //-u2-u1+u0+u0,  -v2-v1+v0+v0,
-                    -u2-u1+u0*2,-v2-v1+v0*2,
+                    -u2-u1+u0+u0,  -v2-v1+v0+v0,
                     -u3+u1,        -v3+v1
                   };
     double Zs[6] = {-u3+u2,        -v3+v2,
                     u2-u1,         v2-v1,
-                   // u3+u1-u0-u0,   v3+v1-v0-v0,
-                    u3+u1-u0*2,v3+v1-v0*2
+                    u3+u1-u0-u0,   v3+v1-v0-v0,
                   };
     double ac,ar,az,bc,br,bz,xc,xr,xz;
     double pc,pr,pz,qc,qr,qz,yc,yr,yz;
