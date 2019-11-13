@@ -61,15 +61,14 @@ STRING(REGEX REPLACE "^prefix=" "prefix=${CMAKE_INSTALL_PREFIX}" PKGC_CONF "${PK
 FILE(WRITE ${PROJECT_BINARY_DIR}/apriltag.pc ${PKGC_CONF})
 install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
 
-
 # Python wrapper
-SET(Python_ADDITIONAL_VERSIONS 3)
+SET(PREFERRED_PYTHON_VERSION 3 CACHE STRING "Preferred Python version 2/3")
+SET(Python_ADDITIONAL_VERSIONS ${PREFERRED_PYTHON_VERSION} 3 2)
+find_package(PythonInterp)
 find_package(PythonLibs)
-execute_process(COMMAND which python3 OUTPUT_QUIET RESULT_VARIABLE Python3_NOT_FOUND)
-execute_process(COMMAND python3 -c "import numpy" RESULT_VARIABLE Numpy_NOT_FOUND)
-if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND)
-# TODO deal with both python2/3
-execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
+execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import numpy" RESULT_VARIABLE Numpy_NOT_FOUND)
+if (NOT PYTHONINTERP_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND)
+execute_process(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
 set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
 cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
 separate_arguments(PY_CFLAGS)
@@ -91,11 +90,10 @@ add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
 add_custom_target(apriltag_python ALL
     DEPENDS apriltag${PY_EXT_SUFFIX})
 
-execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
+execute_process(COMMAND ${PYTHON_EXECUTABLE} -m site --user-site OUTPUT_VARIABLE PY_DEST)
 string(STRIP ${PY_DEST} PY_DEST)
 install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
-endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND)
-
+endif (NOT PYTHONINTERP_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND)
 
 # Examples
 # apriltag_demo
