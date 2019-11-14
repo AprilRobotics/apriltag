@@ -19,4 +19,6 @@
   <export>
     <build_type>cmake</build_type>
   </export>
+  <depend>python-numpy</depend>
+  <depend>python3-numpy</depend>
 </package>
