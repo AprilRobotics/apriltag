@@ -62,7 +62,7 @@ FILE(WRITE ${PROJECT_BINARY_DIR}/apriltag.pc ${PKGC_CONF})
 install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
 
 # Python wrapper
-SET(PREFERRED_PYTHON_VERSION 3 CACHE STRING "Preferred Python version 2/3")
+SET(PREFERRED_PYTHON_VERSION $ENV{ROS_PYTHON_VERSION} CACHE STRING "Preferred Python version 2/3")
 SET(Python_ADDITIONAL_VERSIONS ${PREFERRED_PYTHON_VERSION} 3 2)
 find_package(PythonInterp)
 find_package(PythonLibs)
