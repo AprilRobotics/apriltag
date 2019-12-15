@@ -99,8 +99,8 @@ add_custom_target(apriltag_python ALL
 
 execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
 string(STRIP ${PY_DEST} PY_DEST)
-install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
-endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
+install(FILES ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} DESTINATION ${PY_DEST})
+endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND)
 
 if (BUILD_APRIL_TAG_EXAMPLES )
     # Examples
