@@ -110,7 +110,6 @@ typedef struct
    FILE *file_handle;                   /// File handle to write buffer data to.
    RASPIVIDYUV_STATE *pstate;           /// pointer to our state in case required in callback
    int abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
-   FILE *pts_file_handle;               /// File timestamps
    int frame;
    int64_t starttime;
    int64_t lasttime;
@@ -122,11 +121,10 @@ struct RASPIVIDYUV_STATE_S
 {
    RASPICOMMONSETTINGS_PARAMETERS common_settings;
 
-  int framerate;                      /// Requested frame rate (fps)
-
-  int onlyLuma;                       /// Only output the luma / Y plane of the YUV data
-   int useRGB;                         /// Output RGB data rather than YUV
-
+  int output_format; // 0 =YUV, 1 = Y800, 2 = RGB8
+  
+   int framerate;                      /// Requested frame rate (fps)
+  
    RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
    RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
 
@@ -139,8 +137,7 @@ struct RASPIVIDYUV_STATE_S
 
    int bCapturing;                      /// State of capture/pause
    int frame;
-   char *pts_filename;
-   int save_pts;
+
    int64_t starttime;
    int64_t lasttime;
 };
@@ -157,15 +154,17 @@ static int initial_map_size = sizeof(initial_map) / sizeof(initial_map[0]);
 enum
 {
    CommandFramerate,
-   CommandOnlyLuma,
    CommandUseRGB,
+   CommandUseYUV,
+   CommandUseY8
 };
 
 static COMMAND_LIST cmdline_commands[] =
 {
    { CommandFramerate,     "-framerate",  "fps","Specify the frames per second to record", 1},
-   { CommandOnlyLuma,      "-luma",       "y",  "Only output the luma / Y of the YUV data'", 0},
-   { CommandUseRGB,        "-rgb",        "rgb","Save as RGB data rather than YUV", 0},
+   { CommandUseRGB,        "-rgb",        "rgb","use RGB888 format", 0},
+   { CommandUseYUV,        "-yuv",        "yuv","use YUV420 format", 0},
+   { CommandUseY8,        "-y8",        "y8","use Y8 format", 0},
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
@@ -195,7 +194,6 @@ static void default_status(RASPIVIDYUV_STATE *state)
    state->framerate = VIDEO_FRAME_RATE_NUM;
 
    state->bCapturing = 0;
-   state->onlyLuma = 0;
 
    // Setup preview window defaults
    raspipreview_set_defaults(&state->preview_parameters);
@@ -327,23 +325,17 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
          break;
       }
 
-      case CommandOnlyLuma:
-         if (state->useRGB)
-         {
-            fprintf(stderr, "--luma and --rgb are mutually exclusive\n");
-            valid = 0;
-         }
-         state->onlyLuma = 1;
-         break;
+      case CommandUseRGB:
+	state->output_format = 2;
+	break;
 
-      case CommandUseRGB: // display lots of data during run
-         if (state->onlyLuma)
-         {
-            fprintf(stderr, "--luma and --rgb are mutually exclusive\n");
-            valid = 0;
-         }
-         state->useRGB = 1;
-         break;
+      case CommandUseYUV:
+	state->output_format = 0;
+	break;
+
+      case CommandUseY8:
+	state->output_format = 1;
+	break;
 
       default:
       {
@@ -416,8 +408,6 @@ static FILE *open_filename(RASPIVIDYUV_STATE *pState, char *filename)
  */
 static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
-  printf("frame\n");
-  
    MMAL_BUFFER_HEADER_T *new_buffer;
    static int64_t last_second = -1;
 
@@ -432,13 +422,22 @@ static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buff
       int bytes_to_write = buffer->length;
       int64_t current_time = get_microseconds64()/1000000;
 
-      if (pstate->onlyLuma)
-         bytes_to_write = vcos_min(buffer->length, port->format->es->video.width * port->format->es->video.height);
-
+      // only write luma component
+      switch (pstate->output_format) {
+      case 2: // RGB
+      case 0: // YUV
+	break;
+      case 1: // Y only
+	bytes_to_write = vcos_min(buffer->length, port->format->es->video.width * port->format->es->video.height);
+	
+      }
+      
       vcos_assert(pData->file_handle);
 
       if (bytes_to_write)
       {
+	printf("frame %d bytes\n", bytes_to_write);
+	
          mmal_buffer_header_mem_lock(buffer);
          bytes_written = fwrite(buffer->data, 1, bytes_to_write, pData->file_handle);
          mmal_buffer_header_mem_unlock(buffer);
@@ -447,25 +446,6 @@ static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buff
          {
             vcos_log_error("Failed to write buffer data (%d from %d)- aborting", bytes_written, bytes_to_write);
             pData->abort = 1;
-         }
-         if (pData->pts_file_handle)
-         {
-            // Every buffer should be a complete frame, so no need to worry about
-            // fragments or duplicated timestamps. We're also in RESET_STC mode, so
-            // the time on frame 0 should always be 0 anyway, but simply copy the
-            // code from raspivid.
-            // MMAL_TIME_UNKNOWN should never happen, but it'll corrupt the timestamps
-            // file if saved.
-            if(buffer->pts != MMAL_TIME_UNKNOWN)
-            {
-               int64_t pts;
-               if(pstate->frame==0)
-                  pstate->starttime=buffer->pts;
-               pData->lasttime=buffer->pts;
-               pts = buffer->pts - pData->starttime;
-               fprintf(pData->pts_file_handle,"%lld.%03lld\n", pts/1000, pts%1000);
-               pData->frame++;
-            }
          }
       }
    }
@@ -656,16 +636,20 @@ static MMAL_STATUS_T create_camera_component(RASPIVIDYUV_STATE *state)
       mmal_port_parameter_set(video_port, &fps_range.hdr);
    }
 
-   if (state->useRGB)
-   {
-      format->encoding = mmal_util_rgb_order_fixed(still_port) ? MMAL_ENCODING_RGB24 : MMAL_ENCODING_BGR24;
-      format->encoding_variant = 0;  //Irrelevant when not in opaque mode
+   switch (state->output_format) {
+     // YUV formats
+   case 0:
+   case 1:
+     format->encoding = MMAL_ENCODING_I420;
+     format->encoding_variant = MMAL_ENCODING_I420;
+     break;
+
+   case 2:
+     format->encoding = mmal_util_rgb_order_fixed(still_port) ? MMAL_ENCODING_RGB24 : MMAL_ENCODING_BGR24;
+     format->encoding_variant = 0;  //Irrelevant when not in opaque mode
+     break;
    }
-   else
-   {
-      format->encoding = MMAL_ENCODING_I420;
-      format->encoding_variant = MMAL_ENCODING_I420;
-   }
+
 
    format->es->video.width = VCOS_ALIGN_UP(state->common_settings.width, 32);
    format->es->video.height = VCOS_ALIGN_UP(state->common_settings.height, 16);
@@ -891,29 +875,6 @@ int main(int argc, const char **argv)
             }
          }
 
-         state.callback_data.pts_file_handle = NULL;
-
-         if (state.pts_filename)
-         {
-            if (state.pts_filename[0] == '-')
-            {
-               state.callback_data.pts_file_handle = stdout;
-            }
-            else
-            {
-               state.callback_data.pts_file_handle = open_filename(&state, state.pts_filename);
-               if (state.callback_data.pts_file_handle) /* save header for mkvmerge */
-                  fprintf(state.callback_data.pts_file_handle, "# timecode format v2\n");
-            }
-
-            if (!state.callback_data.pts_file_handle)
-            {
-               // Notify user, carry on but discarding encoded output buffers
-               fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n",state.pts_filename);
-               state.save_pts=0;
-            }
-         }
-
          // Set up our userdata - this is passed though to the callback where we need the information.
          state.callback_data.pstate = &state;
          state.callback_data.abort = 0;
@@ -964,7 +925,6 @@ int main(int argc, const char **argv)
 	       while (running) {
 		 sleep(1);
 		 printf("spin\n");
-		 //		 running = wait_for_next_change(&state);
 	       }
 
                if (state.common_settings.verbose)
@@ -1007,8 +967,6 @@ error:
       // problems if we have already closed the file!
       if (state.callback_data.file_handle && state.callback_data.file_handle != stdout)
          fclose(state.callback_data.file_handle);
-      if (state.callback_data.pts_file_handle && state.callback_data.pts_file_handle != stdout)
-         fclose(state.callback_data.pts_file_handle);
 
       raspipreview_destroy(&state.preview_parameters);
       destroy_camera_component(&state);
