@@ -100,16 +100,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const int ABORT_INTERVAL = 100; // ms
 
 
-/// Capture/Pause switch method
-enum
-{
-   WAIT_METHOD_NONE,       /// Simply capture for time specified
-   WAIT_METHOD_TIMED,      /// Cycle between capture and pause for times specified
-   WAIT_METHOD_KEYPRESS,   /// Switch between capture and pause on keypress
-   WAIT_METHOD_SIGNAL,     /// Switch between capture and pause on signal
-   WAIT_METHOD_FOREVER     /// Run/record forever
-};
-
 // Forward
 typedef struct RASPIVIDYUV_STATE_S RASPIVIDYUV_STATE;
 
@@ -131,15 +121,10 @@ typedef struct
 struct RASPIVIDYUV_STATE_S
 {
    RASPICOMMONSETTINGS_PARAMETERS common_settings;
-   int timeout;                        /// Time taken before frame is grabbed and app then shuts down. Units are milliseconds
-   int framerate;                      /// Requested frame rate (fps)
 
-   int waitMethod;                     /// Method for switching between pause and capture
+  int framerate;                      /// Requested frame rate (fps)
 
-   int onTime;                         /// In timed cycle mode, the amount of time the capture is on per cycle
-   int offTime;                        /// In timed cycle mode, the amount of time the capture is off per cycle
-
-   int onlyLuma;                       /// Only output the luma / Y plane of the YUV data
+  int onlyLuma;                       /// Only output the luma / Y plane of the YUV data
    int useRGB;                         /// Output RGB data rather than YUV
 
    RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
@@ -158,8 +143,6 @@ struct RASPIVIDYUV_STATE_S
    int save_pts;
    int64_t starttime;
    int64_t lasttime;
-
-   bool netListen;
 };
 
 static XREF_T  initial_map[] =
@@ -173,49 +156,19 @@ static int initial_map_size = sizeof(initial_map) / sizeof(initial_map[0]);
 /// Command ID's and Structure defining our command line options
 enum
 {
-   CommandTimeout,
-   CommandDemoMode,
    CommandFramerate,
-   CommandTimed,
-   CommandSignal,
-   CommandKeypress,
-   CommandInitialState,
    CommandOnlyLuma,
    CommandUseRGB,
-   CommandNetListen
 };
 
 static COMMAND_LIST cmdline_commands[] =
 {
-   { CommandTimeout,       "-timeout",    "t",  "Time (in ms) to capture for. If not specified, set to 5s. Zero to disable", 1 },
    { CommandFramerate,     "-framerate",  "fps","Specify the frames per second to record", 1},
-   { CommandTimed,         "-timed",      "td", "Cycle between capture and pause. -cycle on,off where on is record time and off is pause time in ms", 0},
-   { CommandSignal,        "-signal",     "s",  "Cycle between capture and pause on Signal", 0},
-   { CommandKeypress,      "-keypress",   "k",  "Cycle between capture and pause on ENTER", 0},
-   { CommandInitialState,  "-initial",    "i",  "Initial state. Use 'record' or 'pause'. Default 'record'", 1},
    { CommandOnlyLuma,      "-luma",       "y",  "Only output the luma / Y of the YUV data'", 0},
    { CommandUseRGB,        "-rgb",        "rgb","Save as RGB data rather than YUV", 0},
-   { CommandNetListen,     "-listen",     "l", "Listen on a TCP socket", 0},
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
-
-
-static struct
-{
-   char *description;
-   int nextWaitMethod;
-} wait_method_description[] =
-{
-   {"Simple capture",         WAIT_METHOD_NONE},
-   {"Capture forever",        WAIT_METHOD_FOREVER},
-   {"Cycle on time",          WAIT_METHOD_TIMED},
-   {"Cycle on keypress",      WAIT_METHOD_KEYPRESS},
-   {"Cycle on signal",        WAIT_METHOD_SIGNAL},
-};
-
-static int wait_method_description_size = sizeof(wait_method_description) / sizeof(wait_method_description[0]);
-
 
 
 /**
@@ -237,14 +190,10 @@ static void default_status(RASPIVIDYUV_STATE *state)
    raspicommonsettings_set_defaults(&state->common_settings);
 
    // Now set anything non-zero
-   state->timeout = -1; // replaced with 5000ms later if unset
    state->common_settings.width = 1920;       // Default to 1080p
    state->common_settings.height = 1080;
    state->framerate = VIDEO_FRAME_RATE_NUM;
 
-   state->waitMethod = WAIT_METHOD_NONE;
-   state->onTime = 5000;
-   state->offTime = 5000;
    state->bCapturing = 0;
    state->onlyLuma = 0;
 
@@ -273,7 +222,7 @@ static void dump_status(RASPIVIDYUV_STATE *state)
 
    raspicommonsettings_dump_parameters(&state->common_settings);
 
-   fprintf(stderr, "framerate %d, time delay %d\n", state->framerate, state->timeout);
+   fprintf(stderr, "framerate %d\n", state->framerate);
 
    // Calculate the individual image size
    // Y stride rounded to multiple of 32. U&V stride is Y stride/2 (ie multiple of 16).
@@ -290,12 +239,6 @@ static void dump_status(RASPIVIDYUV_STATE *state)
 
    fprintf(stderr, "Sub-image size %d bytes in total.\n  Y pitch %d, Y height %d, UV pitch %d, UV Height %d\n", size, ystride, yheight, ystride/2,yheight/2);
 
-   fprintf(stderr, "Wait method : ");
-   for (i=0; i<wait_method_description_size; i++)
-   {
-      if (state->waitMethod == wait_method_description[i].nextWaitMethod)
-         fprintf(stderr, "%s", wait_method_description[i].description);
-   }
    fprintf(stderr, "\nInitial state '%s'\n", raspicli_unmap_xref(state->bCapturing, initial_map, initial_map_size));
    fprintf(stderr, "\n");
 
@@ -372,21 +315,6 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
       //  We are now dealing with a command line option
       switch (command_id)
       {
-      case CommandTimeout: // Time to run viewfinder/capture
-      {
-         if (sscanf(argv[i + 1], "%d", &state->timeout) == 1)
-         {
-            // Ensure that if previously selected a waitMethod we don't overwrite it
-            if (state->timeout == 0 && state->waitMethod == WAIT_METHOD_NONE)
-               state->waitMethod = WAIT_METHOD_FOREVER;
-
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
       case CommandFramerate: // fps to record
       {
          if (sscanf(argv[i + 1], "%u", &state->framerate) == 1)
@@ -396,57 +324,6 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
          }
          else
             valid = 0;
-         break;
-      }
-
-      case CommandTimed:
-      {
-         if (sscanf(argv[i + 1], "%u,%u", &state->onTime, &state->offTime) == 2)
-         {
-            i++;
-
-            if (state->onTime < 1000)
-               state->onTime = 1000;
-
-            if (state->offTime < 1000)
-               state->offTime = 1000;
-
-            state->waitMethod = WAIT_METHOD_TIMED;
-
-            if (state->timeout == -1)
-               state->timeout = 0;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandKeypress:
-         state->waitMethod = WAIT_METHOD_KEYPRESS;
-
-         if (state->timeout == -1)
-            state->timeout = 0;
-
-         break;
-
-      case CommandSignal:
-         state->waitMethod = WAIT_METHOD_SIGNAL;
-         // Reenable the signal
-         signal(SIGUSR1, default_signal_handler);
-
-         if (state->timeout == -1)
-            state->timeout = 0;
-
-         break;
-
-      case CommandInitialState:
-      {
-         state->bCapturing = raspicli_map_xref(argv[i + 1], initial_map, initial_map_size);
-
-         if( state->bCapturing == -1)
-            state->bCapturing = 0;
-
-         i++;
          break;
       }
 
@@ -467,13 +344,6 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
          }
          state->useRGB = 1;
          break;
-
-      case CommandNetListen:
-      {
-         state->netListen = true;
-
-         break;
-      }
 
       default:
       {
@@ -522,124 +392,7 @@ static FILE *open_filename(RASPIVIDYUV_STATE *pState, char *filename)
 
    if (filename)
    {
-      bool bNetwork = false;
-      int sfd = -1, socktype;
-
-      if(!strncmp("tcp://", filename, 6))
-      {
-         bNetwork = true;
-         socktype = SOCK_STREAM;
-      }
-      else if(!strncmp("udp://", filename, 6))
-      {
-         if (pState->netListen)
-         {
-            fprintf(stderr, "No support for listening in UDP mode\n");
-            exit(131);
-         }
-         bNetwork = true;
-         socktype = SOCK_DGRAM;
-      }
-
-      if(bNetwork)
-      {
-         unsigned short port;
-         filename += 6;
-         char *colon;
-         if(NULL == (colon = strchr(filename, ':')))
-         {
-            fprintf(stderr, "%s is not a valid IPv4:port, use something like tcp://1.2.3.4:1234 or udp://1.2.3.4:1234\n",
-                    filename);
-            exit(132);
-         }
-         if(1 != sscanf(colon + 1, "%hu", &port))
-         {
-            fprintf(stderr,
-                    "Port parse failed. %s is not a valid network file name, use something like tcp://1.2.3.4:1234 or udp://1.2.3.4:1234\n",
-                    filename);
-            exit(133);
-         }
-         char chTmp = *colon;
-         *colon = 0;
-
-         struct sockaddr_in saddr= {};
-         saddr.sin_family = AF_INET;
-         saddr.sin_port = htons(port);
-         if(0 == inet_aton(filename, &saddr.sin_addr))
-         {
-            fprintf(stderr, "inet_aton failed. %s is not a valid IPv4 address\n",
-                    filename);
-            exit(134);
-         }
-         *colon = chTmp;
-
-         if (pState->netListen)
-         {
-            int sockListen = socket(AF_INET, SOCK_STREAM, 0);
-            if (sockListen >= 0)
-            {
-               int iTmp = 1;
-               setsockopt(sockListen, SOL_SOCKET, SO_REUSEADDR, &iTmp, sizeof(int));//no error handling, just go on
-               if (bind(sockListen, (struct sockaddr *) &saddr, sizeof(saddr)) >= 0)
-               {
-                  while ((-1 == (iTmp = listen(sockListen, 0))) && (EINTR == errno))
-                     ;
-                  if (-1 != iTmp)
-                  {
-                     fprintf(stderr, "Waiting for a TCP connection on %s:%"SCNu16"...",
-                             inet_ntoa(saddr.sin_addr), ntohs(saddr.sin_port));
-                     struct sockaddr_in cli_addr;
-                     socklen_t clilen = sizeof(cli_addr);
-                     while ((-1 == (sfd = accept(sockListen, (struct sockaddr *) &cli_addr, &clilen))) && (EINTR == errno))
-                        ;
-                     if (sfd >= 0)
-                        fprintf(stderr, "Client connected from %s:%"SCNu16"\n", inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
-                     else
-                        fprintf(stderr, "Error on accept: %s\n", strerror(errno));
-                  }
-                  else//if (-1 != iTmp)
-                  {
-                     fprintf(stderr, "Error trying to listen on a socket: %s\n", strerror(errno));
-                  }
-               }
-               else//if (bind(sockListen, (struct sockaddr *) &saddr, sizeof(saddr)) >= 0)
-               {
-                  fprintf(stderr, "Error on binding socket: %s\n", strerror(errno));
-               }
-            }
-            else//if (sockListen >= 0)
-            {
-               fprintf(stderr, "Error creating socket: %s\n", strerror(errno));
-            }
-
-            if (sockListen >= 0)//regardless success or error
-               close(sockListen);//do not listen on a given port anymore
-         }
-         else//if (pState->netListen)
-         {
-            if(0 <= (sfd = socket(AF_INET, socktype, 0)))
-            {
-               fprintf(stderr, "Connecting to %s:%hu...", inet_ntoa(saddr.sin_addr), port);
-
-               int iTmp = 1;
-               while ((-1 == (iTmp = connect(sfd, (struct sockaddr *) &saddr, sizeof(struct sockaddr_in)))) && (EINTR == errno))
-                  ;
-               if (iTmp < 0)
-                  fprintf(stderr, "error: %s\n", strerror(errno));
-               else
-                  fprintf(stderr, "connected, sending video...\n");
-            }
-            else
-               fprintf(stderr, "Error creating socket: %s\n", strerror(errno));
-         }
-
-         if (sfd >= 0)
-            new_handle = fdopen(sfd, "w");
-      }
-      else
-      {
-         new_handle = fopen(filename, "wb");
-      }
+     new_handle = fopen(filename, "wb");
    }
 
    if (pState->common_settings.verbose)
@@ -663,6 +416,8 @@ static FILE *open_filename(RASPIVIDYUV_STATE *pState, char *filename)
  */
 static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
+  printf("frame\n");
+  
    MMAL_BUFFER_HEADER_T *new_buffer;
    static int64_t last_second = -1;
 
@@ -1019,132 +774,6 @@ static void destroy_camera_component(RASPIVIDYUV_STATE *state)
 }
 
 /**
- * Pause for specified time, but return early if detect an abort request
- *
- * @param state Pointer to state control struct
- * @param pause Time in ms to pause
- * @param callback Struct contain an abort flag tested for early termination
- *
- */
-static int pause_and_test_abort(RASPIVIDYUV_STATE *state, int pause)
-{
-   int wait;
-
-   if (!pause)
-      return 0;
-
-   // Going to check every ABORT_INTERVAL milliseconds
-   for (wait = 0; wait < pause; wait+= ABORT_INTERVAL)
-   {
-      vcos_sleep(ABORT_INTERVAL);
-      if (state->callback_data.abort)
-         return 1;
-   }
-
-   return 0;
-}
-
-
-/**
- * Function to wait in various ways (depending on settings)
- *
- * @param state Pointer to the state data
- *
- * @return !0 if to continue, 0 if reached end of run
- */
-static int wait_for_next_change(RASPIVIDYUV_STATE *state)
-{
-   int keep_running = 1;
-   static int64_t complete_time = -1;
-
-   // Have we actually exceeded our timeout?
-   int64_t current_time =  get_microseconds64()/1000;
-
-   if (complete_time == -1)
-      complete_time =  current_time + state->timeout;
-
-   // if we have run out of time, flag we need to exit
-   if (current_time >= complete_time && state->timeout != 0)
-      keep_running = 0;
-
-   switch (state->waitMethod)
-   {
-   case WAIT_METHOD_NONE:
-      (void)pause_and_test_abort(state, state->timeout);
-      return 0;
-
-   case WAIT_METHOD_FOREVER:
-   {
-      // We never return from this. Expect a ctrl-c to exit or abort.
-      while (!state->callback_data.abort)
-          // Have a sleep so we don't hog the CPU.
-         vcos_sleep(ABORT_INTERVAL);
-
-      return 0;
-   }
-
-   case WAIT_METHOD_TIMED:
-   {
-      int abort;
-
-      if (state->bCapturing)
-         abort = pause_and_test_abort(state, state->onTime);
-      else
-         abort = pause_and_test_abort(state, state->offTime);
-
-      if (abort)
-         return 0;
-      else
-         return keep_running;
-   }
-
-   case WAIT_METHOD_KEYPRESS:
-   {
-      char ch;
-
-      if (state->common_settings.verbose)
-         fprintf(stderr, "Press Enter to %s, X then ENTER to exit\n", state->bCapturing ? "pause" : "capture");
-
-      ch = getchar();
-      if (ch == 'x' || ch == 'X')
-         return 0;
-      else
-         return keep_running;
-   }
-
-   case WAIT_METHOD_SIGNAL:
-   {
-      // Need to wait for a SIGUSR1 signal
-      sigset_t waitset;
-      int sig;
-      int result = 0;
-
-      sigemptyset( &waitset );
-      sigaddset( &waitset, SIGUSR1 );
-
-      // We are multi threaded because we use mmal, so need to use the pthread
-      // variant of procmask to block SIGUSR1 so we can wait on it.
-      pthread_sigmask( SIG_BLOCK, &waitset, NULL );
-
-      if (state->common_settings.verbose)
-      {
-         fprintf(stderr, "Waiting for SIGUSR1 to %s\n", state->bCapturing ? "pause" : "capture");
-      }
-
-      result = sigwait( &waitset, &sig );
-
-      if (state->common_settings.verbose && result != 0)
-         fprintf(stderr, "Bad signal received - error %d\n", errno);
-
-      return keep_running;
-   }
-
-   } // switch
-
-   return keep_running;
-}
-
-/**
  * main
  */
 int main(int argc, const char **argv)
@@ -1186,9 +815,6 @@ int main(int argc, const char **argv)
       status = -1;
       exit(EX_USAGE);
    }
-
-   if (state.timeout == -1)
-      state.timeout = 5000;
 
    // Setup for sensor specific parameters, only set W/H settings if zero on entry
    get_sensor_defaults(state.common_settings.cameraNum, state.common_settings.camera_name,
@@ -1306,7 +932,8 @@ int main(int argc, const char **argv)
 
                // Enable the camera video port and tell it its callback function
                status = mmal_port_enable(camera_video_port, camera_buffer_callback);
-
+	       printf("after enable\n");
+	       
                if (status != MMAL_SUCCESS)
                {
                   vcos_log_error("Failed to setup camera output");
@@ -1329,41 +956,25 @@ int main(int argc, const char **argv)
                   }
                }
 
-               while (running)
-               {
-                  // Change state
+	       if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS) {
+		 printf("start failed\n");
+		 exit(1);
+	       }
 
-                  state.bCapturing = !state.bCapturing;
-
-                  if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, state.bCapturing) != MMAL_SUCCESS)
-                  {
-                     // How to handle?
-                  }
-
-                  if (state.common_settings.verbose)
-                  {
-                     if (state.bCapturing)
-                        fprintf(stderr, "Starting video capture\n");
-                     else
-                        fprintf(stderr, "Pausing video capture\n");
-                  }
-
-                  running = wait_for_next_change(&state);
-               }
+	       while (running) {
+		 sleep(1);
+		 printf("spin\n");
+		 //		 running = wait_for_next_change(&state);
+	       }
 
                if (state.common_settings.verbose)
                   fprintf(stderr, "Finished capture\n");
             }
             else
             {
-               if (state.timeout)
-                  vcos_sleep(state.timeout);
-               else
-               {
-                  // timeout = 0 so run forever
-                  while(1)
-                     vcos_sleep(ABORT_INTERVAL);
-               }
+	      // timeout = 0 so run forever
+	      while(1)
+		vcos_sleep(ABORT_INTERVAL);
             }
          }
       }
