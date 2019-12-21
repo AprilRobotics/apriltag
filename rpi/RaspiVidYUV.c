@@ -133,8 +133,7 @@ struct RASPIVIDYUV_STATE_S
    RASPICOMMONSETTINGS_PARAMETERS common_settings;
    int timeout;                        /// Time taken before frame is grabbed and app then shuts down. Units are milliseconds
    int framerate;                      /// Requested frame rate (fps)
-   int demoMode;                       /// Run app in demo mode
-   int demoInterval;                   /// Interval between camera settings changes
+
    int waitMethod;                     /// Method for switching between pause and capture
 
    int onTime;                         /// In timed cycle mode, the amount of time the capture is on per cycle
@@ -183,14 +182,12 @@ enum
    CommandInitialState,
    CommandOnlyLuma,
    CommandUseRGB,
-   CommandSavePTS,
    CommandNetListen
 };
 
 static COMMAND_LIST cmdline_commands[] =
 {
    { CommandTimeout,       "-timeout",    "t",  "Time (in ms) to capture for. If not specified, set to 5s. Zero to disable", 1 },
-   { CommandDemoMode,      "-demo",       "d",  "Run a demo mode (cycle through range of camera options, no capture)", 1},
    { CommandFramerate,     "-framerate",  "fps","Specify the frames per second to record", 1},
    { CommandTimed,         "-timed",      "td", "Cycle between capture and pause. -cycle on,off where on is record time and off is pause time in ms", 0},
    { CommandSignal,        "-signal",     "s",  "Cycle between capture and pause on Signal", 0},
@@ -198,7 +195,6 @@ static COMMAND_LIST cmdline_commands[] =
    { CommandInitialState,  "-initial",    "i",  "Initial state. Use 'record' or 'pause'. Default 'record'", 1},
    { CommandOnlyLuma,      "-luma",       "y",  "Only output the luma / Y of the YUV data'", 0},
    { CommandUseRGB,        "-rgb",        "rgb","Save as RGB data rather than YUV", 0},
-   { CommandSavePTS,       "-save-pts",   "pts","Save Timestamps to file", 1 },
    { CommandNetListen,     "-listen",     "l", "Listen on a TCP socket", 0},
 };
 
@@ -245,8 +241,7 @@ static void default_status(RASPIVIDYUV_STATE *state)
    state->common_settings.width = 1920;       // Default to 1080p
    state->common_settings.height = 1080;
    state->framerate = VIDEO_FRAME_RATE_NUM;
-   state->demoMode = 0;
-   state->demoInterval = 250; // ms
+
    state->waitMethod = WAIT_METHOD_NONE;
    state->onTime = 5000;
    state->offTime = 5000;
@@ -392,32 +387,6 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
          break;
       }
 
-      case CommandDemoMode: // Run in demo mode - no capture
-      {
-         // Demo mode might have a timing parameter
-         // so check if a) we have another parameter, b) its not the start of the next option
-         if (i + 1 < argc  && argv[i+1][0] != '-')
-         {
-            if (sscanf(argv[i + 1], "%u", &state->demoInterval) == 1)
-            {
-               // TODO : What limits do we need for timeout?
-               if (state->demoInterval == 0)
-                  state->demoInterval = 250; // ms
-
-               state->demoMode = 1;
-               i++;
-            }
-            else
-               valid = 0;
-         }
-         else
-         {
-            state->demoMode = 1;
-         }
-
-         break;
-      }
-
       case CommandFramerate: // fps to record
       {
          if (sscanf(argv[i + 1], "%u", &state->framerate) == 1)
@@ -498,23 +467,6 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
          }
          state->useRGB = 1;
          break;
-
-      case CommandSavePTS:  // output filename
-      {
-         state->save_pts = 1;
-         int len = strlen(argv[i + 1]);
-         if (len)
-         {
-            state->pts_filename = malloc(len + 1);
-            vcos_assert(state->pts_filename);
-            if (state->pts_filename)
-               strncpy(state->pts_filename, argv[i + 1], len+1);
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
 
       case CommandNetListen:
       {
@@ -1342,23 +1294,7 @@ int main(int argc, const char **argv)
 
          camera_video_port->userdata = (struct MMAL_PORT_USERDATA_T *)&state.callback_data;
 
-         if (state.demoMode)
-         {
-            // Run for the user specific time..
-            int num_iterations = state.timeout / state.demoInterval;
-            int i;
-
-            if (state.common_settings.verbose)
-               fprintf(stderr, "Running in demo mode\n");
-
-            for (i=0; state.timeout == 0 || i<num_iterations; i++)
-            {
-               raspicamcontrol_cycle_test(state.camera_component);
-               vcos_sleep(state.demoInterval);
-            }
-         }
-         else
-         {
+         if (1) {
             // Only save stuff if we have a filename and it opened
             // Note we use the file handle copy in the callback, as the call back MIGHT change the file handle
             if (state.callback_data.file_handle)
