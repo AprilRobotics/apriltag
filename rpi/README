@@ -1,0 +1,20 @@
+This code started life as the userland tools from rpi, specifically
+RaspiVideoYUV. A bunch of features were removed (like demo mode, gps
+integration, etc.), and it was turned into a library that provides a
+dead-simple interface to access rpi's mmal-based camera (see
+rpi_video.h).
+
+A demonstration application, rpi_apriltag_demo.c, is provided to show
+how to put apriltags and rpi_video together. Almost any real-world
+application would need to modify this demo to actually *do* something
+with the detected tags.
+
+On input images 1280x720, 10 fps are achievable with a decimation of 2
+on a raspberry pi 4.
+
+To make this work:
+
+1) First build the apriltag distribution in the enclosing foldder.
+2) Type 'make' in the rpi folder.
+3) There is no step three.
+

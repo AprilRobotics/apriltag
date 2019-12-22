@@ -1,12 +1,15 @@
-OBJS=RaspiVidYUV.o RaspiCamControl.o RaspiCLI.o RaspiCommonSettings.o RaspiHelpers.o RaspiPreview.o 
+OBJS=rpi_video.o RaspiCamControl.o RaspiCLI.o RaspiCommonSettings.o RaspiHelpers.o RaspiPreview.o mtqueue.o zqueue.o 
 
-all: raspividyuv
+all: rpi_video_test rpi_apriltag_demo
 
 %.o: %.c
-	gcc -c $^ -std=gnu99 -I/opt/vc/include/
+	gcc -c $^ -std=gnu99 -g -Wall -O0 -I/opt/vc/include/ -I../
 
-raspividyuv: $(OBJS)
-	gcc -o $< $^ -o raspividyuv -lmmal -lmmal_core -lmmal_util -lbcm_host   -L/opt/vc/lib/ -lpthread -lvcos -ldl
+rpi_apriltag_demo: rpi_apriltag_demo.o $(OBJS) 
+	gcc -o $@ $^  ../lib/libapriltag.a -lm -lmmal -lmmal_core -lmmal_util -lbcm_host -L/opt/vc/lib/ -lpthread -lvcos -ldl 
+
+rpi_video_test: rpi_video_test.o $(OBJS) 
+	gcc -o $@ $^  -lmmal -lmmal_core -lmmal_util -lbcm_host -L/opt/vc/lib/ -lpthread -lvcos -ldl 
 
 clean:
-	rm -rf *.o raspividyuv
+	rm -rf *.o *~ rpi_apriltag_demo

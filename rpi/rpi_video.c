@@ -81,6 +81,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "RaspiCLI.h"
 #include "RaspiHelpers.h"
 
+#include "mtqueue.h"
+#include "rpi_video.h"
+
+struct rpi_video
+{
+  char *args;
+  mtqueue_t *mtq;
+};
+
 #include <semaphore.h>
 
 // Standard port setting for the camera component
@@ -107,7 +116,6 @@ typedef struct RASPIVIDYUV_STATE_S RASPIVIDYUV_STATE;
  */
 typedef struct
 {
-   FILE *file_handle;                   /// File handle to write buffer data to.
    RASPIVIDYUV_STATE *pstate;           /// pointer to our state in case required in callback
    int abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
    int frame;
@@ -119,6 +127,8 @@ typedef struct
  */
 struct RASPIVIDYUV_STATE_S
 {
+  rpi_video_t *rpivid;
+  
    RASPICOMMONSETTINGS_PARAMETERS common_settings;
 
   int output_format; // 0 =YUV, 1 = Y800, 2 = RGB8
@@ -135,20 +145,11 @@ struct RASPIVIDYUV_STATE_S
 
    PORT_USERDATA callback_data;         /// Used to move data to the camera callback
 
-   int bCapturing;                      /// State of capture/pause
    int frame;
 
    int64_t starttime;
    int64_t lasttime;
 };
-
-static XREF_T  initial_map[] =
-{
-   {"record",     0},
-   {"pause",      1},
-};
-
-static int initial_map_size = sizeof(initial_map) / sizeof(initial_map[0]);
 
 /// Command ID's and Structure defining our command line options
 enum
@@ -161,47 +162,13 @@ enum
 
 static COMMAND_LIST cmdline_commands[] =
 {
-   { CommandFramerate,     "-framerate",  "fps","Specify the frames per second to record", 1},
+   { CommandFramerate,     "-fps",  "fps","Specify the frames per second to record", 1},
    { CommandUseRGB,        "-rgb",        "rgb","use RGB888 format", 0},
    { CommandUseYUV,        "-yuv",        "yuv","use YUV420 format", 0},
    { CommandUseY8,        "-y8",        "y8","use Y8 format", 0},
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
-
-
-/**
- * Assign a default set of parameters to the state passed in
- *
- * @param state Pointer to state structure to assign defaults to
- */
-static void default_status(RASPIVIDYUV_STATE *state)
-{
-   if (!state)
-   {
-      vcos_assert(0);
-      return;
-   }
-
-   // Default everything to zero
-   memset(state, 0, sizeof(RASPIVIDYUV_STATE));
-
-   raspicommonsettings_set_defaults(&state->common_settings);
-
-   // Now set anything non-zero
-   state->common_settings.width = 1920;       // Default to 1080p
-   state->common_settings.height = 1080;
-   state->framerate = VIDEO_FRAME_RATE_NUM;
-
-   state->bCapturing = 0;
-
-   // Setup preview window defaults
-   raspipreview_set_defaults(&state->preview_parameters);
-
-   // Set up the camera_parameters to default
-   raspicamcontrol_set_defaults(&state->camera_parameters);
-}
-
 
 /**
  * Dump image state parameters to stderr.
@@ -210,7 +177,7 @@ static void default_status(RASPIVIDYUV_STATE *state)
  */
 static void dump_status(RASPIVIDYUV_STATE *state)
 {
-   int i, size, ystride, yheight;
+   int size, ystride, yheight;
 
    if (!state)
    {
@@ -237,8 +204,7 @@ static void dump_status(RASPIVIDYUV_STATE *state)
 
    fprintf(stderr, "Sub-image size %d bytes in total.\n  Y pitch %d, Y height %d, UV pitch %d, UV Height %d\n", size, ystride, yheight, ystride/2,yheight/2);
 
-   fprintf(stderr, "\nInitial state '%s'\n", raspicli_unmap_xref(state->bCapturing, initial_map, initial_map_size));
-   fprintf(stderr, "\n");
+
 
    raspipreview_dump_parameters(&state->preview_parameters);
    raspicamcontrol_dump_parameters(&state->camera_parameters);
@@ -374,31 +340,6 @@ static int parse_cmdline(int argc, const char **argv, RASPIVIDYUV_STATE *state)
 }
 
 /**
- * Open a file based on the settings in state
- *
- * @param state Pointer to state
- */
-static FILE *open_filename(RASPIVIDYUV_STATE *pState, char *filename)
-{
-   FILE *new_handle = NULL;
-
-   if (filename)
-   {
-     new_handle = fopen(filename, "wb");
-   }
-
-   if (pState->common_settings.verbose)
-   {
-      if (new_handle)
-         fprintf(stderr, "Opening output file \"%s\"\n", filename);
-      else
-         fprintf(stderr, "Failed to open new file \"%s\"\n", filename);
-   }
-
-   return new_handle;
-}
-
-/**
  *  buffer header callback function for camera
  *
  *  Callback will dump buffer data to internal buffer
@@ -409,52 +350,39 @@ static FILE *open_filename(RASPIVIDYUV_STATE *pState, char *filename)
 static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
    MMAL_BUFFER_HEADER_T *new_buffer;
-   static int64_t last_second = -1;
 
    // We pass our file handle and other stuff in via the userdata field.
 
    PORT_USERDATA *pData = (PORT_USERDATA *)port->userdata;
    RASPIVIDYUV_STATE *pstate = pData->pstate;
 
-   if (pData)
-   {
-      int bytes_written = 0;
-      int bytes_to_write = buffer->length;
-      int64_t current_time = get_microseconds64()/1000000;
-
-      // only write luma component
-      switch (pstate->output_format) {
-      case 2: // RGB
-      case 0: // YUV
-	break;
-      case 1: // Y only
-	bytes_to_write = vcos_min(buffer->length, port->format->es->video.width * port->format->es->video.height);
-	
-      }
-      
-      vcos_assert(pData->file_handle);
-
-      if (bytes_to_write)
-      {
-	printf("frame %d bytes\n", bytes_to_write);
-	
-         mmal_buffer_header_mem_lock(buffer);
-         bytes_written = fwrite(buffer->data, 1, bytes_to_write, pData->file_handle);
-         mmal_buffer_header_mem_unlock(buffer);
-
-         if (bytes_written != bytes_to_write)
-         {
-            vcos_log_error("Failed to write buffer data (%d from %d)- aborting", bytes_written, bytes_to_write);
-            pData->abort = 1;
-         }
-      }
-   }
-   else
-   {
+   if (!pData) {
       vcos_log_error("Received a camera buffer callback with no state");
+      return;
    }
+   
+   struct rpi_video_frame *frame = calloc(1, sizeof(struct rpi_video_frame));
 
-   // release buffer back to the pool
+   int bytes_to_write = buffer->length;
+   int64_t current_time = get_microseconds64();
+      
+   // only write luma component
+   if (pstate->output_format == 1) 
+	bytes_to_write = vcos_min(buffer->length, port->format->es->video.width * port->format->es->video.height);
+
+   
+   frame->data = malloc(bytes_to_write);
+   frame->width = pstate->common_settings.width;
+   frame->height = pstate->common_settings.height;
+   frame->format = pstate->output_format;
+   frame->length = bytes_to_write;
+   frame->utime = current_time;
+   
+   // XXX could we skip the memcopy and just leave the memory locked
+   // until put_frame?
+   mmal_buffer_header_mem_lock(buffer);
+   memcpy(frame->data, buffer->data, bytes_to_write);
+   mmal_buffer_header_mem_unlock(buffer);
    mmal_buffer_header_release(buffer);
 
    // and send one back to the port (if still open)
@@ -470,8 +398,34 @@ static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buff
       if (!new_buffer || status != MMAL_SUCCESS)
          vcos_log_error("Unable to return a buffer to the camera port");
    }
+
+   mtqueue_push(pstate->rpivid->mtq, frame);
 }
 
+int rpi_video_get_frames_pending(rpi_video_t *rpivid)
+{
+  return mtqueue_size(rpivid->mtq);
+}
+
+struct rpi_video_frame *rpi_video_get_frame(rpi_video_t *rpivid)
+{
+  return mtqueue_pop_blocking(rpivid->mtq);
+}
+
+void rpi_video_put_frame(rpi_video_t *rpivid, struct rpi_video_frame *frame)
+{
+  free(frame->data);
+  free(frame);
+}
+
+rpi_video_t *rpi_video_create(const char *args)
+{
+  rpi_video_t *rpivid = calloc(1, sizeof(rpi_video_t));
+  rpivid->args = strdup(args);
+  rpivid->mtq = mtqueue_create();
+  
+  return rpivid;
+}
 
 /**
  * Create the camera component, set up its ports
@@ -760,16 +714,45 @@ static void destroy_camera_component(RASPIVIDYUV_STATE *state)
 /**
  * main
  */
-int main(int argc, const char **argv)
+int rpi_video_start(rpi_video_t *rpivid)
 {
-   // Our main data storage vessel..
-   RASPIVIDYUV_STATE state;
+  int argc = 1;
+  const char **argv = calloc(sizeof(char*), 1);
+  argv[0] = strdup("rpi_video_internal");
+
+  if (1) {
+    char *p = rpivid->args;
+    while (1) {
+      // add another arg
+      argv = realloc(argv, sizeof(char*) * (argc + 1));
+      argv[argc] = strdup(p);
+      argc++;
+      char *s = strstr(argv[argc-1], " ");
+      if (!s)
+	break;
+      
+      *s = 0;
+      p = &s[1];
+    }
+  }
+  
+  // Our main data storage vessel..
+  RASPIVIDYUV_STATE *state = calloc(1, sizeof(RASPIVIDYUV_STATE));
+  state->common_settings.width = 1920;
+  state->common_settings.height = 1080;
+  state->framerate = VIDEO_FRAME_RATE_NUM;
+  // Setup preview window defaults
+  raspipreview_set_defaults(&state->preview_parameters);
+  // Set up the camera_parameters to default
+  raspicamcontrol_set_defaults(&state->camera_parameters);
+  
    int exit_code = EX_OK;
 
+   state->rpivid = rpivid;
+   
    MMAL_STATUS_T status = MMAL_SUCCESS;
    MMAL_PORT_T *camera_preview_port = NULL;
    MMAL_PORT_T *camera_video_port = NULL;
-   MMAL_PORT_T *camera_still_port = NULL;
    MMAL_PORT_T *preview_input_port = NULL;
 
    bcm_host_init();
@@ -784,200 +767,142 @@ int main(int argc, const char **argv)
 
    set_app_name(argv[0]);
 
-   // Do we have any parameters
-   if (argc == 1)
-   {
-      display_valid_parameters(basename(get_app_name()), &application_help_message);
-      exit(EX_USAGE);
-   }
-
-   default_status(&state);
-
    // Parse the command line and put options in to our status structure
-   if (parse_cmdline(argc, argv, &state))
+   if (parse_cmdline(argc, argv, state))
    {
       status = -1;
       exit(EX_USAGE);
    }
 
+   if ((state->common_settings.width % 16) || state->common_settings.height %16) {
+     printf("WARNING: width or height is not a multiple of 16\n");
+   }
+     
    // Setup for sensor specific parameters, only set W/H settings if zero on entry
-   get_sensor_defaults(state.common_settings.cameraNum, state.common_settings.camera_name,
-                       &state.common_settings.width, &state.common_settings.height);
+   get_sensor_defaults(state->common_settings.cameraNum, state->common_settings.camera_name,
+                       &state->common_settings.width, &state->common_settings.height);
 
-   if (state.common_settings.verbose)
+   if (state->common_settings.verbose)
    {
       print_app_details(stderr);
-      dump_status(&state);
+      dump_status(state);
    }
 
    // OK, we have a nice set of parameters. Now set up our components
    // We have two components. Camera, Preview
 
-   if ((status = create_camera_component(&state)) != MMAL_SUCCESS)
+   if ((status = create_camera_component(state)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create camera component", __func__);
       exit_code = EX_SOFTWARE;
+      goto error;
    }
-   else if ((status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)
+
+   
+   if ((status = raspipreview_create(&state->preview_parameters)) != MMAL_SUCCESS)
    {
       vcos_log_error("%s: Failed to create preview component", __func__);
-      destroy_camera_component(&state);
+      destroy_camera_component(state);
       exit_code = EX_SOFTWARE;
+      goto error;
    }
-   else
+
+   if (state->common_settings.verbose)
+     fprintf(stderr, "Starting component connection stage\n");
+   
+   camera_preview_port = state->camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
+   camera_video_port   = state->camera_component->output[MMAL_CAMERA_VIDEO_PORT];
+   //   camera_still_port   = state->camera_component->output[MMAL_CAMERA_CAPTURE_PORT];
+   preview_input_port  = state->preview_parameters.preview_component->input[0];
+   
+   if (state->preview_parameters.wantPreview )
+     {
+       if (state->common_settings.verbose)
+         {
+	   fprintf(stderr, "Connecting camera preview port to preview input port\n");
+	   fprintf(stderr, "Starting video preview\n");
+         }
+       
+       // Connect camera to preview
+       status = connect_ports(camera_preview_port, preview_input_port, &state->preview_connection);
+       
+       if (status != MMAL_SUCCESS) {
+	 state->preview_connection = NULL;
+	 goto error;
+       }
+     }
+   
+   // Set up our userdata - this is passed though to the callback where we need the information.
+   state->callback_data.pstate = state;
+   state->callback_data.abort = 0;
+   
+   camera_video_port->userdata = (struct MMAL_PORT_USERDATA_T *) &state->callback_data;
+	 
+   if (state->common_settings.verbose)
+     fprintf(stderr, "Enabling camera video port\n");
+	   
+   // Enable the camera video port and tell it its callback function
+   status = mmal_port_enable(camera_video_port, camera_buffer_callback);
+   
+   if (status != MMAL_SUCCESS) {
+     vcos_log_error("Failed to setup camera output");
+     goto error;
+   }
+   
+   // Send all the buffers to the camera video port
    {
-      if (state.common_settings.verbose)
-         fprintf(stderr, "Starting component connection stage\n");
+     int num = mmal_queue_length(state->camera_pool->queue);
 
-      camera_preview_port = state.camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
-      camera_video_port   = state.camera_component->output[MMAL_CAMERA_VIDEO_PORT];
-      camera_still_port   = state.camera_component->output[MMAL_CAMERA_CAPTURE_PORT];
-      preview_input_port  = state.preview_parameters.preview_component->input[0];
+     for (int q=0; q<num; q++)
+       {
+	 MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state->camera_pool->queue);
 
-      if (state.preview_parameters.wantPreview )
-      {
-         if (state.common_settings.verbose)
-         {
-            fprintf(stderr, "Connecting camera preview port to preview input port\n");
-            fprintf(stderr, "Starting video preview\n");
-         }
-
-         // Connect camera to preview
-         status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
-
-         if (status != MMAL_SUCCESS)
-            state.preview_connection = NULL;
-      }
-      else
-      {
-         status = MMAL_SUCCESS;
-      }
-
-      if (status == MMAL_SUCCESS)
-      {
-         state.callback_data.file_handle = NULL;
-
-         if (state.common_settings.filename)
-         {
-            if (state.common_settings.filename[0] == '-')
-            {
-               state.callback_data.file_handle = stdout;
-            }
-            else
-            {
-               state.callback_data.file_handle = open_filename(&state, state.common_settings.filename);
-            }
-
-            if (!state.callback_data.file_handle)
-            {
-               // Notify user, carry on but discarding output buffers
-               vcos_log_error("%s: Error opening output file: %s\nNo output file will be generated\n", __func__, state.common_settings.filename);
-            }
-         }
-
-         // Set up our userdata - this is passed though to the callback where we need the information.
-         state.callback_data.pstate = &state;
-         state.callback_data.abort = 0;
-
-         camera_video_port->userdata = (struct MMAL_PORT_USERDATA_T *)&state.callback_data;
-
-         if (1) {
-            // Only save stuff if we have a filename and it opened
-            // Note we use the file handle copy in the callback, as the call back MIGHT change the file handle
-            if (state.callback_data.file_handle)
-            {
-               int running = 1;
-
-               if (state.common_settings.verbose)
-                  fprintf(stderr, "Enabling camera video port\n");
-
-               // Enable the camera video port and tell it its callback function
-               status = mmal_port_enable(camera_video_port, camera_buffer_callback);
-	       printf("after enable\n");
-	       
-               if (status != MMAL_SUCCESS)
-               {
-                  vcos_log_error("Failed to setup camera output");
-                  goto error;
-               }
-
-               // Send all the buffers to the camera video port
-               {
-                  int num = mmal_queue_length(state.camera_pool->queue);
-                  int q;
-                  for (q=0; q<num; q++)
-                  {
-                     MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.camera_pool->queue);
-
-                     if (!buffer)
-                        vcos_log_error("Unable to get a required buffer %d from pool queue", q);
-
-                     if (mmal_port_send_buffer(camera_video_port, buffer)!= MMAL_SUCCESS)
-                        vcos_log_error("Unable to send a buffer to camera video port (%d)", q);
-                  }
-               }
-
-	       if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS) {
-		 printf("start failed\n");
-		 exit(1);
-	       }
-
-	       while (running) {
-		 sleep(1);
-		 printf("spin\n");
-	       }
-
-               if (state.common_settings.verbose)
-                  fprintf(stderr, "Finished capture\n");
-            }
-            else
-            {
-	      // timeout = 0 so run forever
-	      while(1)
-		vcos_sleep(ABORT_INTERVAL);
-            }
-         }
-      }
-      else
-      {
-         mmal_status_to_int(status);
-         vcos_log_error("%s: Failed to connect camera to preview", __func__);
-      }
-
-error:
-
-      mmal_status_to_int(status);
-
-      if (state.common_settings.verbose)
-         fprintf(stderr, "Closing down\n");
-
-      // Disable all our ports that are not handled by connections
-      check_disable_port(camera_video_port);
-
-      if (state.preview_parameters.wantPreview && state.preview_connection)
-         mmal_connection_destroy(state.preview_connection);
-
-      if (state.preview_parameters.preview_component)
-         mmal_component_disable(state.preview_parameters.preview_component);
-
-      if (state.camera_component)
-         mmal_component_disable(state.camera_component);
-
-      // Can now close our file. Note disabling ports may flush buffers which causes
-      // problems if we have already closed the file!
-      if (state.callback_data.file_handle && state.callback_data.file_handle != stdout)
-         fclose(state.callback_data.file_handle);
-
-      raspipreview_destroy(&state.preview_parameters);
-      destroy_camera_component(&state);
-
-      if (state.common_settings.verbose)
-         fprintf(stderr, "Close down completed, all components disconnected, disabled and destroyed\n\n");
+	 if (!buffer)
+	   vcos_log_error("Unable to get a required buffer %d from pool queue", q);
+	 
+	 if (mmal_port_send_buffer(camera_video_port, buffer)!= MMAL_SUCCESS)
+	   vcos_log_error("Unable to send a buffer to camera video port (%d)", q);
+       }
    }
-
+   
+   if (mmal_port_parameter_set_boolean(camera_video_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS) {
+     printf("start failed\n");
+     exit(1);
+   }
+   
+   return 0;
+   
+   //         mmal_status_to_int(status);
+   //         vcos_log_error("%s: Failed to connect camera to preview", __func__);
+      
+error:
+   
+   mmal_status_to_int(status);
+   
+   if (state->common_settings.verbose)
+     fprintf(stderr, "Closing down\n");
+   
+   // Disable all our ports that are not handled by connections
+   check_disable_port(camera_video_port);
+   
+   if (state->preview_parameters.wantPreview && state->preview_connection)
+     mmal_connection_destroy(state->preview_connection);
+   
+   if (state->preview_parameters.preview_component)
+     mmal_component_disable(state->preview_parameters.preview_component);
+   
+   if (state->camera_component)
+     mmal_component_disable(state->camera_component);
+   
+   raspipreview_destroy(&state->preview_parameters);
+   destroy_camera_component(state);
+   
+   if (state->common_settings.verbose)
+     fprintf(stderr, "Close down completed, all components disconnected, disabled and destroyed\n\n");
+   
    if (status != MMAL_SUCCESS)
-      raspicamcontrol_check_configuration(128);
-
+     raspicamcontrol_check_configuration(128);
+   
    return exit_code;
 }
 
