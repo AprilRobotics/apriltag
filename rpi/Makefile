@@ -3,7 +3,7 @@ OBJS=rpi_video.o RaspiCamControl.o RaspiCLI.o RaspiCommonSettings.o RaspiHelpers
 all: rpi_video_test rpi_apriltag_demo
 
 %.o: %.c
-	gcc -c $^ -std=gnu99 -g -Wall -O0 -I/opt/vc/include/ -I../
+	gcc -c $^ -std=gnu99 -g -Wall -O2 -I/opt/vc/include/ -I../
 
 rpi_apriltag_demo: rpi_apriltag_demo.o $(OBJS) 
 	gcc -o $@ $^  ../lib/libapriltag.a -lm -lmmal -lmmal_core -lmmal_util -lbcm_host -L/opt/vc/lib/ -lpthread -lvcos -ldl 

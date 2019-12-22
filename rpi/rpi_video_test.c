@@ -20,6 +20,9 @@ int main(int argc, char *argv[])
   // vlc --demux rawvideo --rawvid-fps 5 --rawvid-width 1280
   // --rawvid-height 720 --rawvid-chroma Y800 <input file>
   //
+  // Note that depending on whether you use --rgb, --yuv, or --y8, you
+  // need to specify a different --rawvid-chroma flag:
+  //
   // rpi-video-format     vlc --rawvid-chroma
   // yuv (0)           I420
   // y8  (1)           Y800

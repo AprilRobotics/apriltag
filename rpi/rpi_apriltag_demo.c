@@ -23,10 +23,23 @@
 
 int main(int argc, char *argv[])
 {
-  // Must have --y8
+  // You're constructing a command-line for raspividyuv; see that
+  // program for documentation. You can also addd --help to the string
+  // below and the supported options will print out here.
+  // Note rpi cam 2.0 is capable of 3280x2464, 1920x1232
+  //
+  // ** For correct operation with apriltag, MUST HAVE --y8 **
   //
   //  rpi_video_t *rpivid = rpi_video_create("--width 1920 --height 1232 --fps 30 --y8");
-  rpi_video_t *rpivid = rpi_video_create("--width 1280 --height 720 --fps 3 --y8");
+  rpi_video_t *rpivid = rpi_video_create("--width 1280 --height 720 --fps 40 --y8");
+
+  // You can record a "movie" of the raw images. The resulting file
+  // can be played with vlc, by customizing the line below with the correct resolution.
+  //
+  // vlc --demux rawvideo --rawvid-fps 5 --rawvid-width 1280
+  // --rawvid-height 720 --rawvid-chroma Y800 <input file>
+
+    FILE *f = NULL; // fopen("/tmp/out.yuv", "w");
   
   printf("initializing...\n");
   rpi_video_start(rpivid);
@@ -37,8 +50,6 @@ int main(int argc, char *argv[])
   
   apriltag_detector_add_family_bits(det, tag36h11_create(), 0);
   apriltag_detector_add_family_bits(det, tagStandard41h12_create(), 0);
-  
-  FILE *f = fopen("/tmp/out.yuv", "w");
   
   for (int framecount = 0; 1; framecount++) {
 
