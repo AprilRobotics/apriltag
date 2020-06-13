@@ -3,11 +3,14 @@
 sudo: required
 language: generic
 env:
+  global:
+    - CATKIN_SKIP_TESTING=1
+    - PRERELEASE=1
   matrix:
-    - ROS_DISTRO="kinetic" PRERELEASE=true
-    - ROS_DISTRO="melodic" PRERELEASE=true
-    - ROS_DISTRO="noetic" PRERELEASE=true
-    - ROS_DISTRO="foxy" PRERELEASE=true
+    - ROS_DISTRO="kinetic"
+    - ROS_DISTRO="melodic"
+    - ROS_DISTRO="noetic"
+    - ROS_DISTRO="foxy"
 install:
   - git clone --quiet --depth 1 https://github.com/ros-industrial/industrial_ci.git .ci_config -b master
 script:
