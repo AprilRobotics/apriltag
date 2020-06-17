@@ -15,7 +15,8 @@
   <url>https://april.eecs.umich.edu/software/apriltag.html</url>
 
   <buildtool_depend>cmake</buildtool_depend>
-  <build_depend condition="$ROS_PYTHON_VERSION == 2">python-numpy</build_depend>
+  <!-- Do not install numpy for Python2, so it won't build a Python3 wrapper when Python2 is ROS-default -->
+  <!--<build_depend condition="$ROS_PYTHON_VERSION == 2">python-numpy</build_depend>-->
   <build_depend condition="$ROS_PYTHON_VERSION == 3">python3-numpy</build_depend>
 
   <export>
