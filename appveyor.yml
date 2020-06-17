@@ -1,0 +1,23 @@
+build:
+ verbosity: detailed
+image: Visual Studio 2019
+platform: x64
+# connect via rdp using:
+#    $ xfreerdp /drive:share,/tmp/smb /d:domain /u:appveyor /p:'password' /cert-ignore /v:ipaddr:port
+#init:
+# - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#on_finish:
+# - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+init:
+ - echo.set(VCPKG_BUILD_TYPE release)>> C:\Tools\vcpkg\triplets\x64-windows.cmake
+build_script:
+ - |-
+    vcpkg --triplet x64-windows install pthreads opencv
+    cmake -H%APPVEYOR_BUILD_FOLDER% -Bbuild -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake -G"Visual Studio 16 2019" -A x64
+    cmake --build build --config Release -- /m
+    build\Release\apriltag_test.exe
+artifacts:
+ - path: build\Release\*.dll
+ - path: build\Release\*.exe
+cache:
+ - c:\tools\vcpkg\installed\

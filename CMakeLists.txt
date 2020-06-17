@@ -12,12 +12,21 @@ set(CMAKE_BUILD_TYPE Release)
 # Library
 file(GLOB TAG_FILES ${CMAKE_SOURCE_DIR}/tag*.c)
 set_source_files_properties(SOURCE ${TAG_FILES} PROPERTIES COMPILE_FLAGS -O0)
-add_library(${PROJECT_NAME} SHARED ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+if (WIN32)
+    # shared libraries under windows are troublesome (see cmake docs for
+    # GENERATE_EXPORT_HEADER, CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS and
+    # BUILD_SHARED_LIBS) so we just also build a static version
+    add_library(${PROJECT_NAME} STATIC ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+else()
+    add_library(${PROJECT_NAME} SHARED ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+endif()
+
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC
     # winmm is necessary for __imp_timeGetTime
-    find_library(PTHREAD_LIBRARIES NAMES pthreads)
-    target_link_libraries(${PROJECT_NAME} ${PTHREAD_LIBRARIES} winmm)
+    find_package(pthreads REQUIRED)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${PThreads4W_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PThreads4W::PThreads4W winmm)
 else()
     find_package(Threads REQUIRED)
     target_link_libraries(${PROJECT_NAME} Threads::Threads m)
@@ -60,7 +69,6 @@ FILE(READ apriltag.pc.in PKGC)
 STRING(REGEX REPLACE "^prefix=" "prefix=${CMAKE_INSTALL_PREFIX}" PKGC_CONF "${PKGC}" )
 FILE(WRITE ${PROJECT_BINARY_DIR}/apriltag.pc ${PKGC_CONF})
 install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
-
 
 # Python wrapper
 SET(Python_ADDITIONAL_VERSIONS 3)
@@ -105,11 +113,18 @@ target_link_libraries(apriltag_demo apriltag)
 # opencv_demo
 if(OpenCV_FOUND)
     add_executable(opencv_demo example/opencv_demo.cc)
+    if (MSVC)
+      # for using designated initializers (image_u8_t)
+      target_compile_options(opencv_demo PRIVATE "/std:c++latest")
+    endif()
     target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
     set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
     install(TARGETS opencv_demo RUNTIME DESTINATION bin)
+
+    add_executable(apriltag_test test.cc)
+    target_link_libraries(apriltag_test apriltag ${OpenCV_LIBRARIES})
+    install(TARGETS apriltag_test RUNTIME DESTINATION bin)
 endif(OpenCV_FOUND)
 
 # install example programs
 install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
-

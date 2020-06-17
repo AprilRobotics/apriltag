@@ -34,7 +34,9 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdint.h>
 #include <inttypes.h>
 #include <ctype.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <math.h>
 
 #include "apriltag.h"
@@ -120,7 +122,7 @@ int main(int argc, char *argv[])
     for (int iter = 0; iter < maxiters; iter++) {
 
         int total_quads = 0;
-        int total_hamm_hist[hamm_hist_max];
+        int *total_hamm_hist = (int*)malloc(hamm_hist_max*sizeof(int));
         memset(total_hamm_hist, 0, sizeof(total_hamm_hist));
         double total_time = 0;
 
@@ -129,7 +131,7 @@ int main(int argc, char *argv[])
 
         for (int input = 0; input < zarray_size(inputs); input++) {
 
-            int hamm_hist[hamm_hist_max];
+            int *hamm_hist = (int*)malloc(hamm_hist_max*sizeof(int));
             memset(hamm_hist, 0, sizeof(hamm_hist));
 
             char *path;
@@ -217,6 +219,7 @@ int main(int argc, char *argv[])
 
             for (int i = 0; i < hamm_hist_max; i++)
                 printf("%5d ", hamm_hist[i]);
+            free(hamm_hist);
 
             double t =  timeprofile_total_utime(td->tp) / 1.0E3;
             total_time += t;
@@ -235,6 +238,7 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < hamm_hist_max; i++)
             printf("%5d ", total_hamm_hist[i]);
+        free(total_hamm_hist);
         printf("%12.3f ", total_time);
         printf("%5d", total_quads);
         printf("\n");
