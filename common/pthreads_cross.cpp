@@ -1,6 +1,8 @@
 #include "common/pthreads_cross.h"
 #include <time.h>
 
+#ifdef _WIN32
+
 typedef struct {
     SRWLOCK lock;
     bool    exclusive;
@@ -239,3 +241,5 @@ static unsigned int timespec_to_ms(const struct timespec *abstime)
         t = 1;
     return t;
 }
+
+#endif
