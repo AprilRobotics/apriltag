@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 cmake_minimum_required(VERSION 3.1)
 project(apriltags-umich LANGUAGES C CXX)
+=======
+cmake_minimum_required(VERSION 3.10)
+project(apriltag)
+>>>>>>> 35f4ef2 (Fix transitive dependencies. Fixes #78)
 
 find_package(OpenCV QUIET)
 
@@ -23,7 +28,7 @@ if (MSVC)
     #target_link_libraries(${PROJECT_NAME} ${PTHREAD_LIBRARIES} winmm)
 else()
     find_package(Threads REQUIRED)
-    target_link_libraries(${PROJECT_NAME} Threads::Threads m)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads m)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION 3.1.0)
@@ -41,7 +46,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION 3.1.0)
 
 
 # install library
+<<<<<<< HEAD
 install(TARGETS ${PROJECT_NAME} EXPORT apriltag-umich
+=======
+install(TARGETS ${PROJECT_NAME} EXPORT apriltagTargets
+>>>>>>> 35f4ef2 (Fix transitive dependencies. Fixes #78)
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
@@ -54,10 +63,21 @@ foreach(HEADER ${HEADER_FILES})
 endforeach()
 
 # export library
+<<<<<<< HEAD
 install(EXPORT apriltag-umich
     DESTINATION share/apriltag-umich/cmake
     FILE apriltag-umichConfig.cmake
+=======
+install(EXPORT apriltagTargets
+    FILE apriltagTargets.cmake
+    NAMESPACE apriltag::
+    DESTINATION share/apriltag/cmake
+>>>>>>> 35f4ef2 (Fix transitive dependencies. Fixes #78)
 )
+install(FILES CMake/apriltagConfig.cmake DESTINATION share/apriltag/cmake)
+export(TARGETS apriltag
+    NAMESPACE apriltag::
+    FILE apriltagTargets.cmake)
 
 #FILE(READ apriltag.pc.in PKGC)
 #STRING(REGEX REPLACE "^prefix=" "prefix=${CMAKE_INSTALL_PREFIX}" PKGC_CONF "${PKGC}" )
