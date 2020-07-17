@@ -823,7 +823,7 @@ image_u8x3_t *pjpeg_to_u8x3_baseline(pjpeg_t *pj)
 // returns NULL if file loading fails.
 pjpeg_t *pjpeg_create_from_file(const char *path, uint32_t flags, int *error)
 {
-    FILE *f = fopen(path, "r");
+    FILE *f = fopen(path, "rb");
     if (f == NULL)
         return NULL;
 
@@ -833,6 +833,12 @@ pjpeg_t *pjpeg_create_from_file(const char *path, uint32_t flags, int *error)
     uint8_t *buf = malloc(buflen);
     fseek(f, 0, SEEK_SET);
     int res = fread(buf, 1, buflen, f);
+
+    int error_code = ferror(f);
+    if (error_code ){
+        printf ("Read failed with error code: %d\n", error_code );
+    }
+
     fclose(f);
     if (res != buflen) {
         free(buf);

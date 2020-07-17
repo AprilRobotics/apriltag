@@ -112,10 +112,10 @@ int main(int argc, char *argv[])
         cvtColor(frame, gray, COLOR_BGR2GRAY);
 
         // Make an image_u8_t header for the Mat data
-        image_u8_t im = { .width = gray.cols,
-            .height = gray.rows,
-            .stride = gray.cols,
-            .buf = gray.data
+        image_u8_t im = { gray.cols,
+            gray.rows,
+            gray.cols,
+            gray.data
         };
 
         zarray_t *detections = apriltag_detector_detect(td, &im);

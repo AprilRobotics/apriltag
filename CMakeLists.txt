@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
-project(apriltag LANGUAGES C CXX)
+project(apriltags-umich LANGUAGES C CXX)
 
 find_package(OpenCV QUIET)
 
 include_directories(.)
 aux_source_directory(common COMMON_SRC)
-set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
+set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c tagStandard41h12.c tag16h5.c tag25h9.c tag36h11.c tagCircle21h7.c tagCircle49h12.c tagCustom48h12.c tagStandard52h13.c)
 
 set(CMAKE_BUILD_TYPE Release)
 
@@ -15,7 +15,7 @@ option (BUILD_APRIL_TAG_EXAMPLES "Build the example programs." YES)
 # Library
 file(GLOB TAG_FILES ${CMAKE_SOURCE_DIR}/tag*.c)
 set_source_files_properties(SOURCE ${TAG_FILES} PROPERTIES COMPILE_FLAGS -O0)
-add_library(${PROJECT_NAME} SHARED ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC
     # winmm is necessary for __imp_timeGetTime
@@ -28,20 +28,20 @@ endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION 3.1.0)
 
-include(GNUInstallDirs)
-target_include_directories(${PROJECT_NAME} PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>"
-    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
+#include(GNUInstallDirs)
+#target_include_directories(${PROJECT_NAME} PUBLIC
+#    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
+#    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>"
+#    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
-)
+#set_target_properties(${PROJECT_NAME} PROPERTIES
+#    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
+#    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
+#)
 
 
 # install library
-install(TARGETS ${PROJECT_NAME} EXPORT apriltag
+install(TARGETS ${PROJECT_NAME} EXPORT apriltag-umich
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
@@ -54,15 +54,15 @@ foreach(HEADER ${HEADER_FILES})
 endforeach()
 
 # export library
-install(EXPORT apriltag
-    DESTINATION share/apriltag/cmake
-    FILE apriltagConfig.cmake
+install(EXPORT apriltag-umich
+    DESTINATION share/apriltag-umich/cmake
+    FILE apriltag-umichConfig.cmake
 )
 
-FILE(READ apriltag.pc.in PKGC)
-STRING(REGEX REPLACE "^prefix=" "prefix=${CMAKE_INSTALL_PREFIX}" PKGC_CONF "${PKGC}" )
-FILE(WRITE ${PROJECT_BINARY_DIR}/apriltag.pc ${PKGC_CONF})
-install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
+#FILE(READ apriltag.pc.in PKGC)
+#STRING(REGEX REPLACE "^prefix=" "prefix=${CMAKE_INSTALL_PREFIX}" PKGC_CONF "${PKGC}" )
+#FILE(WRITE ${PROJECT_BINARY_DIR}/apriltag.pc ${PKGC_CONF})
+#install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "lib/pkgconfig/")
 
 
 # Python wrapper
@@ -105,12 +105,12 @@ if (BUILD_APRIL_TAG_EXAMPLES )
     # Examples
     # apriltag_demo
     add_executable(apriltag_demo example/apriltag_demo.c)
-    target_link_libraries(apriltag_demo apriltag)
+    target_link_libraries(apriltag_demo ${PROJECT_NAME})
 
     # opencv_demo
     if(OpenCV_FOUND)
         add_executable(opencv_demo example/opencv_demo.cc)
-        target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
+        target_link_libraries(opencv_demo ${PROJECT_NAME} ${OpenCV_LIBRARIES})
         set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
         install(TARGETS opencv_demo RUNTIME DESTINATION bin)
     endif(OpenCV_FOUND)
