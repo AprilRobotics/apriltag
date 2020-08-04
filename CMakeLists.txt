@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(apriltag)
+project(apriltags LANGUAGES C CXX)
 
 find_package(OpenCV QUIET)
 
@@ -29,15 +29,15 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION 3.1.0)
 
 #include(GNUInstallDirs)
-#target_include_directories(${PROJECT_NAME} PUBLIC
-#    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
-#    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>"
-#    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
+target_include_directories(${PROJECT_NAME} PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>"
+    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
 
-#set_target_properties(${PROJECT_NAME} PROPERTIES
-#    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
-#    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
-#)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
+)
 
 
 # install library
@@ -60,7 +60,7 @@ install(EXPORT apriltagTargets
     DESTINATION share/apriltag/cmake
 )
 install(FILES CMake/apriltagConfig.cmake DESTINATION share/apriltag/cmake)
-export(TARGETS apriltag
+export(TARGETS apriltags
     NAMESPACE apriltag::
     FILE apriltagTargets.cmake)
 
