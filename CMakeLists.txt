@@ -29,13 +29,7 @@ include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/common>"
-    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
-
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_INSTALL_LIBDIR}
-)
-
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
 
 # install library
 install(TARGETS ${PROJECT_NAME} EXPORT apriltagTargets
@@ -79,7 +73,6 @@ set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
 cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
 separate_arguments(PY_CFLAGS)
 separate_arguments(PY_LDFLAGS)
-set(LIB_APRILTAG_PATH ${PROJECT_BINARY_DIR}/lib)
 
 foreach(X detect py_type)
 add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
@@ -91,7 +84,7 @@ add_custom_command(OUTPUT apriltag_pywrap.o
     COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c
     DEPENDS ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
 add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
-    COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath=lib apriltag_pywrap.o ${LIB_APRILTAG_PATH}/libapriltag.so -o apriltag${PY_EXT_SUFFIX}
+    COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath=lib apriltag_pywrap.o ${PROJECT_BINARY_DIR}/libapriltag.so -o apriltag${PY_EXT_SUFFIX}
     DEPENDS ${PROJECT_NAME} apriltag_pywrap.o)
 add_custom_target(apriltag_python ALL
     DEPENDS apriltag${PY_EXT_SUFFIX})
