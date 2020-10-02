@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     getopt_t *getopt = getopt_create();
 
     getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
-    getopt_add_bool(getopt, 'd', "debug", 1, "Enable debugging output (slow)");
+    getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
     getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
     getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
     getopt_add_int(getopt, 't', "threads", "1", "Use this many CPU threads");
@@ -119,7 +119,6 @@ int main(int argc, char *argv[])
         };
 
         zarray_t *detections = apriltag_detector_detect(td, &im);
-        cout << zarray_size(detections) << " tags detected" << endl;
 
         // Draw detection outlines
         for (int i = 0; i < zarray_size(detections); i++) {

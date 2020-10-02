@@ -4,4 +4,5 @@
 *.swp
 example/opencv_demo
 example/apriltag_demo
+build/
 
