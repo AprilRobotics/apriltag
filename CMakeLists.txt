@@ -87,7 +87,7 @@ add_custom_command(OUTPUT apriltag_pywrap.o
     COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c
     DEPENDS ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
 add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
-    COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath=lib apriltag_pywrap.o ${PROJECT_BINARY_DIR}/libapriltag.so -o apriltag${PY_EXT_SUFFIX}
+    COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath=lib apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}
     DEPENDS ${PROJECT_NAME} apriltag_pywrap.o)
 add_custom_target(apriltag_python ALL
     DEPENDS apriltag${PY_EXT_SUFFIX})
