@@ -13,7 +13,7 @@ option (BUILD_APRIL_TAGS_PYTHON_WRAPPER "Build the python wrappers." YES)
 option (BUILD_APRIL_TAG_EXAMPLES "Build the example programs." YES)
 
 # Library
-file(GLOB TAG_FILES ${CMAKE_SOURCE_DIR}/tag*.c)
+file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
 set_source_files_properties(SOURCE ${TAG_FILES} PROPERTIES COMPILE_FLAGS -O0)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
 if (MSVC)
@@ -41,7 +41,7 @@ install(TARGETS ${PROJECT_NAME} EXPORT apriltagTargets
 )
 
 # install header file hierarchy
-file(GLOB_RECURSE HEADER_FILES RELATIVE ${CMAKE_SOURCE_DIR} *.h)
+file(GLOB_RECURSE HEADER_FILES RELATIVE ${PROJECT_SOURCE_DIR} *.h)
 foreach(HEADER ${HEADER_FILES})
     string(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
     install(FILES ${HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${DIR})
@@ -65,38 +65,42 @@ export(TARGETS apriltags
 
 
 # Python wrapper
+option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" On)
+
+if(BUILD_PYTHON_WRAPPER)
 SET(Python_ADDITIONAL_VERSIONS 3)
 find_package(PythonLibs)
 execute_process(COMMAND which python3 OUTPUT_QUIET RESULT_VARIABLE Python3_NOT_FOUND)
 execute_process(COMMAND python3 -c "import numpy" RESULT_VARIABLE Numpy_NOT_FOUND)
-if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND)
+endif(BUILD_PYTHON_WRAPPER)
+
+if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
 # TODO deal with both python2/3
-execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
+execute_process(COMMAND python3 ${PROJECT_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
 set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
 cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
 separate_arguments(PY_CFLAGS)
 separate_arguments(PY_LDFLAGS)
 
-    foreach(X detect py_type)
-    add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
-        COMMAND < ${CMAKE_SOURCE_DIR}/apriltag_${X}.docstring sed 's/\"/\\\\\"/g\; s/^/\"/\; s/$$/\\\\n\"/\;' > apriltag_${X}.docstring.h
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    endforeach()
+foreach(X detect py_type)
+add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
+    COMMAND < ${PROJECT_SOURCE_DIR}/apriltag_${X}.docstring sed 's/\"/\\\\\"/g\; s/^/\"/\; s/$$/\\\\n\"/\;' > apriltag_${X}.docstring.h
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+endforeach()
 
 add_custom_command(OUTPUT apriltag_pywrap.o
-    COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c
-    DEPENDS ${CMAKE_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
+    COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c
+    DEPENDS ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
 add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
     COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,lib apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}
     DEPENDS ${PROJECT_NAME} apriltag_pywrap.o)
 add_custom_target(apriltag_python ALL
     DEPENDS apriltag${PY_EXT_SUFFIX})
 
-    execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
-    string(STRIP ${PY_DEST} PY_DEST)
-    install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
-    endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND)
-endif (USE_APRIL_TAGS_PYTHON_WRAPPER)
+execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
+string(STRIP ${PY_DEST} PY_DEST)
+install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
+endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
 
 if (BUILD_APRIL_TAG_EXAMPLES )
     # Examples
@@ -104,14 +108,18 @@ if (BUILD_APRIL_TAG_EXAMPLES )
     add_executable(apriltag_demo example/apriltag_demo.c)
     target_link_libraries(apriltag_demo ${PROJECT_NAME})
 
-    # opencv_demo
-    if(OpenCV_FOUND)
-        add_executable(opencv_demo example/opencv_demo.cc)
-        target_link_libraries(opencv_demo ${PROJECT_NAME} ${OpenCV_LIBRARIES})
-        set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
-        install(TARGETS opencv_demo RUNTIME DESTINATION bin)
-    endif(OpenCV_FOUND)
+# Examples
+# apriltag_demo
+add_executable(apriltag_demo example/apriltag_demo.c)
+target_link_libraries(apriltag_demo apriltag)
 
-    # install example programs
-    install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
-endif (BUILD_APRIL_TAG_EXAMPLES)
+# opencv_demo
+if(OpenCV_FOUND)
+    add_executable(opencv_demo example/opencv_demo.cc)
+    target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
+    set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
+    install(TARGETS opencv_demo RUNTIME DESTINATION bin)
+endif(OpenCV_FOUND)
+
+# install example programs
+install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
