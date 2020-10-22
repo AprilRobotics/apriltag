@@ -75,7 +75,7 @@ if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD
 # TODO deal with both python2/3
 execute_process(COMMAND python3 ${PROJECT_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
 set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
-cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
+cmake_parse_arguments(PY "" ${PY_VARS} "" ${PY_OUT})
 separate_arguments(PY_CFLAGS)
 separate_arguments(PY_LDFLAGS)
 
