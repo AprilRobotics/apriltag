@@ -25,8 +25,8 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
-#ifndef _TAG36H11
-#define _TAG36H11
+#ifndef _TAGCircle21H7
+#define _TAGCircle21H7
 
 #include "apriltag.h"
 
@@ -34,8 +34,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 extern "C" {
 #endif
 
-apriltag_family_t *tag36h11_create();
-void tag36h11_destroy(apriltag_family_t *tf);
+apriltag_family_t *tagCircle21h7_create();
+void tagCircle21h7_destroy(apriltag_family_t *tf);
 
 #ifdef __cplusplus
 }

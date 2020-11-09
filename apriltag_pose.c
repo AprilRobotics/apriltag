@@ -110,8 +110,8 @@ double orthogonal_iteration(matd_t** v, matd_t** p, matd_t** t, matd_t** R, int 
         }
 
         double error = 0;
-        for (int i = 0; i < 4; i++) {
-            matd_t* err_vec = matd_op("(M-M)(MM+M)", I3, F[i], *R, p[i], *t);
+        for (int j = 0; j < 4; j++) {
+            matd_t* err_vec = matd_op("(M-M)(MM+M)", I3, F[j], *R, p[j], *t);
             error += matd_to_double(matd_op("M'M", err_vec, err_vec));
             matd_destroy(err_vec);
         }
@@ -409,10 +409,10 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
         // Check extrema is a minima.
         if (a2 - 2*a0 + (3*a3 - 6*a1)*t1 + (6*a4 - 8*a2 + 10*a0)*t2 + (-8*a3 + 6*a1)*t3 + (-6*a4 + 3*a2)*t4 + a3*t5 >= 0) {
             // And that it corresponds to an angle different than the known minimum.
-            double t = 2*atan(roots[i]);
+            double t_cur = 2*atan(roots[i]);
             // We only care about finding a second local minima which is qualitatively
             // different than the first.
-            if (fabs(t - t_initial) > 0.1) {
+            if (fabs(t_cur - t_initial) > 0.1) {
                 minima[n_minima++] = roots[i];
             }
         }
@@ -421,18 +421,18 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
     // 5. Get poses for minima.
     matd_t* ret = NULL;
     if (n_minima == 1) {
-        double t = minima[0];
+        double t_cur = minima[0];
         matd_t* R_beta = matd_copy(M2);
-        matd_scale_inplace(R_beta, t);
+        matd_scale_inplace(R_beta, t_cur);
         matd_add_inplace(R_beta, M1);
-        matd_scale_inplace(R_beta, t);
+        matd_scale_inplace(R_beta, t_cur);
         matd_add_inplace(R_beta, I3);
-        matd_scale_inplace(R_beta, 1/(1 + t*t));
+        matd_scale_inplace(R_beta, 1/(1 + t_cur*t_cur));
         ret = matd_op("M'MMM'", R_t, R_gamma, R_beta, R_z);
         matd_destroy(R_beta);
     } else if (n_minima > 1)  {
         // This can happen if our prior pose estimate was not very good.
-        fprintf(stderr, "Error, more than one new minima found.\n");
+        fprintf(stderr, "Error, more than one new minimum found.\n");
     }
     matd_destroy(I3);
     matd_destroy(M1);

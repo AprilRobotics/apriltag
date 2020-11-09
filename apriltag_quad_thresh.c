@@ -377,8 +377,11 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
     free(errs);
 
     // if we didn't get at least 4 maxima, we can't fit a quad.
-    if (nmaxima < 4)
+    if (nmaxima < 4){
+        free(maxima);
+        free(maxima_errs);
         return 0;
+    }
 
     // select only the best maxima if we have too many
     int max_nmaxima = td->qtp.max_nmaxima;
@@ -1714,10 +1717,10 @@ zarray_t* gradient_clusters(apriltag_detector_t *td, image_u8_t* threshim, int w
     clusters = zarray_create(sizeof(zarray_t*));
     zarray_ensure_capacity(clusters, zarray_size(clusters_list[0]));
     for (int i = 0; i < zarray_size(clusters_list[0]); i++) {
-        struct cluster_hash* h;
-        zarray_get(clusters_list[0], i, &h);
-        zarray_add(clusters, &h->data);
-        free(h);
+        struct cluster_hash* hash;
+        zarray_get(clusters_list[0], i, &hash);
+        zarray_add(clusters, &hash->data);
+        free(hash);
     }
     zarray_destroy(clusters_list[0]);
     free(clusters_list);
@@ -1901,8 +1904,8 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
             float rgb[3];
             int bias = 100;
 
-            for (int i = 0; i < 3; i++)
-                rgb[i] = bias + (random() % (255-bias));
+            for (int j = 0; j < 3; j++)
+                rgb[j] = bias + (random() % (255-bias));
 
             fprintf(f, "%f %f %f setrgbcolor\n", rgb[0]/255.0f, rgb[1]/255.0f, rgb[2]/255.0f);
             fprintf(f, "%.15f %.15f moveto %.15f %.15f lineto %.15f %.15f lineto %.15f %.15f lineto %.15f %.15f lineto stroke\n",

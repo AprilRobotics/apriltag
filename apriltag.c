@@ -648,8 +648,15 @@ float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, image_u8_t
         }
     }
 
-    graymodel_solve(&whitemodel);
-    graymodel_solve(&blackmodel);
+    if (family->width_at_border > 1) {
+        graymodel_solve(&whitemodel);
+        graymodel_solve(&blackmodel);
+    } else {
+        graymodel_solve(&whitemodel);
+        blackmodel.C[0] = 0;
+        blackmodel.C[1] = 0;
+        blackmodel.C[2] = blackmodel.B[2]/4;
+    }
 
     // XXX Tunable
     if ((graymodel_interpolate(&whitemodel, 0, 0) - graymodel_interpolate(&blackmodel, 0, 0) < 0) != family->reversed_border) {
@@ -1066,13 +1073,13 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
             struct quad *q;
             zarray_get_volatile(quads, i, &q);
 
-            for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
                 if (td->quad_decimate == 1.5) {
-                    q->p[i][0] *= td->quad_decimate;
-                    q->p[i][1] *= td->quad_decimate;
+                    q->p[j][0] *= td->quad_decimate;
+                    q->p[j][1] *= td->quad_decimate;
                 } else {
-                    q->p[i][0] = (q->p[i][0] - 0.5)*td->quad_decimate + 0.5;
-                    q->p[i][1] = (q->p[i][1] - 0.5)*td->quad_decimate + 0.5;
+                    q->p[j][0] = (q->p[j][0] - 0.5)*td->quad_decimate + 0.5;
+                    q->p[j][1] = (q->p[j][1] - 0.5)*td->quad_decimate + 0.5;
                 }
             }
         }
@@ -1271,8 +1278,9 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
             float rgb[3];
             int bias = 100;
 
-            for (int i = 0; i < 3; i++)
-                rgb[i] = bias + (random() % (255-bias));
+            for (int j = 0; j < 3; j++) {
+                rgb[j] = bias + (random() % (255-bias));
+            }
 
             fprintf(f, "%f %f %f setrgbcolor\n", rgb[0]/255.0f, rgb[1]/255.0f, rgb[2]/255.0f);
             fprintf(f, "%f %f moveto %f %f lineto %f %f lineto %f %f lineto %f %f lineto stroke\n",
@@ -1310,8 +1318,9 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
             float rgb[3];
             int bias = 100;
 
-            for (int i = 0; i < 3; i++)
-                rgb[i] = bias + (random() % (255-bias));
+            for (int j = 0; j < 3; j++) {
+                rgb[j] = bias + (random() % (255-bias));
+            }
 
             for (int j = 0; j < 4; j++) {
                 int k = (j + 1) & 3;
@@ -1352,8 +1361,9 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
             float rgb[3];
             int bias = 100;
 
-            for (int i = 0; i < 3; i++)
-                rgb[i] = bias + (random() % (255-bias));
+            for (int j = 0; j < 3; j++) {
+                rgb[j] = bias + (random() % (255-bias));
+            }
 
             fprintf(f, "%f %f %f setrgbcolor\n", rgb[0]/255.0f, rgb[1]/255.0f, rgb[2]/255.0f);
             fprintf(f, "%f %f moveto %f %f lineto %f %f lineto %f %f lineto %f %f lineto stroke\n",
@@ -1409,7 +1419,7 @@ image_u8_t *apriltag_to_image(apriltag_family_t *fam, int idx)
     image_u8_t *im = image_u8_create(fam->total_width, fam->total_width);
 
     int white_border_width = fam->width_at_border + (fam->reversed_border ? 0 : 2);
-    int white_border_start = (fam->total_width - fam->width_at_border)/2;
+    int white_border_start = (fam->total_width - white_border_width)/2;
     // Make 1px white border
     for (int i = 0; i < white_border_width - 1; i += 1) {
         im->buf[white_border_start*im->stride + white_border_start + i] = 255;

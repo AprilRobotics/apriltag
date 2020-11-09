@@ -3,12 +3,15 @@
 sudo: required
 language: generic
 env:
+  global:
+    - CATKIN_SKIP_TESTING=1
+    - PRERELEASE=1
   matrix:
     - ROS_DISTRO="kinetic"
-    - ROS_DISTRO="kinetic" PRERELEASE=true NOT_TEST_INSTALL=true NOT_TEST_BUILD=true
     - ROS_DISTRO="melodic"
-    - ROS_DISTRO="melodic" PRERELEASE=true NOT_TEST_INSTALL=true NOT_TEST_BUILD=true
+    - ROS_DISTRO="noetic"
+    - ROS_DISTRO="foxy"
 install:
-  - git clone --quiet --depth 1 https://github.com/ros-industrial/industrial_ci.git .ci_config
+  - git clone --quiet --depth 1 https://github.com/ros-industrial/industrial_ci.git .ci_config -b master
 script:
   - source .ci_config/travis.sh
