@@ -101,38 +101,38 @@ install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "${CMAKE_INSTALL_L
 option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" On)
 
 if(BUILD_PYTHON_WRAPPER)
-SET(Python_ADDITIONAL_VERSIONS 3)
-find_package(PythonLibs)
-execute_process(COMMAND which python3 OUTPUT_QUIET RESULT_VARIABLE Python3_NOT_FOUND)
-execute_process(COMMAND python3 -c "import numpy" RESULT_VARIABLE Numpy_NOT_FOUND)
+    SET(Python_ADDITIONAL_VERSIONS 3)
+    find_package(PythonLibs)
+    execute_process(COMMAND which python3 OUTPUT_QUIET RESULT_VARIABLE Python3_NOT_FOUND)
+    execute_process(COMMAND python3 -c "import numpy" RESULT_VARIABLE Numpy_NOT_FOUND)
 endif(BUILD_PYTHON_WRAPPER)
 
 if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
-# TODO deal with both python2/3
-execute_process(COMMAND python3 ${PROJECT_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
-set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
-cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
-separate_arguments(PY_CFLAGS)
-separate_arguments(PY_LDFLAGS)
+    # TODO deal with both python2/3
+    execute_process(COMMAND python3 ${PROJECT_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
+    set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
+    cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
+    separate_arguments(PY_CFLAGS)
+    separate_arguments(PY_LDFLAGS)
 
-foreach(X detect py_type)
-add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
-    COMMAND < ${PROJECT_SOURCE_DIR}/apriltag_${X}.docstring sed 's/\"/\\\\\"/g\; s/^/\"/\; s/$$/\\\\n\"/\;' > apriltag_${X}.docstring.h
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-endforeach()
+    foreach(X detect py_type)
+    add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
+        COMMAND < ${PROJECT_SOURCE_DIR}/apriltag_${X}.docstring sed 's/\"/\\\\\"/g\; s/^/\"/\; s/$$/\\\\n\"/\;' > apriltag_${X}.docstring.h
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    endforeach()
 
-add_custom_command(OUTPUT apriltag_pywrap.o
-    COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c
-    DEPENDS ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
-add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
-    COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,lib apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}
-    DEPENDS ${PROJECT_NAME} apriltag_pywrap.o)
-add_custom_target(apriltag_python ALL
-    DEPENDS apriltag${PY_EXT_SUFFIX})
+    add_custom_command(OUTPUT apriltag_pywrap.o
+        COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c
+        DEPENDS ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
+    add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
+        COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,lib apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}
+        DEPENDS ${PROJECT_NAME} apriltag_pywrap.o)
+    add_custom_target(apriltag_python ALL
+        DEPENDS apriltag${PY_EXT_SUFFIX})
 
-execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
-string(STRIP ${PY_DEST} PY_DEST)
-install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
+    execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
+    string(STRIP ${PY_DEST} PY_DEST)
+    install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
 endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
 
 
