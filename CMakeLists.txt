@@ -40,11 +40,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
 
-# install library
-install(TARGETS ${PROJECT_NAME} EXPORT apriltagTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
 
 # install header file hierarchy
 file(GLOB_RECURSE HEADER_FILES RELATIVE ${PROJECT_SOURCE_DIR} *.h)
@@ -54,15 +49,45 @@ foreach(HEADER ${HEADER_FILES})
 endforeach()
 
 # export library
-install(EXPORT apriltagTargets
-    FILE apriltagTargets.cmake
-    NAMESPACE apriltag::
-    DESTINATION share/apriltag/cmake
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
+set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
+set(targets_export_name "${PROJECT_NAME}Targets")
+set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+
+# Include module with fuction 'write_basic_package_version_file'
+include(CMakePackageConfigHelpers)
+
+# Configure '<PROJECT-NAME>Config.cmake'
+# Use variables:
+#   * targets_export_name
+#   * PROJECT_NAME
+configure_package_config_file(
+        "CMake/apriltagConfig.cmake.in"
+        "${project_config}"
+        INSTALL_DESTINATION "${config_install_dir}"
 )
-install(FILES CMake/apriltagConfig.cmake DESTINATION share/apriltag/cmake)
+
+# Configure '<PROJECT-NAME>ConfigVersion.cmake'
+# Note: PROJECT_VERSION is used as a VERSION
+write_basic_package_version_file("${version_config}" COMPATIBILITY SameMajorVersion)
+
+
+# install library
+install(TARGETS ${PROJECT_NAME} EXPORT ${targets_export_name}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        )
+
+install(EXPORT ${targets_export_name}
+    NAMESPACE apriltag::
+    DESTINATION ${config_install_dir})
+
+install(FILES ${project_config} ${version_config} DESTINATION ${config_install_dir})
+
 export(TARGETS apriltag
     NAMESPACE apriltag::
-    FILE apriltagTargets.cmake)
+    FILE ${generated_dir}/${targets_export_name}.cmake)
 
 FILE(READ apriltag.pc.in PKGC)
 STRING(REGEX REPLACE "^prefix=" "prefix=${CMAKE_INSTALL_PREFIX}" PKGC_CONF "${PKGC}" )
