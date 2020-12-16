@@ -32,7 +32,7 @@ else()
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads m)
 endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION 3.1.0)
+set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})
 
 include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
