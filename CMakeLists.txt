@@ -3,16 +3,21 @@ project(apriltag VERSION 3.1.0 LANGUAGES C CXX)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
+# Set a default build type if none was specified
+set(default_build_type "Release")
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+    set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE  STRING "Choose the type of build." FORCE)
+    # Set the possible values of build type for cmake-gui
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
 find_package(OpenCV QUIET)
 
 include_directories(.)
 aux_source_directory(common COMMON_SRC)
 set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c tagStandard41h12.c tag16h5.c tag25h9.c tag36h11.c tagCircle21h7.c tagCircle49h12.c tagCustom48h12.c tagStandard52h13.c)
-
-set(CMAKE_BUILD_TYPE Release)
-
-option (BUILD_APRIL_TAGS_PYTHON_WRAPPER "Build the python wrappers." YES)
-option (BUILD_APRIL_TAG_EXAMPLES "Build the example programs." YES)
 
 # Library
 file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
