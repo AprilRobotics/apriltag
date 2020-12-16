@@ -15,7 +15,6 @@ endif()
 
 find_package(OpenCV QUIET)
 
-include_directories(.)
 aux_source_directory(common COMMON_SRC)
 set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 
