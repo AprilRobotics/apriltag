@@ -33,6 +33,7 @@ else()
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})
+set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
 include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
