@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
-project(apriltag)
+project(apriltag VERSION 3.1.0 LANGUAGES C CXX)
+
 
 find_package(OpenCV QUIET)
 
