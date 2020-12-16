@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(apriltag VERSION 3.1.0 LANGUAGES C CXX)
 
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 find_package(OpenCV QUIET)
 
