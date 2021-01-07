@@ -101,6 +101,12 @@ double orthogonal_iteration(matd_t** v, matd_t** p, matd_t** t, matd_t** R, int 
         matd_destroy(M3);
         matd_destroy(*R);
         *R = matd_op("M*M'", M3_svd.U, M3_svd.V);
+        double R_det = matd_det(*R);
+        if (R_det < 0) {
+            matd_put(*R, 0, 2, - matd_get(*R, 0, 2));
+            matd_put(*R, 1, 2, - matd_get(*R, 1, 2));
+            matd_put(*R, 2, 2, - matd_get(*R, 2, 2));
+        }
         matd_destroy(M3_svd.U);
         matd_destroy(M3_svd.S);
         matd_destroy(M3_svd.V);
