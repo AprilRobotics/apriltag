@@ -78,8 +78,10 @@ double orthogonal_iteration(matd_t** v, matd_t** p, matd_t** t, matd_t** R, int 
             matd_destroy(M2_update);
         }
         matd_scale_inplace(M2, 1.0/n_points);
-        matd_destroy(*t);
-        *t = matd_multiply(M1_inv, M2);
+        matd_t *tmp1 = matd_multiply(M1_inv, M2);
+        matd_set_data(*t, tmp1->data);
+        matd_destroy(tmp1);
+
         matd_destroy(M2);
 
         // Calculate rotation.
@@ -99,8 +101,10 @@ double orthogonal_iteration(matd_t** v, matd_t** p, matd_t** t, matd_t** R, int 
         }
         matd_svd_t M3_svd = matd_svd(M3);
         matd_destroy(M3);
-        matd_destroy(*R);
-        *R = matd_op("M*M'", M3_svd.U, M3_svd.V);
+        matd_t *tmp2 = matd_op("M*M'", M3_svd.U, M3_svd.V);
+        matd_set_data(*R, tmp2->data);
+        matd_destroy(tmp2);
+
         double R_det = matd_det(*R);
         if (R_det < 0) {
             matd_put(*R, 0, 2, - matd_get(*R, 0, 2));
