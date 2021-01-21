@@ -8,7 +8,7 @@ SYNOPSIS
 
     imagepath = '/tmp/tst.jpg'
     image     = cv2.imread(imagepath, cv2.IMREAD_GRAYSCALE)
-    detector = apriltag("tag36h11")
+    detector = apriltag.apriltag("tag36h11")
 
     detections = detector.detect(image)
 
