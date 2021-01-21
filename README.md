@@ -45,6 +45,20 @@ To install to a different directory than /usr/local:
 
     $ PREFIX=/some/path sudo make install
 
+Make sure your environment is properly set, if not done previously:
+
+Add the following to your .bashrc:
+
+export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+then
+
+    $ source ~/.bashrc
+
+and finally:
+
+    $ sudo ldconfig
+
 
 Flexible Layouts
 ================
