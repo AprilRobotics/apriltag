@@ -7,7 +7,7 @@ include_directories(.)
 aux_source_directory(common COMMON_SRC)
 set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "choose the type of build")
 
 # Library
 file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
