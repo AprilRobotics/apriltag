@@ -28,48 +28,50 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdlib.h>
 #include "tag25h9.h"
 
+static uint64_t codedata[35] = {
+   0x000000000156f1f4UL,
+   0x0000000001f28cd5UL,
+   0x00000000016ce32cUL,
+   0x0000000001ea379cUL,
+   0x0000000001390f89UL,
+   0x000000000034fad0UL,
+   0x00000000007dcdb5UL,
+   0x000000000119ba95UL,
+   0x0000000001ae9daaUL,
+   0x0000000000df02aaUL,
+   0x000000000082fc15UL,
+   0x0000000000465123UL,
+   0x0000000000ceee98UL,
+   0x0000000001f17260UL,
+   0x00000000014429cdUL,
+   0x00000000017248a8UL,
+   0x00000000016ad452UL,
+   0x00000000009670adUL,
+   0x00000000016f65b2UL,
+   0x0000000000b8322bUL,
+   0x00000000005d715bUL,
+   0x0000000001a1c7e7UL,
+   0x0000000000d7890dUL,
+   0x0000000001813522UL,
+   0x0000000001c9c611UL,
+   0x000000000099e4a4UL,
+   0x0000000000855234UL,
+   0x00000000017b81c0UL,
+   0x0000000000c294bbUL,
+   0x000000000089fae3UL,
+   0x000000000044df5fUL,
+   0x0000000001360159UL,
+   0x0000000000ec31e8UL,
+   0x0000000001bcc0f6UL,
+   0x0000000000a64f8dUL,
+};
 apriltag_family_t *tag25h9_create()
 {
    apriltag_family_t *tf = calloc(1, sizeof(apriltag_family_t));
    tf->name = strdup("tag25h9");
    tf->h = 9;
    tf->ncodes = 35;
-   tf->codes = calloc(35, sizeof(uint64_t));
-   tf->codes[0] = 0x000000000156f1f4UL;
-   tf->codes[1] = 0x0000000001f28cd5UL;
-   tf->codes[2] = 0x00000000016ce32cUL;
-   tf->codes[3] = 0x0000000001ea379cUL;
-   tf->codes[4] = 0x0000000001390f89UL;
-   tf->codes[5] = 0x000000000034fad0UL;
-   tf->codes[6] = 0x00000000007dcdb5UL;
-   tf->codes[7] = 0x000000000119ba95UL;
-   tf->codes[8] = 0x0000000001ae9daaUL;
-   tf->codes[9] = 0x0000000000df02aaUL;
-   tf->codes[10] = 0x000000000082fc15UL;
-   tf->codes[11] = 0x0000000000465123UL;
-   tf->codes[12] = 0x0000000000ceee98UL;
-   tf->codes[13] = 0x0000000001f17260UL;
-   tf->codes[14] = 0x00000000014429cdUL;
-   tf->codes[15] = 0x00000000017248a8UL;
-   tf->codes[16] = 0x00000000016ad452UL;
-   tf->codes[17] = 0x00000000009670adUL;
-   tf->codes[18] = 0x00000000016f65b2UL;
-   tf->codes[19] = 0x0000000000b8322bUL;
-   tf->codes[20] = 0x00000000005d715bUL;
-   tf->codes[21] = 0x0000000001a1c7e7UL;
-   tf->codes[22] = 0x0000000000d7890dUL;
-   tf->codes[23] = 0x0000000001813522UL;
-   tf->codes[24] = 0x0000000001c9c611UL;
-   tf->codes[25] = 0x000000000099e4a4UL;
-   tf->codes[26] = 0x0000000000855234UL;
-   tf->codes[27] = 0x00000000017b81c0UL;
-   tf->codes[28] = 0x0000000000c294bbUL;
-   tf->codes[29] = 0x000000000089fae3UL;
-   tf->codes[30] = 0x000000000044df5fUL;
-   tf->codes[31] = 0x0000000001360159UL;
-   tf->codes[32] = 0x0000000000ec31e8UL;
-   tf->codes[33] = 0x0000000001bcc0f6UL;
-   tf->codes[34] = 0x0000000000a64f8dUL;
+   tf->codes = codedata;
    tf->nbits = 25;
    tf->bit_x = calloc(25, sizeof(uint32_t));
    tf->bit_y = calloc(25, sizeof(uint32_t));
@@ -131,7 +133,6 @@ apriltag_family_t *tag25h9_create()
 
 void tag25h9_destroy(apriltag_family_t *tf)
 {
-   free(tf->codes);
    free(tf->bit_x);
    free(tf->bit_y);
    free(tf->name);
