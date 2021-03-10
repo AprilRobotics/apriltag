@@ -16,6 +16,8 @@
 #include "tagCustom48h12.h"
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
+#include "tagStandard41h11.h"
+
 
 
 #define SUPPORTED_TAG_FAMILIES(_)           \
@@ -26,6 +28,7 @@
     _(tagCircle21h7)                        \
     _(tagCircle49h12)                       \
     _(tagStandard41h12)                     \
+    _(tagStandard41h11)                     \
     _(tagStandard52h13)                     \
     _(tagCustom48h12)
 
