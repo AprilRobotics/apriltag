@@ -1139,10 +1139,10 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
         }
     }
 
-    // maxiters used to be smaller to prevent us from looping forever,
-    // but this doesn't seem to happen any more with our more stable
-    // svd22 implementation.
-    int maxiters = 1UL << 30;
+    // empirically, we find a roughly linear worst-case number of iterations
+    // as a function of rows*cols. maxiters ~= 1.5*nrows*ncols
+    // we're a bit conservative below.
+    int maxiters = 200 + 2 * A->nrows * A->ncols;
     assert(maxiters > 0); // reassure clang
     int iter;
 
