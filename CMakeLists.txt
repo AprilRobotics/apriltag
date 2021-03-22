@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(apriltag VERSION 3.1.0 LANGUAGES C CXX)
 
+cmake_policy(SET CMP0077 NEW)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 # Set a default build type if none was specified
