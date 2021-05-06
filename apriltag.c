@@ -89,12 +89,12 @@ struct graymodel
     double C[3];
 };
 
-void graymodel_init(struct graymodel *gm)
+static void graymodel_init(struct graymodel *gm)
 {
     memset(gm, 0, sizeof(struct graymodel));
 }
 
-void graymodel_add(struct graymodel *gm, double x, double y, double gray)
+static void graymodel_add(struct graymodel *gm, double x, double y, double gray)
 {
     // update upper right entries of A = J'J
     gm->A[0][0] += x*x;
@@ -110,12 +110,12 @@ void graymodel_add(struct graymodel *gm, double x, double y, double gray)
     gm->B[2] += gray;
 }
 
-void graymodel_solve(struct graymodel *gm)
+static void graymodel_solve(struct graymodel *gm)
 {
     mat33_sym_solve((double*) gm->A, gm->B, gm->C);
 }
 
-double graymodel_interpolate(struct graymodel *gm, double x, double y)
+static double graymodel_interpolate(struct graymodel *gm, double x, double y)
 {
     return gm->C[0]*x + gm->C[1]*y + gm->C[2];
 }
@@ -151,7 +151,7 @@ static uint64_t rotate90(uint64_t w, int numBits)
     return w;
 }
 
-void quad_destroy(struct quad *quad)
+static void quad_destroy(struct quad *quad)
 {
     if (!quad)
         return;
@@ -161,7 +161,7 @@ void quad_destroy(struct quad *quad)
     free(quad);
 }
 
-struct quad *quad_copy(struct quad *quad)
+static struct quad *quad_copy(struct quad *quad)
 {
     struct quad *q = calloc(1, sizeof(struct quad));
     memcpy(q, quad, sizeof(struct quad));
@@ -172,7 +172,7 @@ struct quad *quad_copy(struct quad *quad)
     return q;
 }
 
-void quick_decode_add(struct quick_decode *qd, uint64_t code, int id, int hamming)
+static void quick_decode_add(struct quick_decode *qd, uint64_t code, int id, int hamming)
 {
     uint32_t bucket = code % qd->nentries;
 
@@ -185,7 +185,7 @@ void quick_decode_add(struct quick_decode *qd, uint64_t code, int id, int hammin
     qd->entries[bucket].hamming = hamming;
 }
 
-void quick_decode_uninit(apriltag_family_t *fam)
+static void quick_decode_uninit(apriltag_family_t *fam)
 {
     if (!fam->impl)
         return;
@@ -196,7 +196,7 @@ void quick_decode_uninit(apriltag_family_t *fam)
     fam->impl = NULL;
 }
 
-void quick_decode_init(apriltag_family_t *family, int maxhamming)
+static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 {
     assert(family->impl == NULL);
     assert(family->ncodes < 65536);
@@ -415,7 +415,7 @@ struct evaluate_quad_ret
     struct quick_decode_entry e;
 };
 
-matd_t* homography_compute2(double c[4][4]) {
+static matd_t* homography_compute2(double c[4][4]) {
     double A[] =  {
             c[0][0], c[0][1], 1,       0,       0, 0, -c[0][0]*c[0][2], -c[0][1]*c[0][2], c[0][2],
                   0,       0, 0, c[0][0], c[0][1], 1, -c[0][0]*c[0][3], -c[0][1]*c[0][3], c[0][3],
@@ -477,7 +477,7 @@ matd_t* homography_compute2(double c[4][4]) {
 }
 
 // returns non-zero if an error occurs (i.e., H has no inverse)
-int quad_update_homographies(struct quad *quad)
+static int quad_update_homographies(struct quad *quad)
 {
     //zarray_t *correspondences = zarray_create(sizeof(float[4]));
 
@@ -506,7 +506,7 @@ int quad_update_homographies(struct quad *quad)
     return -1;
 }
 
-double value_for_pixel(image_u8_t *im, double px, double py) {
+static double value_for_pixel(image_u8_t *im, double px, double py) {
     int x1 = floor(px - 0.5);
     int x2 = ceil(px - 0.5);
     double x = px - 0.5 - x1;
@@ -522,7 +522,7 @@ double value_for_pixel(image_u8_t *im, double px, double py) {
             im->buf[y2*im->stride + x2]*x*y;
 }
 
-void sharpen(apriltag_detector_t* td, double* values, int size) {
+static void sharpen(apriltag_detector_t* td, double* values, int size) {
     double *sharpened = malloc(sizeof(double)*size*size);
     double kernel[9] = {
         0, -1, 0,
@@ -555,7 +555,7 @@ void sharpen(apriltag_detector_t* td, double* values, int size) {
 }
 
 // returns the decision margin. Return < 0 if the detection should be rejected.
-float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, image_u8_t *im, struct quad *quad, struct quick_decode_entry *entry, image_u8_t *im_samples)
+static float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, image_u8_t *im, struct quad *quad, struct quick_decode_entry *entry, image_u8_t *im_samples)
 {
     // decode the tag binary contents by sampling the pixel
     // closest to the center of each bit cell.
@@ -974,7 +974,7 @@ void apriltag_detection_destroy(apriltag_detection_t *det)
     free(det);
 }
 
-int prefer_smaller(int pref, double q0, double q1)
+static int prefer_smaller(int pref, double q0, double q1)
 {
     if (pref)     // already prefer something? exit.
         return pref;
