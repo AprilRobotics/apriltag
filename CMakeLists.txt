@@ -37,6 +37,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 #include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
 
 
