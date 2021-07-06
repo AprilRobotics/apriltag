@@ -422,7 +422,7 @@ static int pjpeg_decode_buffer(struct pjpeg_decode_state *pjd)
                             if (code_pos + ncodes > 0xffff)
                                 return PJPEG_ERR_DHT;
 
-                            for (int ci = 0; ci < ncodes; ci++) {
+                            for (int ci = 0; ci < (int)ncodes; ci++) {
                                 pjd->huff_codes[htidx][code_pos].nbits = nbits;
                                 pjd->huff_codes[htidx][code_pos].code = code;
                                 code_pos++;
@@ -752,8 +752,8 @@ image_u8x3_t *pjpeg_to_u8x3_baseline(pjpeg_t *pj)
 
     if (Cr_factor_y == 1 && Cr_factor_x == 1 && Cb_factor_y == 1 && Cb_factor_x == 1) {
 
-        for (int y = 0; y < pj->height; y++) {
-            for (int x = 0; x < pj->width; x++) {
+        for (int y = 0; y < (int)pj->height; y++) {
+            for (int x = 0; x < (int)pj->width; x++) {
                 int32_t y_val  = Y->data[y*Y->stride + x] * 65536;
                 int32_t cb_val = Cb->data[y*Cb->stride + x] - 128;
                 int32_t cr_val = Cr->data[y*Cr->stride + x] - 128;
@@ -768,8 +768,8 @@ image_u8x3_t *pjpeg_to_u8x3_baseline(pjpeg_t *pj)
             }
         }
     } else if (Cb_factor_y == Cr_factor_y && Cb_factor_x == Cr_factor_x) {
-        for (int by = 0; by < pj->height / Cb_factor_y; by++) {
-            for (int bx = 0; bx < pj->width / Cb_factor_x; bx++) {
+        for (int by = 0; by < (int)pj->height / Cb_factor_y; by++) {
+            for (int bx = 0; bx < (int)pj->width / Cb_factor_x; bx++) {
 
                 int32_t cb_val = Cb->data[by*Cb->stride + bx] - 128;
                 int32_t cr_val = Cr->data[by*Cr->stride + bx] - 128;
@@ -799,8 +799,8 @@ image_u8x3_t *pjpeg_to_u8x3_baseline(pjpeg_t *pj)
         }
     } else {
 
-        for (int y = 0; y < pj->height; y++) {
-            for (int x = 0; x < pj->width; x++) {
+        for (int y = 0; y < (int)pj->height; y++) {
+            for (int x = 0; x < (int)pj->width; x++) {
                 int32_t y_val  = Y->data[y*Y->stride + x];
                 int32_t cb_val = Cb->data[(y / Cb_factor_y)*Cb->stride + (x / Cb_factor_x)] - 128;
                 int32_t cr_val = Cr->data[(y / Cr_factor_y)*Cr->stride + (x / Cr_factor_x)] - 128;

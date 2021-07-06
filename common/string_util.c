@@ -138,7 +138,7 @@ int str_diff_idx(const char * a, const char * b)
 
     size_t minlen = lena < lenb ? lena : lenb;
 
-    for (; i < minlen; i++)
+    for (; i < (int)minlen; i++)
         if (a[i] != b[i])
             break;
 
@@ -235,7 +235,7 @@ char *str_lstrip(char *str)
 
     char *ptr = str;
     char *end = str + strlen(str);
-    for(; ptr != end && isspace(*ptr); ptr++);
+    for(; ptr != end && isspace((unsigned char)*ptr); ptr++);
     // shift the string to the left so the original pointer still works
     memmove(str, ptr, strlen(ptr)+1);
     return str;
@@ -246,7 +246,7 @@ char *str_rstrip(char *str)
     assert(str != NULL);
 
     char *ptr = str + strlen(str) - 1;
-    for(; ptr+1 != str && isspace(*ptr); ptr--);
+    for(; ptr+1 != str && isspace((unsigned char)*ptr); ptr--);
     *(ptr+1) = '\0';
     return str;
 }
@@ -294,7 +294,7 @@ char *str_tolowercase(char *s)
 	assert(s != NULL);
 
     size_t slen = strlen(s);
-    for (int i = 0; i < slen; i++) {
+    for (int i = 0; i < (int)slen; i++) {
         if (s[i] >= 'A' && s[i] <= 'Z')
             s[i] = s[i] + 'a' - 'A';
     }
@@ -307,7 +307,7 @@ char *str_touppercase(char *s)
     assert(s != NULL);
 
     size_t slen = strlen(s);
-    for (int i = 0; i < slen; i++) {
+    for (int i = 0; i < (int)slen; i++) {
         if (s[i] >= 'a' && s[i] <= 'z')
             s[i] = s[i] - ('a' - 'A');
     }
@@ -340,7 +340,7 @@ void string_buffer_append(string_buffer_t *sb, char c)
 {
     assert(sb != NULL);
 
-    if (sb->size+2 >= sb->alloc) {
+    if ((int)sb->size+2 >= sb->alloc) {
         sb->alloc *= 2;
         sb->s = realloc(sb->s, sb->alloc);
     }
@@ -398,7 +398,7 @@ void string_buffer_append_string(string_buffer_t *sb, const char *str)
 
     size_t len = strlen(str);
 
-    while (sb->size+len + 1 >= sb->alloc) {
+    while ((int)(sb->size+len + 1) >= sb->alloc) {
         sb->alloc *= 2;
         sb->s = realloc(sb->s, sb->alloc);
     }
@@ -500,14 +500,13 @@ char string_feeder_next(string_feeder_t *sf)
 char *string_feeder_next_length(string_feeder_t *sf, size_t length)
 {
     assert(sf != NULL);
-    assert(length >= 0);
     assert(sf->pos <= sf->len);
 
     if (sf->pos + length > sf->len)
         length = sf->len - sf->pos;
 
     char *substr = calloc(length+1, sizeof(char));
-    for (int i = 0 ; i < length ; i++)
+    for (int i = 0 ; i < (int)length ; i++)
         substr[i] = string_feeder_next(sf);
     return substr;
 }
@@ -523,7 +522,6 @@ char string_feeder_peek(string_feeder_t *sf)
 char *string_feeder_peek_length(string_feeder_t *sf, size_t length)
 {
     assert(sf != NULL);
-    assert(length >= 0);
     assert(sf->pos <= sf->len);
 
     if (sf->pos + length > sf->len)
@@ -551,7 +549,7 @@ void string_feeder_require(string_feeder_t *sf, const char *str)
 
     size_t len = strlen(str);
 
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < (int)len; i++) {
         char c = string_feeder_next(sf);
         assert(c == str[i]);
     }
@@ -624,9 +622,9 @@ bool str_matches_any(const char *haystack, const char **needles, int num_needles
 char *str_substring(const char *str, size_t startidx, long endidx)
 {
     assert(str != NULL);
-    assert(startidx >= 0 && startidx <= strlen(str)+1);
-    assert(endidx < 0 || endidx >= startidx);
-    assert(endidx < 0 || endidx <= strlen(str)+1);
+    assert(startidx <= strlen(str)+1);
+    assert(endidx < 0 || endidx >= (long)startidx);
+    assert(endidx < 0 || endidx <= (long)strlen(str)+1);
 
     if (endidx < 0)
         endidx = (long) strlen(str);
@@ -649,7 +647,7 @@ char *str_replace(const char *haystack, const char *needle, const char *replacem
     size_t needle_len = strlen(needle);
 
     int pos = 0;
-    while (pos < haystack_len) {
+    while (pos < (int)haystack_len) {
         if (needle_len > 0 && str_starts_with(&haystack[pos], needle)) {
             string_buffer_append_string(sb, replacement);
             pos += needle_len;

@@ -124,9 +124,9 @@ static inline bool strcaseeq(const char *str1, const char* str2)
     for (i = 0 ; str1[i] != '\0' ; i++) {
         if (str1[i] == str2[i])
             continue;
-        else if (islower(str1[i]) && (str1[i] - 32) == str2[i])
+        else if (islower((unsigned char)str1[i]) && (str1[i] - 32) == str2[i])
             continue;
-        else if (isupper(str1[i]) && (str1[i] + 32) == str2[i])
+        else if (isupper((unsigned char)str1[i]) && (str1[i] + 32) == str2[i])
             continue;
 
         return false;
