@@ -1,0 +1,26 @@
+# This config uses industrial_ci (https://github.com/ros-industrial/industrial_ci.git).
+# For troubleshooting, see readme (https://github.com/ros-industrial/industrial_ci/blob/master/README.rst)
+name: ROS-CI
+on: [push, pull_request]
+
+jobs:
+  CI:
+    strategy:
+      matrix:
+        env:
+          # ROS1
+          - {ROS_DISTRO: melodic}
+          - {ROS_DISTRO: noetic}
+          # ROS2
+          - {ROS_DISTRO: foxy}
+          - {ROS_DISTRO: galactic}
+          - {ROS_DISTRO: rolling}
+    env:
+      PRERELEASE: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: 'ros-industrial/industrial_ci@master'
+        env: ${{ matrix.env }}
