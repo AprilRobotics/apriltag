@@ -9,7 +9,7 @@ set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c tagStandard4
 
 set(CMAKE_BUILD_TYPE Release)
 
-option (USE_APRIL_TAGS_PYTHON_WRAPPER "Build the python wrappers." YES)
+option (BUILD_APRIL_TAGS_PYTHON_WRAPPER "Build the python wrappers." YES)
 option (BUILD_APRIL_TAG_EXAMPLES "Build the example programs." YES)
 
 # Library
