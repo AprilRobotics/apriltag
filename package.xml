@@ -19,6 +19,9 @@
   <!--<build_depend condition="$ROS_PYTHON_VERSION == 2">python-numpy</build_depend>-->
   <build_depend condition="$ROS_PYTHON_VERSION == 3">python3-numpy</build_depend>
 
+  <!-- Specify test dependency on OpenCV such that examples are built on the test server-->
+  <test_depend>libopencv-dev</test_depend>
+
   <export>
     <build_type>cmake</build_type>
   </export>
