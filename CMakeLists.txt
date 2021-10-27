@@ -13,8 +13,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-find_package(OpenCV COMPONENTS core highgui QUIET)
-
 aux_source_directory(common COMMON_SRC)
 set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 
@@ -144,11 +142,14 @@ add_executable(apriltag_demo example/apriltag_demo.c)
 target_link_libraries(apriltag_demo apriltag)
 
 # opencv_demo
+find_package(OpenCV COMPONENTS core imgproc videoio highgui QUIET)
 if(OpenCV_FOUND)
     add_executable(opencv_demo example/opencv_demo.cc)
     target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
     set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
     install(TARGETS opencv_demo RUNTIME DESTINATION bin)
+else()
+    message(WARNING "OpenCV not found: Not building demo")
 endif(OpenCV_FOUND)
 
 # install example programs
