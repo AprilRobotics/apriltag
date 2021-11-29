@@ -285,8 +285,8 @@ static size_t quick_decode_init(apriltag_family_t *family, int maxhamming)
         }
 
         printf("quick decode: longest run: %d, average run %.3f\n", longest_run, 1.0 * run_sum / run_count);
-        return APRILTAG_DETECTOR_ADD_FAMILY_OK;
     }
+    return APRILTAG_DETECTOR_ADD_FAMILY_OK;
 }
 
 // returns an entry with hamming set to 255 if no decode was found.
