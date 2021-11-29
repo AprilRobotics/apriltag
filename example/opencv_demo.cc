@@ -99,7 +99,9 @@ int main(int argc, char *argv[])
 
 
     apriltag_detector_t *td = apriltag_detector_create();
-    apriltag_detector_add_family(td, tf);
+    if(apriltag_detector_add_family_bits(td, tf, getopt_get_int(getopt, "hamming")) !=APRILTAG_DETECTOR_ADD_FAMILY_OK){
+        exit(-1);
+    }
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");
