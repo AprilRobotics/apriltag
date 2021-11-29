@@ -41,6 +41,7 @@ extern "C" {
 #include <pthread.h>
 
 #define APRILTAG_TASKS_PER_THREAD_TARGET 10
+#define APRILTAG_DETECTOR_ADD_FAMILY_OK 0
 
 struct quad
 {
@@ -235,14 +236,16 @@ apriltag_detector_t *apriltag_detector_create();
 
 // add a family to the apriltag detector. caller still "owns" the family.
 // a single instance should only be provided to one apriltag detector instance.
-void apriltag_detector_add_family_bits(apriltag_detector_t *td, apriltag_family_t *fam, int bits_corrected);
+// returns APRILTAG_DETECTOR_ADD_FAMILY_OK on success and the number of bytes required to use the family on failure
+size_t apriltag_detector_add_family_bits(apriltag_detector_t *td, apriltag_family_t *fam, int bits_corrected);
 
 // Tunable, but really, 2 is a good choice. Values of >=3
 // consume prohibitively large amounts of memory, and otherwise
 // you want the largest value possible.
-static inline void apriltag_detector_add_family(apriltag_detector_t *td, apriltag_family_t *fam)
+// returns APRILTAG_DETECTOR_ADD_FAMILY_OK on success and the number of bytes required to use the family on failure
+static inline size_t apriltag_detector_add_family(apriltag_detector_t *td, apriltag_family_t *fam)
 {
-    apriltag_detector_add_family_bits(td, fam, 2);
+    return apriltag_detector_add_family_bits(td, fam, 2);
 }
 
 // does not deallocate the family.

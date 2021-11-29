@@ -196,7 +196,7 @@ static void quick_decode_uninit(apriltag_family_t *fam)
     fam->impl = NULL;
 }
 
-static void quick_decode_init(apriltag_family_t *family, int maxhamming)
+static size_t quick_decode_init(apriltag_family_t *family, int maxhamming)
 {
     assert(family->impl == NULL);
     assert(family->ncodes < 65536);
@@ -223,7 +223,7 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     qd->entries = calloc(qd->nentries, sizeof(struct quick_decode_entry));
     if (qd->entries == NULL) {
         printf("apriltag.c: failed to allocate hamming decode table. Reduce max hamming size.\n");
-        exit(-1);
+        return capacity *3 * sizeof(struct quick_decode_entry);
     }
 
     for (int i = 0; i < qd->nentries; i++)
@@ -285,6 +285,7 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
         }
 
         printf("quick decode: longest run: %d, average run %.3f\n", longest_run, 1.0 * run_sum / run_count);
+        return APRILTAG_DETECTOR_ADD_FAMILY_OK;
     }
 }
 
@@ -330,12 +331,13 @@ void apriltag_detector_remove_family(apriltag_detector_t *td, apriltag_family_t 
     zarray_remove_value(td->tag_families, &fam, 0);
 }
 
-void apriltag_detector_add_family_bits(apriltag_detector_t *td, apriltag_family_t *fam, int bits_corrected)
+size_t apriltag_detector_add_family_bits(apriltag_detector_t *td, apriltag_family_t *fam, int bits_corrected)
 {
     zarray_add(td->tag_families, &fam);
 
-    if (!fam->impl)
-        quick_decode_init(fam, bits_corrected);
+    if (fam->impl) return APRILTAG_DETECTOR_ADD_FAMILY_OK;
+        
+    return quick_decode_init(fam, bits_corrected);
 }
 
 void apriltag_detector_clear_families(apriltag_detector_t *td)
