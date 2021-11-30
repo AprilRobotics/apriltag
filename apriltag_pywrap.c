@@ -139,7 +139,7 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
 
     if(apriltag_detector_add_family_bits(self->td, self->tf, maxhamming) != APRILTAG_DETECTOR_ADD_FAMILY_OK){
-        PyErr_Format(PyExc_RuntimeError, "Adding tag family failed. Try reducing maxhamming from: %d", maxhamming);
+        PyErr_Format(PyExc_RuntimeError, "Adding tag family failed. Try reducing maxhamming from %d.", maxhamming);
         goto done;
     }
 
