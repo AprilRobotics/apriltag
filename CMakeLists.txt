@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 project(apriltag VERSION 3.1.0 LANGUAGES C CXX)
 
+if(POLICY CMP0077)
+    cmake_policy(SET CMP0077 NEW)
+endif()
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 # Set a default build type if none was specified
@@ -18,7 +21,8 @@ set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 
 # Library
 file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
-add_library(${PROJECT_NAME} SHARED ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC
     # winmm is necessary for __imp_timeGetTime
@@ -98,7 +102,8 @@ install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "${CMAKE_INSTALL_L
 
 
 # Python wrapper
-option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" On)
+include(CMakeDependentOption)
+cmake_dependent_option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" ON BUILD_SHARED_LIBS OFF)
 
 if(BUILD_PYTHON_WRAPPER)
     SET(Python_ADDITIONAL_VERSIONS 3)
