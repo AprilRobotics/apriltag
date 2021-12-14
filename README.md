@@ -25,22 +25,38 @@ Usage
 Install
 =======
 
- Officially only linux operating systems are supported, although users have had success installing on windows too.
- 
- The default installation will place headers in /usr/local/include and
-shared library in /usr/local/lib. It also installs a pkg-config script
-into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed.
+Officially only Linux operating systems are supported, although users have had success installing on Windows too.
 
-If you have CMake installed or it is not difficult to install, then do:
+The default installation will place headers in /usr/local/include and shared library in /usr/local/lib. It also installs a pkg-config script into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed.
 
-    $ cmake .
-    $ sudo make install
-    
+## cmake
+If you have CMake installed, then do:
+```
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target install
+```
+This will build shared (\*.so) libraries by default. If you need static (\*.a) libraries set `BUILD_SHARED_LIBS` to `OFF`:
+```
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF
+cmake --build build --target install
+```
+
+If you have Ninja (`sudo apt install ninja-build`) installed, you can use:
+```
+cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target install
+```
+to generate and compile via the ninja build script. It will be much faster than with cmake's default Makefile generator.
+
+You can omit `--target install` if you only want to use this locally without installing.
+
+## make
 Otherwise, we have a handwritten makefile you can use (be warned it will do slightly different things):
+```
+make -j
+sudo make install
+```
 
-    $ make
-    $ sudo make install
-    
 To install to a different directory than /usr/local:
 
     $ PREFIX=/some/path sudo make install
@@ -59,4 +75,4 @@ You can generate your own tag families using our other repo, [AprilTag-Generatio
 
 Support
 =======
-Please create an issue on this github for any questions instead of sending a private message. This allows other people with the same question to find your answer.
+Please create an issue on this GitHub for any questions instead of sending a private message. This allows other people with the same question to find your answer.
