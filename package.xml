@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>apriltag</name>
-  <version>3.1.7</version>
+  <version>3.2.0</version>
   <description>AprilTag detector library</description>
 
   <maintainer email="mkrogius@umich.edu">Max Krogius</maintainer>
