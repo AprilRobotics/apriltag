@@ -1105,8 +1105,10 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
             double mag = sqrt(mag2);
 
             // this case can occur when the vectors are already perpendicular
-            if (mag == 0)
+            if (mag == 0) {
+                free(v);
                 continue;
+            }
 
             for (int i = 0; i < vlen; i++)
                 v[i] /= mag;
