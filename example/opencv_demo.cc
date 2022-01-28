@@ -28,6 +28,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <iostream>
 
 #include "opencv2/opencv.hpp"
+#include "opencv2/core/utility.hpp"
 
 extern "C" {
 #include "apriltag.h"
@@ -66,12 +67,22 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    cout << "Enabling video capture" << endl;
+    
+    TickMeter meter;
+    meter.start();
     // Initialize camera
     VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Couldn't open video capture device" << endl;
         return -1;
     }
+    meter.stop();
+
+    cout << "VideoCapture initialized in " 
+        << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
+    meter.reset();
+    meter.start();
 
     // Initialize tag detector with options
     apriltag_family_t *tf = NULL;
@@ -97,6 +108,11 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    meter.stop();
+    cout << "Tag family " << famname << " initialized in " 
+        << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
+    meter.reset();
+    meter.start();
 
     apriltag_detector_t *td = apriltag_detector_create();
     apriltag_detector_add_family(td, tf);
@@ -106,8 +122,15 @@ int main(int argc, char *argv[])
     td->debug = getopt_get_bool(getopt, "debug");
     td->refine_edges = getopt_get_bool(getopt, "refine-edges");
 
+    float frame_counter = 0.0f;
+    meter.stop();
+    cout << "Detector " << famname << " initialized in " 
+        << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
+    meter.reset();
+
     Mat frame, gray;
     while (true) {
+        meter.start();
         cap >> frame;
         cvtColor(frame, gray, COLOR_BGR2GRAY);
 
@@ -154,6 +177,13 @@ int main(int argc, char *argv[])
         imshow("Tag Detections", frame);
         if (waitKey(30) >= 0)
             break;
+        frame_counter++;
+        if (frame_counter > 30) {
+            cout << "FPS "
+                << std::fixed << std::setprecision(3) << meter.getFPS() << endl;
+            frame_counter = 0.0f;
+        }
+        meter.stop();
     }
 
     apriltag_detector_destroy(td);
