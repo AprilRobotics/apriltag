@@ -37,6 +37,12 @@ option(AT_DIAG_ENABLE_TEXT "Enable textural diagnostics to stderr" ON)
 option(AT_DIAG_ENABLE_DEBUG "Enable debug level diagnostics (chatty)" OFF)
 option(AT_DIAG_ENABLE_IMAGE "Enable detector image diagnostics" ON)
 
+# Developer debug flags
+option(AT_DEBUG_GAUSSIAN "Debug the gaussian blur kernel" OFF)
+
+# Developer test flags (experimental features)
+option(AT_TEST_THRESHOLD_DEGLITCH "Enable threshold deglitching for noisy images" OFF)
+
 # Textual diagnostic options
 cmake_dependent_option(AT_DIAG_TEXT_STDERR "Enable text diagnostic through stderr" ON AT_DIAG_ENABLE_TEXT OFF)
 
@@ -57,7 +63,9 @@ set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
 
+#
 # Set the diagnostic compilation options
+#
 if (AT_DIAG_ENABLE_TEXT)
     target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_TEXT=1)
 endif ()
@@ -67,8 +75,17 @@ endif()
 if (AT_DIAG_TEXT_STDERR)
     target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_TEXT_STDERR=1)
 endif()
-
-
+if (AT_DIAG_ENABLE_IMAGE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_IMAGE=1)
+endif()
+# debug
+if (AT_DEBUG_GAUSSIAN)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DEBUG_GAUSSIAN=1)
+endif()
+# experiments
+if (AT_TEST_THRESHOLD_DEGLITCH)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_TEST_THRESHOLD_DEGLITCH=1)
+endif()
 
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC

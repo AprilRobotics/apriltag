@@ -265,7 +265,8 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 
     family->impl = qd;
 
-    if (0) {
+#if defined(AT_DIAG_ENABLE_DEBUG)
+    do {
         int longest_run = 0;
         int run = 0;
         int run_sum = 0;
@@ -287,7 +288,8 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
         }
 
         AT_DEBUG_TEXT("quick decode: longest run: %d, average run %.3f", longest_run, 1.0 * run_sum / run_count);
-    }
+    } while(0);
+#endif
 }
 
 // returns an entry with hamming set to 255 if no decode was found.
@@ -363,7 +365,9 @@ apriltag_detector_t *apriltag_detector_create()
 
     td->qtp.max_line_fit_mse = 10.0;
     td->qtp.cos_critical_rad = cos(10 * M_PI / 180);
+#if defined(AT_TEST_THRESHOLD_DEGLITCH)
     td->qtp.deglitch = 0;
+#endif
     td->qtp.min_white_black_diff = 5;
 
     td->tag_families = zarray_create(sizeof(apriltag_family_t*));

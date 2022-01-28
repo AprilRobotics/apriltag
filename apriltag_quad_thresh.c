@@ -1273,9 +1273,10 @@ image_u8_t *threshold(apriltag_detector_t *td, image_u8_t *im)
     free(im_min);
     free(im_max);
 
+#if defined(AT_TEST_THRESHOLD_DEGLITCH)
     // this is a dilate/erode deglitching scheme that does not improve
     // anything as far as I can tell.
-    if (0 || td->qtp.deglitch) {
+    if (td->qtp.deglitch) {
         image_u8_t *tmp = image_u8_create(w, h);
 
         for (int y = 1; y + 1 < h; y++) {
@@ -1308,6 +1309,7 @@ image_u8_t *threshold(apriltag_detector_t *td, image_u8_t *im)
 
         image_u8_destroy(tmp);
     }
+#endif
 
     timeprofile_stamp(td->tp, "threshold");
 

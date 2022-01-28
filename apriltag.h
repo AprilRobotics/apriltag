@@ -115,9 +115,11 @@ struct apriltag_quad_thresh_params
     // [0,255]). .
     int min_white_black_diff;
 
+#if defined(AT_TEST_THRESHOLD_DEGLITCH)
     // should the thresholded image be deglitched? Only useful for
     // very noisy images
     int deglitch;
+#endif
 };
 
 // Represents a detector object. Upon creating a detector, all fields
