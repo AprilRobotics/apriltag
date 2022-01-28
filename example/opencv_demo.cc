@@ -71,8 +71,9 @@ int main(int argc, char *argv[])
     
     TickMeter meter;
     meter.start();
+
     // Initialize camera
-    VideoCapture cap(0);
+    VideoCapture cap(0, CAP_ANY);
     if (!cap.isOpened()) {
         cerr << "Couldn't open video capture device" << endl;
         return -1;
@@ -126,6 +127,9 @@ int main(int argc, char *argv[])
     meter.stop();
     cout << "Detector " << famname << " initialized in " 
         << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
+    cout << "  " << cap.get(CAP_PROP_FRAME_WIDTH ) << "x" <<
+                    cap.get(CAP_PROP_FRAME_HEIGHT ) << " @" <<
+                    cap.get(CAP_PROP_FPS) << "FPS" << endl;
     meter.reset();
 
     Mat frame, gray;
