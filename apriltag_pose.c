@@ -5,6 +5,7 @@
 #include "apriltag_math.h"
 #include "common/homography.h"
 #include "common/image_u8x3.h"
+#include "common/diagnostic.h"
 
 
 /**
@@ -23,7 +24,7 @@ matd_t* calculate_F(matd_t* v) {
  */
 double matd_to_double(matd_t *a)
 {
-    assert(matd_is_scalar(a));
+    AT_ASSERT(matd_is_scalar(a));
     double d = a->data[0];
     matd_destroy(a);
     return d;
@@ -438,7 +439,7 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
         matd_destroy(R_beta);
     } else if (n_minima > 1)  {
         // This can happen if our prior pose estimate was not very good.
-        fprintf(stderr, "Error, more than one new minimum found.\n");
+        AT_ERROR_TEXT("Error, more than one new minimum found.");
     }
     matd_destroy(I3);
     matd_destroy(M1);

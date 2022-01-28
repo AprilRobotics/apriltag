@@ -33,7 +33,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "apriltag.h"
 
 #include <math.h>
-#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -49,6 +48,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/math_util.h"
 #include "common/g2d.h"
 #include "common/floats.h"
+#include "common/diagnostic.h"
 
 #include "apriltag_math.h"
 
@@ -135,7 +135,10 @@ struct quick_decode
 };
 
 /**
- * Assuming we are drawing the image one quadrant at a time, what would the rotated image look like?
+ * Assuming we are drawing the image
+ *
+ *
+ * one quadrant at a time, what would the rotated image look like?
  * Special care is taken to handle the case where there is a middle pixel of the image.
  */
 static uint64_t rotate90(uint64_t w, int numBits)
@@ -198,8 +201,8 @@ static void quick_decode_uninit(apriltag_family_t *fam)
 
 static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 {
-    assert(family->impl == NULL);
-    assert(family->ncodes < 65536);
+    AT_ASSERT(family->impl == NULL);
+    AT_ASSERT(family->ncodes < 65536);
 
     struct quick_decode *qd = calloc(1, sizeof(struct quick_decode));
     int capacity = family->ncodes;
@@ -217,13 +220,12 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 
     qd->nentries = capacity * 3;
 
-//    printf("capacity %d, size: %.0f kB\n",
-//           capacity, qd->nentries * sizeof(struct quick_decode_entry) / 1024.0);
+    AT_DEBUG_TEXT("capacity %d, size: %.0f kB",
+        capacity, qd->nentries * sizeof(struct quick_decode_entry) / 1024.0);
 
     qd->entries = calloc(qd->nentries, sizeof(struct quick_decode_entry));
     if (qd->entries == NULL) {
-        printf("apriltag.c: failed to allocate hamming decode table. Reduce max hamming size.\n");
-        exit(-1);
+        AT_PANIC("failed to allocate hamming decode table. Reduce max hamming size.");
     }
 
     for (int i = 0; i < qd->nentries; i++)
@@ -257,7 +259,7 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
         }
 
         if (maxhamming > 3) {
-            printf("apriltag.c: maxhamming beyond 3 not supported\n");
+            AT_ERROR_TEXT("maxhamming beyond 3 not supported");
         }
     }
 
@@ -284,7 +286,7 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
             }
         }
 
-        printf("quick decode: longest run: %d, average run %.3f\n", longest_run, 1.0 * run_sum / run_count);
+        AT_DEBUG_TEXT("quick decode: longest run: %d, average run %.3f", longest_run, 1.0 * run_sum / run_count);
     }
 }
 
@@ -443,7 +445,7 @@ static matd_t* homography_compute2(double c[4][4]) {
         }
 
         if (max_val < epsilon) {
-            fprintf(stderr, "WRN: Matrix is singular.\n");
+            AT_WARN_TEXT("Matrix is singular.");
         }
 
         // Swap to get best row.
@@ -992,7 +994,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 {
     if (zarray_size(td->tag_families) == 0) {
         zarray_t *s = zarray_create(sizeof(apriltag_detection_t*));
-        printf("apriltag.c: No tag families enabled.");
+        AT_ERROR_TEXT("apriltag.c: No tag families enabled.");
         return s;
     }
 
@@ -1222,7 +1224,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
                     if (pref == 0) {
                         // at this point, we should only be undecided if the tag detections
                         // are *exactly* the same. How would that happen?
-                        printf("uh oh, no preference for overlappingdetection\n");
+                        AT_WARN_TEXT("uh oh, no preference for overlappingdetection");
                     }
 
                     if (pref < 0) {
@@ -1411,8 +1413,8 @@ void apriltag_detections_destroy(zarray_t *detections)
 
 image_u8_t *apriltag_to_image(apriltag_family_t *fam, int idx)
 {
-    assert(fam != NULL);
-    assert(idx >= 0 && idx < fam->ncodes);
+    AT_ASSERT(fam != NULL);
+    AT_ASSERT(idx >= 0 && idx < fam->ncodes);
 
     uint64_t code = fam->codes[idx];
 

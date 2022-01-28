@@ -25,12 +25,12 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
-#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "pnm.h"
+#include "common/pnm.h"
+#include "common/diagnostic.h"
 
 pnm_t *pnm_create_from_file(const char *path)
 {
@@ -57,7 +57,7 @@ pnm_t *pnm_create_from_file(const char *path)
 
         if (pnm->format == -1 && tmp[0]=='P') {
             pnm->format = tmp[1]-'0';
-            assert(pnm->format == PNM_FORMAT_GRAY || pnm->format == PNM_FORMAT_RGB || pnm->format == PNM_FORMAT_BINARY);
+            AT_ASSERT(pnm->format == PNM_FORMAT_GRAY || pnm->format == PNM_FORMAT_RGB || pnm->format == PNM_FORMAT_BINARY);
             p = &tmp[2];
         }
 
@@ -106,7 +106,7 @@ pnm_t *pnm_create_from_file(const char *path)
             else if (pnm->max == 65535)
                 pnm->buflen = 2 * pnm->width * pnm->height;
             else
-                assert(0);
+                AT_ASSERT(0);
 
             pnm->buf = malloc(pnm->buflen);
             size_t len = fread(pnm->buf, 1, pnm->buflen, f);
@@ -123,7 +123,7 @@ pnm_t *pnm_create_from_file(const char *path)
             else if (pnm->max == 65535)
                 pnm->buflen = 2 * pnm->width * pnm->height * 3;
             else
-                assert(0);
+                AT_ASSERT(0);
 
             pnm->buf = malloc(pnm->buflen);
             size_t len = fread(pnm->buf, 1, pnm->buflen, f);

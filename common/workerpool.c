@@ -28,7 +28,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 #define __USE_GNU
 #include <pthread.h>
 #include <sched.h>
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -38,10 +37,11 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <unistd.h>
 #endif
 
-#include "workerpool.h"
-#include "timeprofile.h"
-#include "math_util.h"
-#include "string_util.h"
+#include "common/workerpool.h"
+#include "common/timeprofile.h"
+#include "common/math_util.h"
+#include "common/string_util.h"
+#include "common/diagnostic.h"
 
 struct workerpool {
     int nthreads;
@@ -102,7 +102,7 @@ void *worker_thread(void *p)
 
 workerpool_t *workerpool_create(int nthreads)
 {
-    assert(nthreads > 0);
+    AT_ASSERT(nthreads > 0);
 
     workerpool_t *wp = calloc(1, sizeof(workerpool_t));
     wp->nthreads = nthreads;

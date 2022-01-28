@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.1)
+include(CMakeDependentOption)
 project(apriltag VERSION 3.2.0 LANGUAGES C CXX)
 
 if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)
 endif()
+
+# Build options
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(ASAN "Use AddressSanitizer for debug builds to detect memory issues" OFF)
 
@@ -29,6 +32,17 @@ endif()
 # Set a default build type if none was specified
 set(default_build_type "Release")
 
+# Diagnostic options
+option(AT_DIAG_ENABLE_TEXT "Enable textural diagnostics to stderr" ON)
+option(AT_DIAG_ENABLE_DEBUG "Enable debug level diagnostics (chatty)" OFF)
+option(AT_DIAG_ENABLE_IMAGE "Enable detector image diagnostics" ON)
+
+# Textual diagnostic options
+cmake_dependent_option(AT_DIAG_TEXT_STDERR "Enable text diagnostic through stderr" ON AT_DIAG_ENABLE_TEXT OFF)
+
+option(AT_HOMOGRAPHY_METHOD_INVERSE "Use inverse method" ON)
+cmake_dependent_option(AT_HOMOGRAPHY_METHOD_CHO_OR_PLU "Use CHO matrix solver" OFF AT_HOMOGRAPHY_METHOD_INVERSE CHO)
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
     set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE  STRING "Choose the type of build." FORCE)
@@ -42,6 +56,19 @@ set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 # Library
 file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+
+# Set the diagnostic compilation options
+if (AT_DIAG_ENABLE_TEXT)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_TEXT=1)
+endif ()
+if (AT_DIAG_ENABLE_DEBUG)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_DEBUG=1)
+endif()
+if (AT_DIAG_TEXT_STDERR)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_TEXT_STDERR=1)
+endif()
+
+
 
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC
@@ -122,7 +149,6 @@ install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "${CMAKE_INSTALL_L
 
 
 # Python wrapper
-include(CMakeDependentOption)
 cmake_dependent_option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" ON BUILD_SHARED_LIBS OFF)
 
 if(BUILD_PYTHON_WRAPPER)

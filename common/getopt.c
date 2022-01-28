@@ -27,15 +27,15 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
 
-#include "zhash.h"
-#include "zarray.h"
-#include "getopt.h"
+#include "common/zhash.h"
+#include "common/zarray.h"
+#include "common/getopt.h"
 #include "common/math_util.h"
+#include "common/diagnostic.h"
 
 #define GOO_BOOL_TYPE 1
 #define GOO_STRING_TYPE 2
@@ -195,7 +195,7 @@ int getopt_parse(getopt_t *gopt, int argc, char *argv[], int showErrors)
             if (goo == NULL) {
                 okay = 0;
                 if (showErrors)
-                    printf("Unknown option --%s\n", optname);
+                    AT_ERROR_TEXT("Unknown option --%s", optname);
                 i++;
                 continue;
             }
@@ -234,8 +234,9 @@ int getopt_parse(getopt_t *gopt, int argc, char *argv[], int showErrors)
                 }
 
                 okay = 0;
-                if (showErrors)
-                    printf("Option %s requires a string argument.\n",optname);
+                if (showErrors) {
+                    printf("Option %s requires a string argument.\n", optname);
+                }
             }
         }
 
@@ -258,8 +259,9 @@ int getopt_parse(getopt_t *gopt, int argc, char *argv[], int showErrors)
                         break;
                     } else {
                         okay = 0;
-                        if (showErrors)
+                        if (showErrors) {
                             printf("Unknown option -%c\n", tok[pos]);
+                        }
                         i++;
                         continue;
                     }
@@ -280,8 +282,9 @@ int getopt_parse(getopt_t *gopt, int argc, char *argv[], int showErrors)
                         if (val[0]=='-')
                         {
                             okay = 0;
-                            if (showErrors)
+                            if (showErrors) {
                                 printf("Ran out of arguments for option block %s\n", tok);
+                            }
                         }
                         i++;
                         getopt_modify_string(&goo->svalue, val);
@@ -289,8 +292,9 @@ int getopt_parse(getopt_t *gopt, int argc, char *argv[], int showErrors)
                     }
 
                     okay = 0;
-                    if (showErrors)
+                    if (showErrors) {
                         printf("Option -%c requires a string argument.\n", tok[pos]);
+                    }
                 }
             }
             i++;
@@ -413,14 +417,14 @@ const char *getopt_get_string(getopt_t *gopt, const char *lname)
     zhash_get(gopt->lopts, &lname, &goo);
     // could return null, but this would be the only
     // method that doesn't assert on a missing key
-    assert (goo != NULL);
+    AT_ASSERT(goo != NULL);
     return goo->svalue;
 }
 
 int getopt_get_int(getopt_t *getopt, const char *lname)
 {
     const char *v = getopt_get_string(getopt, lname);
-    assert(v != NULL);
+    AT_ASSERT(v != NULL);
 
     errno = 0;
     char *endptr = (char *) v;
@@ -442,7 +446,7 @@ int getopt_get_int(getopt_t *getopt, const char *lname)
 int getopt_get_bool(getopt_t *getopt, const char *lname)
 {
     const char *v = getopt_get_string(getopt, lname);
-    assert (v!=NULL);
+    AT_ASSERT(v!=NULL);
     int val = !strcmp(v, "true");
     return val;
 }
@@ -450,7 +454,7 @@ int getopt_get_bool(getopt_t *getopt, const char *lname)
 double getopt_get_double (getopt_t *getopt, const char *lname)
 {
     const char *v = getopt_get_string (getopt, lname);
-    assert (v!=NULL);
+    AT_ASSERT(v!=NULL);
 
     errno = 0;
     char *endptr = (char *) v;

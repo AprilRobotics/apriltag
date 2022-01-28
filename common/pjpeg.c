@@ -27,14 +27,14 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
-#include "pjpeg.h"
+#include "common/pjpeg.h"
 
-#include "image_u8.h"
-#include "image_u8x3.h"
+#include "common/image_u8.h"
+#include "common/image_u8x3.h"
+#include "common/diagnostic.h"
 
 // https://www.w3.org/Graphics/JPEG/itu-t81.pdf
 
@@ -176,7 +176,7 @@ static inline void bd_ensure(struct bit_decoder *bd, int nbits)
     while (bd->nbits_avail < nbits) {
 
         if (bd->inpos >= bd->inlen) {
-            printf("hallucinating 1s!\n");
+            AT_ERROR_TEXT("hallucinating 1s!");
             // we hit end of stream hallucinate an infinite stream of 1s
             bd->bits = (bd->bits << 8) | 0xff;
             bd->nbits_avail += 8;
@@ -207,7 +207,7 @@ static inline uint32_t bd_peek_bits(struct bit_decoder *bd, int nbits)
 
 static inline uint32_t bd_consume_bits(struct bit_decoder *bd, int nbits)
 {
-    assert(nbits < 32);
+    AT_ASSERT(nbits < 32);
 
     bd_ensure(bd, nbits);
 
@@ -221,7 +221,7 @@ static inline uint32_t bd_consume_bits(struct bit_decoder *bd, int nbits)
 // discard without regard for byte stuffing!
 static inline void bd_discard_bytes(struct bit_decoder *bd, int nbytes)
 {
-    assert(bd->nbits_avail == 0);
+    AT_ASSERT(bd->nbits_avail == 0);
     bd->inpos += nbytes;
 }
 
@@ -270,7 +270,7 @@ static int pjpeg_decode_buffer(struct pjpeg_decode_state *pjd)
         }
 
         if (marker_sync_skipped) {
-            printf("%08x: skipped %04x bytes\n", marker_sync_skipped_from_offset, marker_sync_skipped);
+            AT_DEBUG_TEXT("%08x: skipped %04x bytes", marker_sync_skipped_from_offset, marker_sync_skipped);
             marker_sync_skipped = 0;
         }
 
@@ -375,7 +375,7 @@ static int pjpeg_decode_buffer(struct pjpeg_decode_state *pjd)
             case 0xce: // SOF, differential,     arithmetic, progressive
             case 0xcf: // SOF, differential,     arithmetic, lossless
             {
-                printf("pjepg.c: unsupported JPEG type %02x\n", marker);
+                AT_ERROR_TEXT("pjepg.c: unsupported JPEG type %02x", marker);
                 return PJEPG_ERR_UNSUPPORTED;
             }
 
@@ -497,8 +497,7 @@ static int pjpeg_decode_buffer(struct pjpeg_decode_state *pjd)
                 int mcus_x = (pjd->width + maxmcux - 1) / maxmcux;
                 int mcus_y = (pjd->height + maxmcuy - 1) / maxmcuy;
 
-                if (0)
-                    printf("Image has %d x %d MCU blocks, each %d x %d pixels\n",
+                AT_DEBUG_TEXT("Image has %d x %d MCU blocks, each %d x %d pixels",
                            mcus_x, mcus_y, maxmcux, maxmcuy);
 
                 // allocate output storage
@@ -670,7 +669,7 @@ static int pjpeg_decode_buffer(struct pjpeg_decode_state *pjd)
             }
 
             default: {
-                printf("pjepg: Unknown marker %02x at offset %04x\n", marker, marker_offset);
+                AT_WARN_TEXT("Unknown marker %02x at offset %04x", marker, marker_offset);
 
                 // try to skip it.
                 uint16_t length = bd_consume_bits(&bd, 16);
@@ -701,11 +700,11 @@ void pjpeg_destroy(pjpeg_t *pj)
 // just grab the first component.
 image_u8_t *pjpeg_to_u8_baseline(pjpeg_t *pj)
 {
-    assert(pj->ncomponents > 0);
+    AT_ASSERT(pj->ncomponents > 0);
 
     pjpeg_component_t *comp = &pj->components[0];
 
-    assert(comp->width >= pj->width && comp->height >= pj->height);
+    AT_ASSERT(comp->width >= pj->width && comp->height >= pj->height);
 
     image_u8_t *im = image_u8_create(pj->width, pj->height);
     for (int y = 0; y < im->height; y++)
@@ -736,7 +735,7 @@ static inline uint8_t clamp_u8(int32_t v)
 // color conversion formulas taken from JFIF spec v 1.02
 image_u8x3_t *pjpeg_to_u8x3_baseline(pjpeg_t *pj)
 {
-    assert(pj->ncomponents == 3);
+    AT_ASSERT(pj->ncomponents == 3);
 
     pjpeg_component_t *Y = &pj->components[0];
     pjpeg_component_t *Cb = &pj->components[1];
@@ -856,7 +855,7 @@ pjpeg_t *pjpeg_create_from_buffer(uint8_t *buf, int buflen, uint32_t flags, int 
         pjd.in = mjpeg_dht;
         pjd.inlen = sizeof(mjpeg_dht);
         int result = pjpeg_decode_buffer(&pjd);
-        assert(result == 0);
+        AT_ASSERT(result == 0);
     }
 
     pjd.in = buf;

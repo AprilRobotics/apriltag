@@ -29,7 +29,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 // because we use a fixed-point 16 bit integer representation with one
 // fractional bit.
 #include <math.h>
-#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -43,6 +42,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/zmaxheap.h"
 #include "common/postscript_utils.h"
 #include "common/math_util.h"
+#include "common/diagnostic.h"
 
 #ifdef _WIN32
 static inline long int random(void)
@@ -150,8 +150,8 @@ struct cluster_hash
 // sz) if i1 < i0, we treat this as a wrap around.
 void fit_line(struct line_fit_pt *lfps, int sz, int i0, int i1, double *lineparm, double *err, double *mse)
 {
-    assert(i0 != i1);
-    assert(i0 >= 0 && i1 >= 0 && i0 < sz && i1 < sz);
+    AT_ASSERT(i0 != i1);
+    AT_ASSERT(i0 >= 0 && i1 >= 0 && i0 < sz && i1 < sz);
 
     double Mx, My, Mxx, Myy, Mxy, W;
     int N; // how many points are included in the set?
@@ -177,7 +177,7 @@ void fit_line(struct line_fit_pt *lfps, int sz, int i0, int i1, double *lineparm
 
     } else {
         // i0 > i1, e.g. [15, 2]. Wrap around.
-        assert(i0 > 0);
+        AT_ASSERT(i0 > 0);
 
         Mx  = lfps[sz-1].Mx   - lfps[i0-1].Mx;
         My  = lfps[sz-1].My   - lfps[i0-1].My;
@@ -196,7 +196,7 @@ void fit_line(struct line_fit_pt *lfps, int sz, int i0, int i1, double *lineparm
         N = sz - i0 + i1 + 1;
     }
 
-    assert(N >= 2);
+    AT_ASSERT(N >= 2);
 
     double Ex = Mx / W;
     double Ey = My / W;
@@ -517,7 +517,7 @@ int quad_segment_agg(apriltag_detector_t *td, zarray_t *cluster, struct line_fit
     int nvertices = sz;
 
     while (nvertices > 4) {
-        assert(rvalloc_pos < rvalloc_size);
+        AT_ASSERT(rvalloc_pos < rvalloc_size);
 
         struct remove_vertex *rv;
         float err;
@@ -525,7 +525,7 @@ int quad_segment_agg(apriltag_detector_t *td, zarray_t *cluster, struct line_fit
         int res = zmaxheap_remove_max(heap, &rv, &err);
         if (!res)
             return 0;
-        assert(res);
+        AT_ASSERT(res);
 
         // is this remove_vertex valid? (Or has one of the left/right
         // vertices changes since we last looked?)
@@ -536,7 +536,7 @@ int quad_segment_agg(apriltag_detector_t *td, zarray_t *cluster, struct line_fit
         }
 
         // we now merge.
-        assert(segs[rv->i].is_vertex);
+        AT_ASSERT(segs[rv->i].is_vertex);
 
         segs[rv->i].is_vertex = 0;
         segs[rv->left].right = rv->right;
@@ -1004,7 +1004,7 @@ static void do_unionfind_first_line(unionfind_t *uf, image_u8_t *im, int h, int 
 
 static void do_unionfind_line2(unionfind_t *uf, image_u8_t *im, int h, int w, int s, int y)
 {
-    assert(y > 0);
+    AT_ASSERT(y > 0);
 
     uint8_t v_m1_m1;
     uint8_t v_0_m1 = im->buf[(y - 1)*s];
@@ -1093,11 +1093,11 @@ static void do_quad_task(void *p)
 image_u8_t *threshold(apriltag_detector_t *td, image_u8_t *im)
 {
     int w = im->width, h = im->height, s = im->stride;
-    assert(w < 32768);
-    assert(h < 32768);
+    AT_ASSERT(w < 32768);
+    AT_ASSERT(h < 32768);
 
     image_u8_t *threshim = image_u8_create_alignment(w, h, s);
-    assert(threshim->stride == s);
+    AT_ASSERT(threshim->stride == s);
 
     // The idea is to find the maximum and minimum values in a
     // window around each pixel. If it's a contrast-free region
@@ -1322,10 +1322,10 @@ image_u8_t *threshold_bayer(apriltag_detector_t *td, image_u8_t *im)
     int w = im->width, h = im->height, s = im->stride;
 
     image_u8_t *threshim = image_u8_create_alignment(w, h, s);
-    assert(threshim->stride == s);
+    AT_ASSERT(threshim->stride == s);
 
     int tilesz = 32;
-    assert((tilesz & 1) == 0); // must be multiple of 2
+    AT_ASSERT((tilesz & 1) == 0); // must be multiple of 2
 
     int tw = w/tilesz + 1;
     int th = h/tilesz + 1;
