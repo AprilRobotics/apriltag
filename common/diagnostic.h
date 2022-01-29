@@ -3,9 +3,10 @@
 //
 #pragma once
 
-#ifdef USE_ASSERTS
+#if defined(AT_DIAG_ENABLE_ASSERT)
+#include <assert.h>
 #define AT_ASSERT(EXPR) assert(EXPR)
-#define AT_ASSERT_MSG(EXPR, FMT, ... ) if (!(EXPR)) { AT_ERROR_TEXT(FMT , __VA_ARGS __); assert(false); }
+#define AT_ASSERT_MSG(EXPR, FMT, ... ) if (!(EXPR)) { AT_ERROR_TEXT(FMT , ##__VA_ARGS__); assert(0); }
 #else
 #define AT_ASSERT(EXPR)
 #define AT_ASSERT_MSG(EXPR, FMT, ...)

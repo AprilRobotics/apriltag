@@ -189,11 +189,12 @@ void workerpool_run(workerpool_t *wp)
         pthread_cond_broadcast(&wp->startcond);
 
         while (wp->end_count < wp->nthreads) {
-//            printf("caught %d\n", wp->end_count);
             pthread_cond_wait(&wp->endcond, &wp->mutex);
         }
 
         pthread_mutex_unlock(&wp->mutex);
+
+        AT_ASSERT(wp->end_count == wp->nthreads);
 
         wp->taskspos = 0;
 
