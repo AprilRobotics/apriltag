@@ -122,6 +122,29 @@ struct apriltag_quad_thresh_params
 #endif
 };
 
+// Represents the debug parameter callbacks for the detector
+typedef struct apriltag_diagnostic apriltag_diagnostic_t;
+struct apriltag_diagnostic
+{
+    // issue timer call
+    void (*timer)(const char *name);
+
+    // pre-process
+    void (*preprocess)(const struct image_u8_t *);
+
+    // quad-finding
+    void (*quads)(const struct quad *quads, uint32_t count);
+
+    // point searching post quads
+    void (*samples)(const struct image_u8_t *);
+
+    // graymodel fixup
+    void (*quads_fixed)(const struct quad *quads, uint32_t count);
+
+    // detections complete
+    void (*complete)(const apriltag_detection_t *detections, uint32_t count);
+};
+
 // Represents a detector object. Upon creating a detector, all fields
 // are set to reasonable values, but can be overridden by accessing
 // these fields.
@@ -165,7 +188,7 @@ struct apriltag_detector
     // When non-zero, write a variety of debugging images to the
     // current working directory at various stages through the
     // detection process. (Somewhat slow).
-    int debug;
+    apriltag_diagnostic_t diag;
 
     struct apriltag_quad_thresh_params qtp;
 

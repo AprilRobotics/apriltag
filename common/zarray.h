@@ -36,6 +36,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 extern "C" {
 #endif
 
+#include "common/diagnostic.h"
+
 /**
  * Defines a structure which acts as a resize-able array ala Java's ArrayList.
  */
@@ -56,7 +58,7 @@ struct zarray
  */
 static inline zarray_t *zarray_create(size_t el_sz)
 {
-    assert(el_sz > 0);
+    AT_ASSERT(el_sz > 0);
 
     zarray_t *za = (zarray_t*) calloc(1, sizeof(zarray_t));
     za->el_sz = el_sz;
@@ -81,7 +83,7 @@ static inline void zarray_destroy(zarray_t *za)
 /** Allocate a new zarray that contains a copy of the data in the argument. **/
 static inline zarray_t *zarray_copy(const zarray_t *za)
 {
-    assert(za != NULL);
+    AT_ASSERT(za != NULL);
 
     zarray_t *zb = (zarray_t*) calloc(1, sizeof(zarray_t));
     zb->el_sz = za->el_sz;
@@ -129,7 +131,7 @@ static inline zarray_t *zarray_copy_subset(const zarray_t *za,
  */
 static inline int zarray_size(const zarray_t *za)
 {
-    assert(za != NULL);
+    AT_ASSERT(za != NULL);
 
     return za->size;
 }
@@ -142,7 +144,7 @@ static inline int zarray_size(const zarray_t *za)
 JUST CALL zarray_size
 int zarray_isempty(const zarray_t *za)
 {
-    assert(za != NULL);
+    AT_ASSERT(za != NULL);
     if (za->size <= 0)
         return 1;
     else
@@ -157,7 +159,7 @@ int zarray_isempty(const zarray_t *za)
  */
 static inline void zarray_ensure_capacity(zarray_t *za, int capacity)
 {
-    assert(za != NULL);
+    AT_ASSERT(za != NULL);
 
     if (capacity <= za->alloc)
         return;
@@ -178,8 +180,8 @@ static inline void zarray_ensure_capacity(zarray_t *za, int capacity)
  */
 static inline void zarray_add(zarray_t *za, const void *p)
 {
-    assert(za != NULL);
-    assert(p != NULL);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(p != NULL);
 
     zarray_ensure_capacity(za, za->size + 1);
 
@@ -194,10 +196,10 @@ static inline void zarray_add(zarray_t *za, const void *p)
  */
 static inline void zarray_get(const zarray_t *za, int idx, void *p)
 {
-    assert(za != NULL);
-    assert(p != NULL);
-    assert(idx >= 0);
-    assert(idx < za->size);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(p != NULL);
+    AT_ASSERT(idx >= 0);
+    AT_ASSERT(idx < za->size);
 
     memcpy(p, &za->data[idx*za->el_sz], za->el_sz);
 }
@@ -211,18 +213,18 @@ static inline void zarray_get(const zarray_t *za, int idx, void *p)
  */
 inline static void zarray_get_volatile(const zarray_t *za, int idx, void *p)
 {
-    assert(za != NULL);
-    assert(p != NULL);
-    assert(idx >= 0);
-    assert(idx < za->size);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(p != NULL);
+    AT_ASSERT(idx >= 0);
+    AT_ASSERT(idx < za->size);
 
     *((void**) p) = &za->data[idx*za->el_sz];
 }
 
 inline static void zarray_truncate(zarray_t *za, int sz)
 {
-   assert(za != NULL);
-   assert(sz <= za->size);
+   AT_ASSERT(za != NULL);
+   AT_ASSERT(sz <= za->size);
    za->size = sz;
 }
 
@@ -233,9 +235,9 @@ inline static void zarray_truncate(zarray_t *za, int sz)
  */
 static inline void zarray_remove_index(zarray_t *za, int idx, int shuffle)
 {
-    assert(za != NULL);
-    assert(idx >= 0);
-    assert(idx < za->size);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(idx >= 0);
+    AT_ASSERT(idx < za->size);
 
     if (shuffle) {
         if (idx < za->size-1)
@@ -272,8 +274,8 @@ static inline void zarray_remove_index(zarray_t *za, int idx, int shuffle)
 // the newly-open space; if false, the zarray is compacted.
 static inline int zarray_remove_value(zarray_t *za, const void *p, int shuffle)
 {
-    assert(za != NULL);
-    assert(p != NULL);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(p != NULL);
 
     for (int idx = 0; idx < za->size; idx++) {
         if (!memcmp(p, &za->data[idx*za->el_sz], za->el_sz)) {
@@ -295,10 +297,10 @@ static inline int zarray_remove_value(zarray_t *za, const void *p, int shuffle)
  */
 static inline void zarray_insert(zarray_t *za, int idx, const void *p)
 {
-    assert(za != NULL);
-    assert(p != NULL);
-    assert(idx >= 0);
-    assert(idx <= za->size);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(p != NULL);
+    AT_ASSERT(idx >= 0);
+    AT_ASSERT(idx <= za->size);
 
     zarray_ensure_capacity(za, za->size + 1);
     // size = 10, idx = 7. Should copy three entries (idx=7, idx=8, idx=9)
@@ -318,10 +320,10 @@ static inline void zarray_insert(zarray_t *za, int idx, const void *p)
  */
 static inline void zarray_set(zarray_t *za, int idx, const void *p, void *outp)
 {
-    assert(za != NULL);
-    assert(p != NULL);
-    assert(idx >= 0);
-    assert(idx < za->size);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(p != NULL);
+    AT_ASSERT(idx >= 0);
+    AT_ASSERT(idx < za->size);
 
     if (outp != NULL)
         memcpy(outp, &za->data[idx*za->el_sz], za->el_sz);
@@ -338,8 +340,8 @@ static inline void zarray_set(zarray_t *za, int idx, const void *p, void *outp)
  */
 static inline void zarray_map(zarray_t *za, void (*f)(void*))
 {
-    assert(za != NULL);
-    assert(f != NULL);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(f != NULL);
 
     for (int idx = 0; idx < za->size; idx++)
         f(&za->data[idx*za->el_sz]);
@@ -364,7 +366,7 @@ static inline void zarray_map(zarray_t *za, void (*f)(void*))
  */
 static inline void zarray_clear(zarray_t *za)
 {
-    assert(za != NULL);
+    AT_ASSERT(za != NULL);
     za->size = 0;
 }
 
@@ -376,8 +378,8 @@ static inline void zarray_clear(zarray_t *za)
  */
 static inline int zarray_contains(const zarray_t *za, const void *p)
 {
-    assert(za != NULL);
-    assert(p != NULL);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(p != NULL);
 
     for (int idx = 0; idx < za->size; idx++) {
         if (!memcmp(p, &za->data[idx*za->el_sz], za->el_sz)) {
@@ -405,8 +407,8 @@ static inline int zarray_contains(const zarray_t *za, const void *p)
  */
 static inline void zarray_sort(zarray_t *za, int (*compar)(const void*, const void*))
 {
-    assert(za != NULL);
-    assert(compar != NULL);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(compar != NULL);
     if (za->size == 0)
         return;
 
@@ -426,8 +428,8 @@ static inline void zarray_sort(zarray_t *za, int (*compar)(const void*, const vo
 // returns -1 if not in array. Remember p is a pointer to the item.
 static inline int zarray_index_of(const zarray_t *za, const void *p)
 {
-    assert(za != NULL);
-    assert(p != NULL);
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(p != NULL);
 
     for (int i = 0; i < za->size; i++) {
         if (!memcmp(p, &za->data[i*za->el_sz], za->el_sz))
@@ -445,7 +447,7 @@ static inline int zarray_index_of(const zarray_t *za, const void *p)
  **/
 static inline void zarray_add_all(zarray_t * dest, const zarray_t * source)
 {
-    assert(dest->el_sz == source->el_sz);
+    AT_ASSERT(dest->el_sz == source->el_sz);
 
     // Don't allocate on stack because el_sz could be larger than ~8 MB
     // stack size

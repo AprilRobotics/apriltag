@@ -3,17 +3,39 @@
 //
 #pragma once
 
-#if defined(AT_DIAG_ENABLE_ASSERT)
-#include <assert.h>
-#define AT_ASSERT(EXPR) assert(EXPR)
-#define AT_ASSERT_MSG(EXPR, FMT, ... ) if (!(EXPR)) { AT_ERROR_TEXT(FMT , ##__VA_ARGS__); assert(0); }
+//
+// Tracing will call specific methods to allow diagnostic visualization of various stages
+// of the detection algorithm.
+//
+#if defined(AT_DIAG_ENABLE_TRACING)
+    #define AT_TIMESTAMP(detector, name) timeprofile_stamp((detector)->tp, name)
+    #define AT_DIAGNOSTIC(detector, callback, ...) (detector)->callback(__VA_ARGS__)
 #else
-#define AT_ASSERT(EXPR)
-#define AT_ASSERT_MSG(EXPR, FMT, ...)
+    #define AT_TIMESTAMP(detector, name)
+    #define AT_DIAGNOSTIC(detector, callback, ...)
 #endif
 
+//
+// Enable asserts which can terminate the program when exceptional conditions are encountered
+//
+#if defined(AT_DIAG_ENABLE_ASSERT)
+    #include <assert.h>
+    #define AT_ASSERT(EXPR) assert(EXPR)
+    #define AT_ASSERT_MSG(EXPR, FMT, ... ) if (!(EXPR)) { AT_ERROR_TEXT(FMT , ##__VA_ARGS__); assert(0); }
+#else
+    #define AT_ASSERT(EXPR)
+    #define AT_ASSERT_MSG(EXPR, FMT, ...)
+#endif // defined(AT_DIAG_ENABLE_ASSERT)
+
+//
+// Panic is a specific form of exit to maintain compatibility with previous exit conditions.
+//   i.e.: functions like an assert but exits with a -1 exit code
+//
 #define AT_PANIC(FMT, ...) do { AT_ERROR_TEXT(FMT , ##__VA_ARGS__); exit(-1); } while(0);
 
+//
+// Textural line ending
+//
 #define AT_LINE_END "\n"
 
 //
@@ -42,17 +64,3 @@
     #define AT_ERROR_TEXT(FMT, ...)
     #define AT_WARN_TEXT(FMT, ...)
 #endif
-
-#ifdef USE_TRACE_DETECTOR
-#define AT_TRACE_IMAGE(td, img)
-#define AT_TRACE_LINES(td, gd_line)
-#endif
-
-//
-// All code debug options:
-//
-
-// Drop the gaussian blurring kernel to STDOUT
-// #define AT_DEBUG_GAUSSIAN
-
-

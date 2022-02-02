@@ -37,6 +37,7 @@ option(AT_DIAG_ENABLE_TEXT "Enable textural diagnostics to stderr" ON)
 option(AT_DIAG_ENABLE_DEBUG "Enable debug level diagnostics (chatty)" OFF)
 option(AT_DIAG_ENABLE_IMAGE "Enable detector image diagnostics" ON)
 option(AT_DIAG_ENABLE_ASSERT "Enable asserts" ON)
+option(AT_DIAG_ENABLE_TRACING "Enable tracing of the detector algorithm" ON)
 
 # Developer debug flags
 option(AT_DEBUG_GAUSSIAN "Debug the gaussian blur kernel" OFF)
@@ -81,6 +82,9 @@ if (AT_DIAG_ENABLE_ASSERT)
 endif()
 if (AT_DIAG_ENABLE_IMAGE)
     target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_IMAGE=1)
+endif()
+if (AT_DIAG_ENABLE_TRACING)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_TRACING=1)
 endif()
 # debug
 if (AT_DEBUG_GAUSSIAN)
