@@ -179,25 +179,32 @@ struct apriltag_diagnostic
     // Display the image after it has been pre-processed (blur/sharpen)
     void (*preprocess)(const struct image_u8 *);
 
-    // quad-finding
-    void (*quads)(const struct image_u8 *orig, const struct zarray *quads);
-
-    // point searching post quads
-    void (*samples)(const struct image_u8 *);
-
+    // Image after threshold during quad finding (apriltag_quad_thres())
     void (*quads_threshold)(const struct image_u8 *);
 
+    // After connected_components() during quad building (apriltag_quad_thres())
     void (*segmentation)(struct unionfind *uf, int w, int h, uint32_t min_cluster_pixels);
 
+    // After gradient_clusters() during quad building (apriltag_quad_thres())
     void (*clusters)(const struct zarray *clusters, int w, int h);
 
+    // After fit_lines() during quad building (apriltag_quad_thres())
     void (*lines)(const image_u8_t *im_orig, const zarray_t *quads);
 
-    // graymodel fixup
+    // After apriltag_quad_thresh() and optionally decimate
+    void (*quads_raw)(const struct image_u8 *orig, const struct zarray *quads);
+
+    // Point sampling post quad_thresh
+    void (*samples)(const struct image_u8 *);
+
+    // After graymodel fixup/decode and refinement
     void (*quads_fixed)(const struct image_u8 *im_orig, const struct zarray *quads);
 
-    // detections complete
-    void (*complete)(const struct image_u8 *im_orig, const struct zarray *detections);
+    // Final quads after reconcile (sorting, de-duping)
+    void (*quads_final)(const struct image_u8 *im_orig, const struct zarray *quads);
+
+    // Detections before they are returned to the caller
+    void (*detections)(const struct image_u8 *im_orig, const struct zarray *detections);
 };
 
 // Represents a detector object. Upon creating a detector, all fields

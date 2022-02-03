@@ -1771,7 +1771,6 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
 {
     ////////////////////////////////////////////////////////
     // step 1. threshold the image, creating the edge image.
-
     int w = im->width, h = im->height;
 
     image_u8_t *threshim = threshold(td, im);
@@ -1782,22 +1781,20 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
     ////////////////////////////////////////////////////////
     // step 2. find connected components.
     unionfind_t* uf = connected_components(td, threshim, w, h, ts);
-    AT_TIMESTAMP(td, "unionfind");
     AT_TRACE(td, diag.segmentation, uf, w, h, td->qtp.min_cluster_pixels);
+    AT_TIMESTAMP(td, "unionfind");
 
     zarray_t* clusters = gradient_clusters(td, threshim, w, h, ts, uf);
-    AT_TIMESTAMP(td, "make clusters");
     AT_TRACE(td, diag.clusters, clusters, w, h);
+    AT_TIMESTAMP(td, "make clusters");
 
     image_u8_destroy(threshim);
 
     ////////////////////////////////////////////////////////
     // step 3. process each connected component.
-
     zarray_t* quads = fit_quads(td, w, h, clusters, im);
-
-    AT_TIMESTAMP(td, "fit quads to clusters");
     AT_TRACE(td, diag.lines, im, quads);
+    AT_TIMESTAMP(td, "fit quads to clusters");
 
     unionfind_destroy(uf);
 

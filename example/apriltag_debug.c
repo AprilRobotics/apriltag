@@ -5,14 +5,15 @@
 #include "apriltag.h"
 
 #include "common/image_u8.h"
-#include "image_u8x3.h"
-#include "image_u8x4.h"
-#include "postscript_utils.h"
 #include "common/zarray.h"
 #include "common/unionfind.h"
 
+#include "example/image_u8x3.h"
+#include "example/image_u8x4.h"
+#include "example/postscript_utils.h"
+#include "example/apriltag_debug.h"
 
-static void output_quads_ps(const image_u8_t *im_orig, const zarray_t *quads)
+void output_quads_ps(const image_u8_t *im_orig, const zarray_t *quads)
 {
     // deallocate
     FILE *f = fopen("debug_quads.ps", "w");
@@ -31,6 +32,7 @@ static void output_quads_ps(const image_u8_t *im_orig, const zarray_t *quads)
     postscript_image(f, darker);
 
     image_u8_destroy(darker);
+    srandom(0);
 
     for (int i = 0; i < zarray_size(quads); i++) {
         struct quad *q;
@@ -56,6 +58,12 @@ static void output_quads_ps(const image_u8_t *im_orig, const zarray_t *quads)
     fclose(f);
 }
 
+void output_detections_all(const image_u8_t *im_orig, const zarray_t *detections)
+{
+    output_detections_pnm(im_orig, detections);
+    output_detections_ps(im_orig, detections);
+}
+
 void output_detections_pnm(const image_u8_t *im_orig, const zarray_t *detections)
 {
     image_u8_t *darker = image_u8_copy(im_orig);
@@ -72,6 +80,7 @@ void output_detections_pnm(const image_u8_t *im_orig, const zarray_t *detections
     }
 
     image_u8_destroy(darker);
+    srandom(0);
 
     for (int i = 0; i < zarray_size(detections); i++) {
         apriltag_detection_t *det;
@@ -114,6 +123,7 @@ void output_detections_ps(const image_u8_t *im_orig, const zarray_t *detections)
 
     image_u8_destroy(darker);
 
+    srandom(0);
     for (int i = 0; i < zarray_size(detections); i++) {
         apriltag_detection_t *det;
         zarray_get(detections, i, &det);

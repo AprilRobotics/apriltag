@@ -1096,7 +1096,8 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 
     td->nquads = zarray_size(quads);
 
-    AT_TRACE(td, diag.quads, im_orig, quads);
+
+    AT_TRACE(td, diag.quads_raw, im_orig, quads);
     AT_TIMESTAMP(td, "quads");
 
     ////////////////////////////////////////////////////////////////
@@ -1209,7 +1210,8 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 
     AT_TIMESTAMP(td, "reconcile");
 
-    AT_TRACE(td, diag.complete, im_orig, detections);
+    AT_TRACE(td, diag.detections, im_orig, detections);
+    AT_TRACE(td, diag.quads_final, im_orig, quads);
     AT_TIMESTAMP(td, "debug output");
 
     for (int i = 0; i < zarray_size(quads); i++) {
