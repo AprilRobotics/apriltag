@@ -34,6 +34,10 @@ either expressed or implied, of the Regents of The University of Michigan.
 extern "C" {
 #endif
 
+// least common multiple of 64 (sandy bridge cache line) and 24 (stride
+// needed for RGB in 8-wide vector processing)
+#define DEFAULT_ALIGNMENT_U8 96
+
 typedef struct image_u8_lut image_u8_lut_t;
 struct image_u8_lut
 {
@@ -54,9 +58,6 @@ image_u8_t *image_u8_create_stride(unsigned int width, unsigned int height, unsi
 image_u8_t *image_u8_create(unsigned int width, unsigned int height);
 image_u8_t *image_u8_create_alignment(unsigned int width, unsigned int height, unsigned int alignment);
 image_u8_t *image_u8_create_from_f32(image_f32_t *fim);
-
-image_u8_t *image_u8_create_from_pnm(const char *path);
-    image_u8_t *image_u8_create_from_pnm_alignment(const char *path, int alignment);
 
 image_u8_t *image_u8_copy(const image_u8_t *in);
 void image_u8_draw_line(image_u8_t *im, float x0, float y0, float x1, float y1, int v, int width);

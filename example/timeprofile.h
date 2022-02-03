@@ -36,11 +36,11 @@ extern "C" {
 #include <stdint.h>
 
 #include "time_util.h"
-#include "zarray.h"
+#include "common/zarray.h"
 
 struct timeprofile_entry
 {
-    char name[32];
+    const char *name; // static memory
     int64_t utime;
 };
 
@@ -50,6 +50,13 @@ struct timeprofile
     int64_t utime;
     zarray_t *stamps;
 };
+
+static inline int64_t utime_now() // blacklist-ignore
+{
+    struct timeval tv;
+    gettimeofday (&tv, NULL); // blacklist-ignore
+    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
+}
 
 static inline timeprofile_t *timeprofile_create()
 {
@@ -77,8 +84,7 @@ static inline void timeprofile_stamp(timeprofile_t *tp, const char *name)
 {
     struct timeprofile_entry tpe;
 
-    strncpy(tpe.name, name, sizeof(tpe.name));
-    tpe.name[sizeof(tpe.name)-1] = 0;
+    tpe.name = name;
     tpe.utime = utime_now();
 
     zarray_add(tp->stamps, &tpe);

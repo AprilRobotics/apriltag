@@ -27,8 +27,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #pragma once
 
-#include "image_u8.h"
-#include "image_u8x3.h"
+#include "common/image_u8.h"
+#include "example/image_u8x3.h"
 
 #ifdef __cplusplus
 extern "C" {

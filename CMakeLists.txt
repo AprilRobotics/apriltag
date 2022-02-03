@@ -32,24 +32,33 @@ endif()
 # Set a default build type if none was specified
 set(default_build_type "Release")
 
+#
 # Diagnostic options
+#
 option(AT_DIAG_ENABLE_TEXT "Enable textural diagnostics to stderr" ON)
 option(AT_DIAG_ENABLE_DEBUG "Enable debug level diagnostics (chatty)" OFF)
-option(AT_DIAG_ENABLE_IMAGE "Enable detector image diagnostics" ON)
 option(AT_DIAG_ENABLE_ASSERT "Enable asserts" ON)
 option(AT_DIAG_ENABLE_TRACING "Enable tracing of the detector algorithm" ON)
+option(AT_DIAG_ENABLE_TIMESTAMPS "Enable profiling of the detector through timestamps" ON)
 
+#
 # Developer debug flags
+#
 option(AT_DEBUG_GAUSSIAN "Debug the gaussian blur kernel" OFF)
 
+#
 # Developer test flags (experimental features)
+#
 option(AT_TEST_THRESHOLD_DEGLITCH "Enable threshold deglitching for noisy images" OFF)
-
-# Textual diagnostic options
-cmake_dependent_option(AT_DIAG_TEXT_STDERR "Enable text diagnostic through stderr" ON AT_DIAG_ENABLE_TEXT OFF)
 
 option(AT_HOMOGRAPHY_METHOD_INVERSE "Use inverse method" ON)
 cmake_dependent_option(AT_HOMOGRAPHY_METHOD_CHO_OR_PLU "Use CHO matrix solver" OFF AT_HOMOGRAPHY_METHOD_INVERSE CHO)
+
+#
+# Textual diagnostic options
+#
+cmake_dependent_option(AT_DIAG_TEXT_STDERR "Enable text diagnostic through stderr" ON AT_DIAG_ENABLE_TEXT OFF)
+
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
@@ -58,43 +67,54 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-aux_source_directory(common COMMON_SRC)
-set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
-
-# Library
-file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
-add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
-
 #
 # Set the diagnostic compilation options
 #
-if (AT_DIAG_ENABLE_TEXT)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_TEXT=1)
-endif ()
-if (AT_DIAG_ENABLE_DEBUG)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_DEBUG=1)
-endif()
-if (AT_DIAG_TEXT_STDERR)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_TEXT_STDERR=1)
-endif()
-if (AT_DIAG_ENABLE_ASSERT)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_ASSERT=1)
-endif()
-if (AT_DIAG_ENABLE_IMAGE)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_IMAGE=1)
-endif()
-if (AT_DIAG_ENABLE_TRACING)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DIAG_ENABLE_TRACING=1)
-endif()
-# debug
-if (AT_DEBUG_GAUSSIAN)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_DEBUG_GAUSSIAN=1)
-endif()
-# experiments
-if (AT_TEST_THRESHOLD_DEGLITCH)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE AT_TEST_THRESHOLD_DEGLITCH=1)
-endif()
+macro (diag_compile_definitions project)
+    if (AT_DIAG_ENABLE_TEXT)
+        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_TEXT=1)
+    endif ()
+    if (AT_DIAG_ENABLE_DEBUG)
+        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_DEBUG=1)
+    endif()
+    if (AT_DIAG_TEXT_STDERR)
+        target_compile_definitions(${project} PRIVATE AT_DIAG_TEXT_STDERR=1)
+    endif()
+    if (AT_DIAG_ENABLE_ASSERT)
+        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_ASSERT=1)
+    endif()
+    if (AT_DIAG_ENABLE_TRACING)
+        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_TRACING=1)
+    endif()
+    if (AT_DIAG_ENABLE_TIMESTAMPS)
+        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_TIMESTAMPS=1)
+    endif()
+    # debug
+    if (AT_DEBUG_GAUSSIAN)
+        target_compile_definitions(${project} PRIVATE AT_DEBUG_GAUSSIAN=1)
+    endif()
+    # experiments
+    if (AT_TEST_THRESHOLD_DEGLITCH)
+        target_compile_definitions(${project} PRIVATE AT_TEST_THRESHOLD_DEGLITCH=1)
+    endif()
+endmacro()
 
+#
+# Library sources
+#
+aux_source_directory(common COMMON_SRC)
+set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
+
+#
+# Build library
+#
+file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
+add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+diag_compile_definitions(${PROJECT_NAME})
+
+#
+# Link the platform threads library
+#
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC
     # winmm is necessary for __imp_timeGetTime
@@ -105,9 +125,15 @@ else()
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads m)
 endif()
 
+#
+# Setup the shared library options
+#
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
+#
+# Configure installation directory
+#
 include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
@@ -115,13 +141,16 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
 
 
-# install header file hierarchy
+# Install header file hierarchy
 file(GLOB HEADER_FILES RELATIVE ${PROJECT_SOURCE_DIR} *.h common/*.h)
-list(REMOVE_ITEM HEADER_FILES apriltag_detect.docstring.h apriltag_py_type.docstring.h)
+list(REMOVE_ITEM HEADER_FILES
+        apriltag_detect.docstring.h
+        apriltag_py_type.docstring.h)
 
 foreach(HEADER ${HEADER_FILES})
     string(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
-    install(FILES ${HEADER} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${DIR})
+    install(FILES ${HEADER} DESTINATION
+            ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${DIR})
 endforeach()
 
 # export library
@@ -131,7 +160,7 @@ set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
 set(targets_export_name "${PROJECT_NAME}Targets")
 set(config_install_dir "share/${PROJECT_NAME}/cmake")
 
-# Include module with fuction 'write_basic_package_version_file'
+# Include module with function 'write_basic_package_version_file'
 include(CMakePackageConfigHelpers)
 
 # Configure '<PROJECT-NAME>Config.cmake'
@@ -152,8 +181,7 @@ write_basic_package_version_file("${version_config}" COMPATIBILITY SameMajorVers
 # install library
 install(TARGETS ${PROJECT_NAME} EXPORT ${targets_export_name}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        )
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 install(EXPORT ${targets_export_name}
     NAMESPACE apriltag::
@@ -211,18 +239,37 @@ string(STRIP ${PY_DEST} PY_DEST)
 install(FILES ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} DESTINATION ${PY_DEST})
 endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
 
+#
+# Example support library
+#
+set(EXAMPLE_SUPPORT_SOURCE
+        example/apriltag_debug.c
+        example/getopt.c
+        example/image_u8x3.c
+        example/image_u8x4.c
+        example/pam.c
+        example/pjpeg.c
+        example/pjpeg-idct.c
+        example/pnm.c
+        example/time_util.c)
+add_library(at_example_support STATIC ${EXAMPLE_SUPPORT_SOURCE})
+target_include_directories(at_example_support
+        PRIVATE . ./common)
+diag_compile_definitions(at_example_support)
 
 # Examples
 # apriltag_demo
 add_executable(apriltag_demo example/apriltag_demo.c)
-target_link_libraries(apriltag_demo apriltag)
+target_link_libraries(apriltag_demo apriltag at_example_support)
+diag_compile_definitions(apriltag_demo)
 
 # opencv_demo
 find_package(OpenCV COMPONENTS core imgproc videoio highgui QUIET)
 if(OpenCV_FOUND)
     add_executable(opencv_demo example/opencv_demo.cc)
-    target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
+    target_link_libraries(opencv_demo apriltag at_example_support ${OpenCV_LIBRARIES})
     set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
+    diag_compile_definitions(opencv_demo)
     install(TARGETS opencv_demo RUNTIME DESTINATION bin)
 else()
     message(WARNING "OpenCV not found: Not building demo")

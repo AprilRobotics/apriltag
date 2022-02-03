@@ -27,8 +27,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #pragma once
 
-#include "zarray.h"
-#include "string_util.h"
+#include "common/zarray.h"
+#include "common/string_util.h"
 
 #ifdef __cplusplus
 extern "C" {

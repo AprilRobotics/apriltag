@@ -29,9 +29,9 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/pam.h"
-#include "common/pnm.h"
-#include "common/image_u8x4.h"
+#include "pam.h"
+#include "pnm.h"
+#include "image_u8x4.h"
 #include "common/diagnostic.h"
 
 // least common multiple of 64 (sandy bridge cache line) and 64 (stride needed

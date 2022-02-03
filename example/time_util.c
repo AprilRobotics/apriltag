@@ -28,6 +28,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdlib.h>
 #include <math.h>
 #include "time_util.h"
+#include "timeprofile.h"
 
 struct timeutil_rest
 {
@@ -44,13 +45,6 @@ timeutil_rest_t *timeutil_rest_create()
 void timeutil_rest_destroy(timeutil_rest_t *rest)
 {
     free(rest);
-}
-
-int64_t utime_now() // blacklist-ignore
-{
-    struct timeval tv;
-    gettimeofday (&tv, NULL); // blacklist-ignore
-    return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 int64_t utime_get_seconds(int64_t v)

@@ -214,11 +214,10 @@ static inline void zarray_get(const zarray_t *za, int idx, void *p)
 inline static void zarray_get_volatile(const zarray_t *za, int idx, void *p)
 {
     AT_ASSERT(za != NULL);
-    AT_ASSERT(p != NULL);
     AT_ASSERT(idx >= 0);
     AT_ASSERT(idx < za->size);
 
-    *((void**) p) = &za->data[idx*za->el_sz];
+    *((void**) p) = &(za->data[idx*za->el_sz]);
 }
 
 inline static void zarray_truncate(zarray_t *za, int sz)

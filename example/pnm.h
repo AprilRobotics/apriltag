@@ -27,54 +27,34 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #pragma once
 
-#include <stdbool.h>
 #include <stdint.h>
-#ifdef _WIN32
-#include <windows.h>
-typedef long long suseconds_t;
-#endif
-#ifdef _MSC_VER
-
-inline int gettimeofday(struct timeval* tp, void* tzp)
-{
-  unsigned long t;
-  t = timeGetTime();
-  tp->tv_sec = t / 1000;
-  tp->tv_usec = t % 1000;
-  return 0;
-}
-#else
-#include <sys/time.h>
-#include <unistd.h>
-#endif
-#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct timeutil_rest timeutil_rest_t;
-timeutil_rest_t *timeutil_rest_create();
-void timeutil_rest_destroy(timeutil_rest_t * rest);
+#define PNM_FORMAT_BINARY 4
+#define PNM_FORMAT_GRAY 5
+#define PNM_FORMAT_RGB  6
 
-int64_t utime_now(); // blacklist-ignore
-int64_t utime_get_seconds(int64_t v);
-int64_t utime_get_useconds(int64_t v);
-void    utime_to_timeval(int64_t v, struct timeval *tv);
-void    utime_to_timespec(int64_t v, struct timespec *ts);
+// supports ppm, pnm, pgm
 
-int32_t  timeutil_usleep(int64_t useconds);
-uint32_t timeutil_sleep(unsigned int seconds);
-int32_t  timeutil_sleep_hz(timeutil_rest_t *rest, double hz);
+typedef struct pnm pnm_t;
+struct pnm
+{
+    int width, height;
+    int format;
+    int max; // 1 = binary, 255 = one byte, 65535 = two bytes
 
-void timeutil_timer_reset(timeutil_rest_t *rest);
-void timeutil_timer_start(timeutil_rest_t *rest);
-void timeutil_timer_stop(timeutil_rest_t *rest);
-bool timeutil_timer_timeout(timeutil_rest_t *rest, double timeout_s);
+    uint32_t buflen;
+    uint8_t *buf; // if max=65535, in big endian
+};
 
-int64_t time_util_hhmmss_ss_to_utime(double time);
+pnm_t *pnm_create_from_file(const char *path);
+void pnm_destroy(pnm_t *pnm);
 
-int64_t timeutil_ms_to_us(int32_t ms);
+struct image_u8 *image_u8_create_from_pnm(const char *path);
+struct image_u8 *image_u8_create_from_pnm_alignment(const char *path, int alignment);
 
 #ifdef __cplusplus
 }

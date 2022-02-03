@@ -40,7 +40,7 @@ extern "C" {
 #include "tagCustom48h12.h"
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
-#include "common/getopt.h"
+#include "getopt.h"
 }
 
 using namespace std;
@@ -52,7 +52,6 @@ int main(int argc, char *argv[])
     getopt_t *getopt = getopt_create();
 
     getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
-    getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
     getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
     getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
     getopt_add_int(getopt, 't', "threads", "1", "Use this many CPU threads");
@@ -120,7 +119,6 @@ int main(int argc, char *argv[])
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");
-    td->debug = getopt_get_bool(getopt, "debug");
     td->refine_edges = getopt_get_bool(getopt, "refine-edges");
 
     float frame_counter = 0.0f;

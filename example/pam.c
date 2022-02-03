@@ -29,7 +29,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <string.h>
 #include <stdlib.h>
 
-#include "common/pam.h"
+#include "pam.h"
 #include "common/diagnostic.h"
 
 pam_t *pam_create_from_file(const char *inpath)

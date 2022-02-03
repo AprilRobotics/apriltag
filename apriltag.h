@@ -37,7 +37,8 @@ extern "C" {
 #include "common/image_u8.h"
 #include "common/zarray.h"
 #include "common/workerpool.h"
-#include "common/timeprofile.h"
+#include "example/timeprofile.h"
+#include "common/unionfind.h"
 #include <pthread.h>
 
 #define APRILTAG_TASKS_PER_THREAD_TARGET 10
@@ -122,27 +123,81 @@ struct apriltag_quad_thresh_params
 #endif
 };
 
+
+// Represents the detection of a tag. These are returned to the user
+// and must be individually destroyed by the user.
+typedef struct apriltag_detection apriltag_detection_t;
+struct apriltag_detection
+{
+    // a pointer for convenience. not freed by apriltag_detection_destroy.
+    apriltag_family_t *family;
+
+    // The decoded ID of the tag
+    int id;
+
+    // How many error bits were corrected? Note: accepting large numbers of
+    // corrected errors leads to greatly increased false positive rates.
+    // NOTE: As of this implementation, the detector cannot detect tags with
+    // a hamming distance greater than 2.
+    int hamming;
+
+    // A measure of the quality of the binary decoding process: the
+    // average difference between the intensity of a data bit versus
+    // the decision threshold. Higher numbers roughly indicate better
+    // decodes. This is a reasonable measure of detection accuracy
+    // only for very small tags-- not effective for larger tags (where
+    // we could have sampled anywhere within a bit cell and still
+    // gotten a good detection.)
+    float decision_margin;
+
+    // The 3x3 homography matrix describing the projection from an
+    // "ideal" tag (with corners at (-1,1), (1,1), (1,-1), and (-1,
+    // -1)) to pixels in the image. This matrix will be freed by
+    // apriltag_detection_destroy.
+    matd_t *H;
+
+    // The center of the detection in image pixel coordinates.
+    double c[2];
+
+    // The corners of the tag in image pixel coordinates. These always
+    // wrap counter-clock wise around the tag.
+    double p[4][2];
+};
+
+//
+//
 // Represents the debug parameter callbacks for the detector
+//
+// Requires AT_DIAG_ENABLE_TRACING
+//
 typedef struct apriltag_diagnostic apriltag_diagnostic_t;
 struct apriltag_diagnostic
 {
-    // issue timer call
-    void (*timer)(const char *name);
+    // Record a specific timestamp of the multi-pass algorithm
+    void (*timestamp)(timeprofile_t *tp, const char *name);
 
-    // pre-process
-    void (*preprocess)(const struct image_u8_t *);
+    // Display the image after it has been pre-processed (blur/sharpen)
+    void (*preprocess)(const struct image_u8 *);
 
     // quad-finding
-    void (*quads)(const struct quad *quads, uint32_t count);
+    void (*quads)(const struct image_u8 *orig, const struct zarray *quads);
 
     // point searching post quads
-    void (*samples)(const struct image_u8_t *);
+    void (*samples)(const struct image_u8 *);
+
+    void (*quads_threshold)(const struct image_u8 *);
+
+    void (*segmentation)(struct unionfind *uf, int w, int h, uint32_t min_cluster_pixels);
+
+    void (*clusters)(const struct zarray *clusters, int w, int h);
+
+    void (*lines)(const image_u8_t *im_orig, const zarray_t *quads);
 
     // graymodel fixup
-    void (*quads_fixed)(const struct quad *quads, uint32_t count);
+    void (*quads_fixed)(const struct image_u8 *im_orig, const struct zarray *quads);
 
     // detections complete
-    void (*complete)(const apriltag_detection_t *detections, uint32_t count);
+    void (*complete)(const struct image_u8 *im_orig, const struct zarray *detections);
 };
 
 // Represents a detector object. Upon creating a detector, all fields
@@ -215,45 +270,6 @@ struct apriltag_detector
     pthread_mutex_t mutex;
 };
 
-// Represents the detection of a tag. These are returned to the user
-// and must be individually destroyed by the user.
-typedef struct apriltag_detection apriltag_detection_t;
-struct apriltag_detection
-{
-    // a pointer for convenience. not freed by apriltag_detection_destroy.
-    apriltag_family_t *family;
-
-    // The decoded ID of the tag
-    int id;
-
-    // How many error bits were corrected? Note: accepting large numbers of
-    // corrected errors leads to greatly increased false positive rates.
-    // NOTE: As of this implementation, the detector cannot detect tags with
-    // a hamming distance greater than 2.
-    int hamming;
-
-    // A measure of the quality of the binary decoding process: the
-    // average difference between the intensity of a data bit versus
-    // the decision threshold. Higher numbers roughly indicate better
-    // decodes. This is a reasonable measure of detection accuracy
-    // only for very small tags-- not effective for larger tags (where
-    // we could have sampled anywhere within a bit cell and still
-    // gotten a good detection.)
-    float decision_margin;
-
-    // The 3x3 homography matrix describing the projection from an
-    // "ideal" tag (with corners at (-1,1), (1,1), (1,-1), and (-1,
-    // -1)) to pixels in the image. This matrix will be freed by
-    // apriltag_detection_destroy.
-    matd_t *H;
-
-    // The center of the detection in image pixel coordinates.
-    double c[2];
-
-    // The corners of the tag in image pixel coordinates. These always
-    // wrap counter-clock wise around the tag.
-    double p[4][2];
-};
 
 // don't forget to add a family!
 apriltag_detector_t *apriltag_detector_create();

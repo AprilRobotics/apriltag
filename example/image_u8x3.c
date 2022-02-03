@@ -30,7 +30,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <string.h>
 #include <math.h>
 
-#include "math_util.h"
+#include "common/math_util.h"
 #include "pnm.h"
 
 #include "image_u8x3.h"

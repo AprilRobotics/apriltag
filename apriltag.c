@@ -36,23 +36,18 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include <inttypes.h>
 
 #include "common/image_u8.h"
-#include "common/image_u8x3.h"
-#include "common/zhash.h"
+#include "example/image_u8x3.h"
 #include "common/zarray.h"
 #include "common/matd.h"
 #include "common/homography.h"
-#include "common/timeprofile.h"
+#include "example/timeprofile.h"
 #include "common/math_util.h"
 #include "common/g2d.h"
-#include "common/floats.h"
 #include "common/diagnostic.h"
 
 #include "apriltag_math.h"
-
-#include "common/postscript_utils.h"
 
 #ifndef M_PI
 # define M_PI 3.141592653589793238462643383279502884196
@@ -374,7 +369,9 @@ apriltag_detector_t *apriltag_detector_create()
 
     pthread_mutex_init(&td->mutex, NULL);
 
+#if defined(AT_DIAG_ENABLE_TIMESTAMPS)
     td->tp = timeprofile_create();
+#endif
 
     td->refine_edges = 1;
     td->decode_sharpening = 0.25;
@@ -387,7 +384,10 @@ apriltag_detector_t *apriltag_detector_create()
 
 void apriltag_detector_destroy(apriltag_detector_t *td)
 {
+#if defined(AT_DIAG_ENABLE_TIMESTAMPS)
     timeprofile_destroy(td->tp);
+#endif
+
     workerpool_destroy(td->wp);
 
     apriltag_detector_clear_families(td);
@@ -1004,7 +1004,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         td->wp = workerpool_create(td->nthreads);
     }
 
-#if defined(AT_DIAG_ENABLE_TRACING)
+#if defined(AT_DIAG_ENABLE_TIMESTAMPS)
     timeprofile_clear(td->tp);
     timeprofile_stamp(td->tp, "init");
 #endif
@@ -1016,7 +1016,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
     if (td->quad_decimate > 1) {
         quad_im = image_u8_decimate(im_orig, td->quad_decimate);
 
-        timeprofile_stamp(td->tp, "decimate");
+        AT_TIMESTAMP(td, "decimate");
     }
 
     if (td->quad_sigma != 0) {
@@ -1064,8 +1064,8 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         }
     }
 
+    AT_TRACE(td, diag.preprocess, quad_im);
     AT_TIMESTAMP(td, "blur/sharp");
-    AT_DIAGNOSTIC(td, td->diag.preprocess, quad_im);
 
     zarray_t *quads = apriltag_quad_thresh(td, quad_im);
 
@@ -1088,15 +1088,16 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         }
     }
 
-    if (quad_im != im_orig)
+    if (quad_im != im_orig) {
         image_u8_destroy(quad_im);
+    }
 
     zarray_t *detections = zarray_create(sizeof(apriltag_detection_t*));
 
     td->nquads = zarray_size(quads);
 
+    AT_TRACE(td, diag.quads, im_orig, quads);
     AT_TIMESTAMP(td, "quads");
-    AT_DIAGNOSTIC(td, diag.quads, quads, zarray_size(quads));
 
     ////////////////////////////////////////////////////////////////
     // Step 2. Decode tags from each quad.
@@ -1127,14 +1128,12 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         free(tasks);
 
         if (im_samples != NULL) {
-            AT_DIAGNOSTIC(td, td->diag.samples, im_samples);
+            AT_TRACE(td, diag.samples, im_samples);
             image_u8_destroy(im_samples);
         }
     }
 
-
-    AT_DIAGNOSTIC(td, td->diag.quads_fixed, quads, zarray_size(quads));
-
+    AT_TRACE(td, diag.quads_fixed, im_orig, quads);
     AT_TIMESTAMP(td, "decode+refinement");
 
     ////////////////////////////////////////////////////////////////
@@ -1208,10 +1207,10 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         zarray_destroy(poly1);
     }
 
-    AT_TIMESTAMP(td->tp, "reconcile");
+    AT_TIMESTAMP(td, "reconcile");
 
-    AT_DIAGNOSTIC(td, diag.complete, detections, zarray_size(detections));
-    AT_TIMESTAMP("debug output");
+    AT_TRACE(td, diag.complete, im_orig, detections);
+    AT_TIMESTAMP(td, "debug output");
 
     for (int i = 0; i < zarray_size(quads); i++) {
         struct quad *quad;
@@ -1223,7 +1222,7 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
     zarray_destroy(quads);
 
     zarray_sort(detections, detection_compare_function);
-    timeprofile_stamp(td->tp, "cleanup");
+    AT_TIMESTAMP(td, "cleanup");
 
     return detections;
 }

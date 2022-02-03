@@ -30,10 +30,10 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdint.h>
 #include <string.h>
 
-#include "common/pjpeg.h"
+#include "pjpeg.h"
 
 #include "common/image_u8.h"
-#include "common/image_u8x3.h"
+#include "example/image_u8x3.h"
 #include "common/diagnostic.h"
 
 // https://www.w3.org/Graphics/JPEG/itu-t81.pdf

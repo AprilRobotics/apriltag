@@ -30,17 +30,13 @@ either expressed or implied, of the Regents of The University of Michigan.
 // fractional bit.
 #include <math.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdint.h>
 
 #include "apriltag.h"
-#include "common/image_u8x3.h"
 #include "common/zarray.h"
-#include "common/zhash.h"
 #include "common/unionfind.h"
-#include "common/timeprofile.h"
+#include "example/timeprofile.h"
 #include "common/zmaxheap.h"
-#include "common/postscript_utils.h"
 #include "common/math_util.h"
 #include "common/diagnostic.h"
 
@@ -67,14 +63,6 @@ struct uint64_zarray_entry
 # define M_PI 3.141592653589793238462643383279502884196
 #endif
 
-struct pt
-{
-    // Note: these represent 2*actual value.
-    uint16_t x, y;
-    int16_t gx, gy;
-
-    float slope;
-};
 
 struct unionfind_task
 {
@@ -1789,139 +1777,27 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
     image_u8_t *threshim = threshold(td, im);
     int ts = threshim->stride;
 
-    if (td->debug)
-        image_u8_write_pnm(threshim, "debug_threshold.pnm");
-
+    AT_TRACE(td, diag.quads_threshold, threshim);
 
     ////////////////////////////////////////////////////////
     // step 2. find connected components.
     unionfind_t* uf = connected_components(td, threshim, w, h, ts);
-
-    // make segmentation image.
-    if (td->debug) {
-        image_u8x3_t *d = image_u8x3_create(w, h);
-
-        uint32_t *colors = (uint32_t*) calloc(w*h, sizeof(*colors));
-
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                uint32_t v = unionfind_get_representative(uf, y*w+x);
-
-                if (unionfind_get_set_size(uf, v) < td->qtp.min_cluster_pixels)
-                    continue;
-
-                uint32_t color = colors[v];
-                uint8_t r = color >> 16,
-                    g = color >> 8,
-                    b = color;
-
-                if (color == 0) {
-                    const int bias = 50;
-                    r = bias + (random() % (200-bias));
-                    g = bias + (random() % (200-bias));
-                    b = bias + (random() % (200-bias));
-                    colors[v] = (r << 16) | (g << 8) | b;
-                }
-
-                d->buf[y*d->stride + 3*x + 0] = r;
-                d->buf[y*d->stride + 3*x + 1] = g;
-                d->buf[y*d->stride + 3*x + 2] = b;
-            }
-        }
-
-        free(colors);
-
-        image_u8x3_write_pnm(d, "debug_segmentation.pnm");
-        image_u8x3_destroy(d);
-    }
-
-
-    timeprofile_stamp(td->tp, "unionfind");
+    AT_TIMESTAMP(td, "unionfind");
+    AT_TRACE(td, diag.segmentation, uf, w, h, td->qtp.min_cluster_pixels);
 
     zarray_t* clusters = gradient_clusters(td, threshim, w, h, ts, uf);
-
-    if (td->debug) {
-        image_u8x3_t *d = image_u8x3_create(w, h);
-
-        for (int i = 0; i < zarray_size(clusters); i++) {
-            zarray_t *cluster;
-            zarray_get(clusters, i, &cluster);
-
-            uint32_t r, g, b;
-
-            if (1) {
-                const int bias = 50;
-                r = bias + (random() % (200-bias));
-                g = bias + (random() % (200-bias));
-                b = bias + (random() % (200-bias));
-            }
-
-            for (int j = 0; j < zarray_size(cluster); j++) {
-                struct pt *p;
-                zarray_get_volatile(cluster, j, &p);
-
-                int x = p->x / 2;
-                int y = p->y / 2;
-                d->buf[y*d->stride + 3*x + 0] = r;
-                d->buf[y*d->stride + 3*x + 1] = g;
-                d->buf[y*d->stride + 3*x + 2] = b;
-            }
-        }
-
-        image_u8x3_write_pnm(d, "debug_clusters.pnm");
-        image_u8x3_destroy(d);
-    }
-
+    AT_TIMESTAMP(td, "make clusters");
+    AT_TRACE(td, diag.clusters, clusters, w, h);
 
     image_u8_destroy(threshim);
-    timeprofile_stamp(td->tp, "make clusters");
 
     ////////////////////////////////////////////////////////
     // step 3. process each connected component.
 
     zarray_t* quads = fit_quads(td, w, h, clusters, im);
 
-    if (td->debug) {
-        FILE *f = fopen("debug_lines.ps", "w");
-        fprintf(f, "%%!PS\n\n");
-
-        image_u8_t *im2 = image_u8_copy(im);
-        image_u8_darken(im2);
-        image_u8_darken(im2);
-
-        // assume letter, which is 612x792 points.
-        double scale = fmin(612.0/im->width, 792.0/im2->height);
-        fprintf(f, "%.15f %.15f scale\n", scale, scale);
-        fprintf(f, "0 %d translate\n", im2->height);
-        fprintf(f, "1 -1 scale\n");
-
-        postscript_image(f, im2);
-
-        image_u8_destroy(im2);
-
-        for (int i = 0; i < zarray_size(quads); i++) {
-            struct quad *q;
-            zarray_get_volatile(quads, i, &q);
-
-            float rgb[3];
-            int bias = 100;
-
-            for (int j = 0; j < 3; j++)
-                rgb[j] = bias + (random() % (255-bias));
-
-            fprintf(f, "%f %f %f setrgbcolor\n", rgb[0]/255.0f, rgb[1]/255.0f, rgb[2]/255.0f);
-            fprintf(f, "%.15f %.15f moveto %.15f %.15f lineto %.15f %.15f lineto %.15f %.15f lineto %.15f %.15f lineto stroke\n",
-                    q->p[0][0], q->p[0][1],
-                    q->p[1][0], q->p[1][1],
-                    q->p[2][0], q->p[2][1],
-                    q->p[3][0], q->p[3][1],
-                    q->p[0][0], q->p[0][1]);
-        }
-
-        fclose(f);
-    }
-
-    timeprofile_stamp(td->tp, "fit quads to clusters");
+    AT_TIMESTAMP(td, "fit quads to clusters");
+    AT_TRACE(td, diag.lines, im, quads);
 
     unionfind_destroy(uf);
 

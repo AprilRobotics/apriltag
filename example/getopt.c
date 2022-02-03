@@ -33,7 +33,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #include "common/zhash.h"
 #include "common/zarray.h"
-#include "common/getopt.h"
+#include "getopt.h"
 #include "common/math_util.h"
 #include "common/diagnostic.h"
 

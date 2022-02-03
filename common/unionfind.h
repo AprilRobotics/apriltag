@@ -32,6 +32,16 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 typedef struct unionfind unionfind_t;
 
+
+struct pt
+{
+    // Note: these represent 2*actual value.
+    uint16_t x, y;
+    int16_t gx, gy;
+
+    float slope;
+};
+
 struct unionfind
 {
     uint32_t maxid;

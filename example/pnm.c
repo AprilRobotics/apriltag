@@ -28,8 +28,10 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "common/pnm.h"
+#include "pnm.h"
+#include "common/image_u8.h"
 #include "common/diagnostic.h"
 
 pnm_t *pnm_create_from_file(const char *path)
@@ -152,4 +154,99 @@ void pnm_destroy(pnm_t *pnm)
 
     free(pnm->buf);
     free(pnm);
+}
+
+
+////////////////////////////////////////////////////////////
+// PNM file i/o
+image_u8_t *image_u8_create_from_pnm(const char *path)
+{
+    return image_u8_create_from_pnm_alignment(path, DEFAULT_ALIGNMENT_U8);
+}
+
+image_u8_t *image_u8_create_from_pnm_alignment(const char *path, int alignment)
+{
+    pnm_t *pnm = pnm_create_from_file(path);
+    if (pnm == NULL)
+        return NULL;
+
+    image_u8_t *im = NULL;
+
+    switch (pnm->format) {
+        case PNM_FORMAT_GRAY: {
+            im = image_u8_create_alignment(pnm->width, pnm->height, alignment);
+
+            if (pnm->max == 255) {
+                for (int y = 0; y < im->height; y++)
+                    memcpy(&im->buf[y*im->stride], &pnm->buf[y*im->width], im->width);
+            } else if (pnm->max == 65535) {
+                for (int y = 0; y < im->height; y++)
+                    for (int x = 0; x < im->width; x++)
+                        im->buf[y*im->stride + x] = pnm->buf[2*(y*im->width + x)];
+            } else {
+                AT_ASSERT_MSG(0, "invalid pnm->max");
+            }
+
+            break;
+        }
+
+        case PNM_FORMAT_RGB: {
+            im = image_u8_create_alignment(pnm->width, pnm->height, alignment);
+
+            if (pnm->max == 255) {
+                // Gray conversion for RGB is gray = (r + g + g + b)/4
+                for (int y = 0; y < im->height; y++) {
+                    for (int x = 0; x < im->width; x++) {
+                        uint8_t gray = (pnm->buf[y*im->width*3 + 3*x+0] +    // r
+                                        pnm->buf[y*im->width*3 + 3*x+1] +    // g
+                                        pnm->buf[y*im->width*3 + 3*x+1] +    // g
+                                        pnm->buf[y*im->width*3 + 3*x+2])     // b
+                                       / 4;
+
+                        im->buf[y*im->stride + x] = gray;
+                    }
+                }
+            } else if (pnm->max == 65535) {
+                for (int y = 0; y < im->height; y++) {
+                    for (int x = 0; x < im->width; x++) {
+                        int r = pnm->buf[6*(y*im->width + x) + 0];
+                        int g = pnm->buf[6*(y*im->width + x) + 2];
+                        int b = pnm->buf[6*(y*im->width + x) + 4];
+
+                        im->buf[y*im->stride + x] = (r + g + g + b) / 4;
+                    }
+                }
+            } else {
+                AT_ASSERT(0);
+            }
+
+            break;
+        }
+
+        case PNM_FORMAT_BINARY: {
+            im = image_u8_create_alignment(pnm->width, pnm->height, alignment);
+
+            // image is padded to be whole bytes on each row.
+
+            // how many bytes per row on the input?
+            int pbmstride = (im->width + 7) / 8;
+
+            for (int y = 0; y < im->height; y++) {
+                for (int x = 0; x < im->width; x++) {
+                    int byteidx = y * pbmstride + x / 8;
+                    int bitidx = 7 - (x & 7);
+
+                    // ack, black is one according to pbm docs!
+                    if ((pnm->buf[byteidx] >> bitidx) & 1)
+                        im->buf[y*im->stride + x] = 0;
+                    else
+                        im->buf[y*im->stride + x] = 255;
+                }
+            }
+            break;
+        }
+    }
+
+    pnm_destroy(pnm);
+    return im;
 }

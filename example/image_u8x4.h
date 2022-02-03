@@ -28,30 +28,37 @@ either expressed or implied, of the Regents of The University of Michigan.
 #pragma once
 
 #include <stdint.h>
+#include "common/image_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define PNM_FORMAT_BINARY 4
-#define PNM_FORMAT_GRAY 5
-#define PNM_FORMAT_RGB  6
 
-// supports ppm, pnm, pgm
+/////////////////////////////////////
+// IMPORTANT NOTE ON BYTE ORDER
+//
+// Format conversion routines will (unless otherwise specified) assume
+// R, G, B, A ordering of bytes.
+//
+/////////////////////////////////////
 
-typedef struct pnm pnm_t;
-struct pnm
-{
-    int width, height;
-    int format;
-    int max; // 1 = binary, 255 = one byte, 65535 = two bytes
+// Create or load an image. returns NULL on failure
+image_u8x4_t *image_u8x4_create(unsigned int width, unsigned int height);
+image_u8x4_t *image_u8x4_create_alignment(unsigned int width, unsigned int height, unsigned int alignment);
+image_u8x4_t *image_u8x4_create_from_pnm(const char *path);
 
-    uint32_t buflen;
-    uint8_t *buf; // if max=65535, in big endian
-};
+image_u8x4_t *image_u8x4_copy(const image_u8x4_t *in);
 
-pnm_t *pnm_create_from_file(const char *path);
-void pnm_destroy(pnm_t *pnm);
+void image_u8x4_destroy(image_u8x4_t *im);
+
+// Write a pnm. Return 0 on success.
+// Currently supports GRAY and RGB
+int image_u8x4_write_pnm(const image_u8x4_t *im, const char *path);
+
+image_u8x4_t *image_u8x4_create_from_pam(const char *path);
+
+    void image_u8x4_write_pam(const image_u8x4_t *im, const char *path);
 
 #ifdef __cplusplus
 }

@@ -8,11 +8,18 @@
 // of the detection algorithm.
 //
 #if defined(AT_DIAG_ENABLE_TRACING)
-    #define AT_TIMESTAMP(detector, name) timeprofile_stamp((detector)->tp, name)
-    #define AT_DIAGNOSTIC(detector, callback, ...) (detector)->callback(__VA_ARGS__)
+    #define AT_TRACE(detector, callback, ...) if ((detector)->callback) { (detector)->callback(__VA_ARGS__); }
+#else
+    #define AT_TRACE(detector, callback, ...)
+#endif
+
+//
+// Profiling the library with specific instrumented timestamps
+//
+#if defined(AT_DIAG_ENABLE_TIMESTAMPS)
+    #define AT_TIMESTAMP(detector, name) if ((detector)->diag.timestamp) { (detector)->diag.timestamp((detector)->tp, name); }
 #else
     #define AT_TIMESTAMP(detector, name)
-    #define AT_DIAGNOSTIC(detector, callback, ...)
 #endif
 
 //

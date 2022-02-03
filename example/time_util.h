@@ -27,38 +27,53 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
-#include "image_types.h"
+#ifdef _WIN32
+#include <windows.h>
+typedef long long suseconds_t;
+#endif
+#ifdef _MSC_VER
+
+inline int gettimeofday(struct timeval* tp, void* tzp)
+{
+  unsigned long t;
+  t = timeGetTime();
+  tp->tv_sec = t / 1000;
+  tp->tv_usec = t % 1000;
+  return 0;
+}
+#else
+#include <sys/time.h>
+#include <unistd.h>
+#endif
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct timeutil_rest timeutil_rest_t;
+timeutil_rest_t *timeutil_rest_create();
+void timeutil_rest_destroy(timeutil_rest_t * rest);
 
-/////////////////////////////////////
-// IMPORTANT NOTE ON BYTE ORDER
-//
-// Format conversion routines will (unless otherwise specified) assume
-// R, G, B, A ordering of bytes.
-//
-/////////////////////////////////////
+int64_t utime_get_seconds(int64_t v);
+int64_t utime_get_useconds(int64_t v);
+void    utime_to_timeval(int64_t v, struct timeval *tv);
+void    utime_to_timespec(int64_t v, struct timespec *ts);
 
-// Create or load an image. returns NULL on failure
-image_u8x4_t *image_u8x4_create(unsigned int width, unsigned int height);
-image_u8x4_t *image_u8x4_create_alignment(unsigned int width, unsigned int height, unsigned int alignment);
-image_u8x4_t *image_u8x4_create_from_pnm(const char *path);
+int32_t  timeutil_usleep(int64_t useconds);
+uint32_t timeutil_sleep(unsigned int seconds);
+int32_t  timeutil_sleep_hz(timeutil_rest_t *rest, double hz);
 
-image_u8x4_t *image_u8x4_copy(const image_u8x4_t *in);
+void timeutil_timer_reset(timeutil_rest_t *rest);
+void timeutil_timer_start(timeutil_rest_t *rest);
+void timeutil_timer_stop(timeutil_rest_t *rest);
+bool timeutil_timer_timeout(timeutil_rest_t *rest, double timeout_s);
 
-void image_u8x4_destroy(image_u8x4_t *im);
+int64_t time_util_hhmmss_ss_to_utime(double time);
 
-// Write a pnm. Return 0 on success.
-// Currently supports GRAY and RGB
-int image_u8x4_write_pnm(const image_u8x4_t *im, const char *path);
-
-image_u8x4_t *image_u8x4_create_from_pam(const char *path);
-
-    void image_u8x4_write_pam(const image_u8x4_t *im, const char *path);
+int64_t timeutil_ms_to_us(int32_t ms);
 
 #ifdef __cplusplus
 }

@@ -31,10 +31,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <ctype.h>
-#include <unistd.h>
 #include <math.h>
 
 #include "apriltag.h"
@@ -47,11 +43,15 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
 
-#include "common/getopt.h"
 #include "common/image_u8.h"
-#include "common/image_u8x4.h"
-#include "common/pjpeg.h"
 #include "common/zarray.h"
+
+#include "getopt.h"
+#include "image_u8x4.h"
+#include "pjpeg.h"
+#include "pnm.h"
+#include "apriltag_debug.h"
+#include "postscript_utils.h"
 
 // Invoke:
 //
@@ -105,14 +105,23 @@ int main(int argc, char *argv[])
 
     apriltag_detector_t *td = apriltag_detector_create();
     apriltag_detector_add_family_bits(td, tf, getopt_get_int(getopt, "hamming"));
-    td->quad_decimate = getopt_get_double(getopt, "decimate");
-    td->quad_sigma = getopt_get_double(getopt, "blur");
+    td->quad_decimate = (float)getopt_get_double(getopt, "decimate");
+    td->quad_sigma = (float)getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");
-    td->debug = getopt_get_bool(getopt, "debug");
     td->refine_edges = getopt_get_bool(getopt, "refine-edges");
 
-    int quiet = getopt_get_bool(getopt, "quiet");
+#if defined (AT_DIAG_ENABLE_TIMESTAMPS)
+    td->diag.timestamp = timeprofile_stamp;
+#endif
 
+    // Wire up the debug output routine
+#if defined (AT_DIAG_ENABLE_TRACING)
+    if (getopt_get_bool(getopt, "debug")) {
+        AT_SETUP_FILE_DIAG(td->diag);
+    }
+#endif
+
+    int quiet = getopt_get_bool(getopt, "quiet");
     int maxiters = getopt_get_int(getopt, "iters");
 
     const int hamm_hist_max = 10;
@@ -141,9 +150,9 @@ int main(int argc, char *argv[])
 
             image_u8_t *im = NULL;
             if (str_ends_with(path, "pnm") || str_ends_with(path, "PNM") ||
-                str_ends_with(path, "pgm") || str_ends_with(path, "PGM"))
+                str_ends_with(path, "pgm") || str_ends_with(path, "PGM")) {
                 im = image_u8_create_from_pnm(path);
-            else if (str_ends_with(path, "jpg") || str_ends_with(path, "JPG")) {
+            } else if (str_ends_with(path, "jpg") || str_ends_with(path, "JPG")) {
                 int err = 0;
                 pjpeg_t *pjpeg = pjpeg_create_from_file(path, 0, &err);
                 if (pjpeg == NULL) {
@@ -178,8 +187,7 @@ int main(int argc, char *argv[])
                         }
                     }
                     image_u8x3_destroy(imc);
-                    if (td->debug)
-                        image_u8_write_pnm(im, "debug_invariant.pnm");
+                    image_u8_write_pnm(im, "debug_invariant.pnm");
                 }
 
                 pjpeg_destroy(pjpeg);
@@ -198,9 +206,10 @@ int main(int argc, char *argv[])
                 apriltag_detection_t *det;
                 zarray_get(detections, i, &det);
 
-                if (!quiet)
+                if (!quiet) {
                     printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, margin %8.3f\n",
                            i, det->family->nbits, det->family->h, det->id, det->hamming, det->decision_margin);
+                }
 
                 hamm_hist[det->hamming]++;
                 total_hamm_hist[det->hamming]++;
@@ -208,37 +217,40 @@ int main(int argc, char *argv[])
 
             apriltag_detections_destroy(detections);
 
+#if defined (AT_DIAG_ENABLE_TIMESTAMPS)
             if (!quiet) {
                 timeprofile_display(td->tp);
             }
-
+#endif
             total_quads += td->nquads;
 
-            if (!quiet)
+            if (!quiet) {
                 printf("hamm ");
 
-            for (int i = 0; i < hamm_hist_max; i++)
-                printf("%5d ", hamm_hist[i]);
+                for (int i = 0; i < hamm_hist_max; i++)
+                    printf("%5d ", hamm_hist[i]);
 
-            double t =  timeprofile_total_utime(td->tp) / 1.0E3;
-            total_time += t;
-            printf("%12.3f ", t);
-            printf("%5d", td->nquads);
+#if defined(AT_DIAG_ENABLE_TIMESTAMPS)
+                double t = (double) timeprofile_total_utime(td->tp) / 1.0E3;
+                total_time += t;
+                printf("time %12.3f ", t);
+#endif
+                printf("quads %5d", td->nquads);
 
-            printf("\n");
+                printf("\n");
+            }
 
             image_u8_destroy(im);
         }
 
-
-        printf("Summary\n");
+        printf("==== All Iterations:\n");
 
         printf("hamm ");
 
         for (int i = 0; i < hamm_hist_max; i++)
             printf("%5d ", total_hamm_hist[i]);
-        printf("%12.3f ", total_time);
-        printf("%5d", total_quads);
+        printf("time %12.3f ", total_time);
+        printf("quads %5d", total_quads);
         printf("\n");
 
     }
