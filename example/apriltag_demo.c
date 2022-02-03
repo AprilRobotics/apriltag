@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 #if defined(AT_DIAG_ENABLE_TIMESTAMPS)
                 double t = (double) timeprofile_total_utime(td->tp) / 1.0E3;
                 total_time += t;
-                printf("time %12.3f ", t);
+                printf("time %12.3fms ", t);
 #endif
                 printf("quads %5d", td->nquads);
 
@@ -247,9 +247,10 @@ int main(int argc, char *argv[])
 
         printf("hamm ");
 
-        for (int i = 0; i < hamm_hist_max; i++)
+        for (int i = 0; i < hamm_hist_max; i++) {
             printf("%5d ", total_hamm_hist[i]);
-        printf("time %12.3f ", total_time);
+        }
+        printf("time %12.3fms ", total_time);
         printf("quads %5d", total_quads);
         printf("\n");
 
