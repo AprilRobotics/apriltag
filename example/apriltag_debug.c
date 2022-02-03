@@ -1,3 +1,5 @@
+#include "apriltag_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -9,7 +11,6 @@
 #include "common/unionfind.h"
 
 #include "example/image_u8x3.h"
-#include "example/image_u8x4.h"
 #include "example/postscript_utils.h"
 #include "example/apriltag_debug.h"
 

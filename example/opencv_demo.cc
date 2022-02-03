@@ -26,6 +26,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #include <iostream>
+#include <cstdlib>
 
 #include "opencv2/opencv.hpp"
 #include "opencv2/core/utility.hpp"
@@ -40,11 +41,83 @@ extern "C" {
 #include "tagCustom48h12.h"
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
-#include "getopt.h"
+
+#include "common/image_u8.h"
+#include "example/getopt.h"
+#include "example/image_u8x3.h"
 }
 
 using namespace std;
 using namespace cv;
+
+
+//
+// Capture routines based on diagnostic tracing routines
+//
+#if defined (AT_DIAG_ENABLE_TRACING)
+
+static image_u8_t *s_capture_preprocess = NULL;
+static image_u8_t *s_capture_threshold = NULL;
+static image_u8x3_t *s_capture_quads = NULL;
+
+static void capture_init() {
+}
+
+static void try_copy_image(image_u8_t **dest, const image_u8_t *src)
+{
+    if (!*dest) {
+        *dest = image_u8_copy(src);
+        return;
+    }
+
+    if (src->width != s_capture_preprocess->width || src->height != s_capture_preprocess->height) {
+        image_u8_destroy(s_capture_preprocess);
+        *dest = image_u8_copy(src);
+        return;
+    }
+
+    AT_ASSERT(src->stride == s_capture_preprocess->stride);
+
+    memcpy((*dest)->buf, src->buf, src->height * src->stride * sizeof(uint8_t));
+}
+
+extern "C" void capture_preprocess(const image_u8_t *src)
+{
+    try_copy_image(&s_capture_preprocess, src);
+}
+
+extern "C" void capture_quads_threshold(const image_u8_t *src)
+{
+    try_copy_image(&s_capture_threshold, src);
+}
+
+extern "C" void capture_quads_final(const image_u8_t *im_orig, const struct zarray *quads)
+{
+    srandom(0);
+
+    for (int i = 0; i < zarray_size(quads); i++) {
+        struct quad *q;
+        zarray_get_volatile(quads, i, &q);
+
+        float rgb[3];
+        int bias = 100;
+
+        for (int j = 0; j < 3; j++) {
+            rgb[j] = bias + (random() % (255-bias));
+        }
+
+//        fprintf(f, "%f %f %f setrgbcolor\n", rgb[0]/255.0f, rgb[1]/255.0f, rgb[2]/255.0f);
+//        fprintf(f, "%f %f moveto %f %f lineto %f %f lineto %f %f lineto %f %f lineto stroke\n",
+//                q->p[0][0], q->p[0][1],
+//                q->p[1][0], q->p[1][1],
+//                q->p[2][0], q->p[2][1],
+//                q->p[3][0], q->p[3][1],
+//                q->p[0][0], q->p[0][1]);
+    }
+}
+
+
+#endif
 
 
 int main(int argc, char *argv[])
@@ -121,6 +194,13 @@ int main(int argc, char *argv[])
     td->nthreads = getopt_get_int(getopt, "threads");
     td->refine_edges = getopt_get_bool(getopt, "refine-edges");
 
+
+#if defined (AT_DIAG_ENABLE_TRACING)
+    td->diag.preprocess = capture_preprocess;
+    td->diag.quads_threshold = capture_quads_threshold;
+    td->diag.quads_final = capture_quads_final;
+#endif
+
     float frame_counter = 0.0f;
     meter.stop();
     cout << "Detector " << famname << " initialized in " 
@@ -130,10 +210,16 @@ int main(int argc, char *argv[])
                     cap.get(CAP_PROP_FPS) << "FPS" << endl;
     meter.reset();
 
+#if defined(AT_DIAG_ENABLE_TRACING)
+    Mat compose;
+#endif
+
     Mat frame, gray;
+
     while (true) {
         meter.start();
         cap >> frame;
+
         cvtColor(frame, gray, COLOR_BGR2GRAY);
 
         // Make an image_u8_t header for the Mat data
@@ -176,9 +262,25 @@ int main(int argc, char *argv[])
         }
         apriltag_detections_destroy(detections);
 
+
+
+#if defined(AT_DIAG_ENABLE_TRACING)
+//        image_u8_t *right_hand = s_capture_preprocess;
+//        Mat rightHand();
+//        Mat *concat[2] = {&frame, &rightHand};
+//        hconcat(concat, 2, compose);
+
+        imshow("Tag Tracing", compose);
+#else
         imshow("Tag Detections", frame);
-        if (waitKey(30) >= 0)
+#endif
+
+
+        // replace with waitKey() if a delay is desired
+        if (pollKey() >= 0) {
             break;
+        }
+
         frame_counter++;
         if (frame_counter > 30) {
             cout << "FPS "

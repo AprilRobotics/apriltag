@@ -67,37 +67,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-#
-# Set the diagnostic compilation options
-#
-macro (diag_compile_definitions project)
-    if (AT_DIAG_ENABLE_TEXT)
-        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_TEXT=1)
-    endif ()
-    if (AT_DIAG_ENABLE_DEBUG)
-        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_DEBUG=1)
-    endif()
-    if (AT_DIAG_TEXT_STDERR)
-        target_compile_definitions(${project} PRIVATE AT_DIAG_TEXT_STDERR=1)
-    endif()
-    if (AT_DIAG_ENABLE_ASSERT)
-        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_ASSERT=1)
-    endif()
-    if (AT_DIAG_ENABLE_TRACING)
-        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_TRACING=1)
-    endif()
-    if (AT_DIAG_ENABLE_TIMESTAMPS)
-        target_compile_definitions(${project} PRIVATE AT_DIAG_ENABLE_TIMESTAMPS=1)
-    endif()
-    # debug
-    if (AT_DEBUG_GAUSSIAN)
-        target_compile_definitions(${project} PRIVATE AT_DEBUG_GAUSSIAN=1)
-    endif()
-    # experiments
-    if (AT_TEST_THRESHOLD_DEGLITCH)
-        target_compile_definitions(${project} PRIVATE AT_TEST_THRESHOLD_DEGLITCH=1)
-    endif()
-endmacro()
+configure_file (
+        "${PROJECT_SOURCE_DIR}/apriltag_config.h.in"
+        "${PROJECT_BINARY_DIR}/apriltag_config.h"
+)
 
 #
 # Library sources
@@ -110,7 +83,7 @@ set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 #
 file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
-diag_compile_definitions(${PROJECT_NAME})
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_BINARY_DIR})
 
 #
 # Link the platform threads library
@@ -254,22 +227,21 @@ set(EXAMPLE_SUPPORT_SOURCE
         example/time_util.c)
 add_library(at_example_support STATIC ${EXAMPLE_SUPPORT_SOURCE})
 target_include_directories(at_example_support
-        PRIVATE . ./common)
-diag_compile_definitions(at_example_support)
+        PRIVATE . ./common ${PROJECT_BINARY_DIR})
 
 # Examples
 # apriltag_demo
 add_executable(apriltag_demo example/apriltag_demo.c)
 target_link_libraries(apriltag_demo apriltag at_example_support)
-diag_compile_definitions(apriltag_demo)
+target_include_directories(apriltag_demo PRIVATE ${PROJECT_BINARY_DIR})
 
 # opencv_demo
 find_package(OpenCV COMPONENTS core imgproc videoio highgui QUIET)
 if(OpenCV_FOUND)
     add_executable(opencv_demo example/opencv_demo.cc)
     target_link_libraries(opencv_demo apriltag at_example_support ${OpenCV_LIBRARIES})
+    target_include_directories(apriltag_demo PRIVATE ${PROJECT_BINARY_DIR})
     set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
-    diag_compile_definitions(opencv_demo)
     install(TARGETS opencv_demo RUNTIME DESTINATION bin)
 else()
     message(WARNING "OpenCV not found: Not building demo")

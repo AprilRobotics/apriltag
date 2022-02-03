@@ -28,6 +28,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 // limitation: image size must be <32768 in width and height. This is
 // because we use a fixed-point 16 bit integer representation with one
 // fractional bit.
+#include "apriltag_config.h"
 #include <math.h>
 #include <string.h>
 #include <stdint.h>
