@@ -67,16 +67,17 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-configure_file (
-        "${PROJECT_SOURCE_DIR}/apriltag_config.h.in"
-        "${PROJECT_BINARY_DIR}/apriltag_config.h"
-)
+configure_file(
+        "${PROJECT_SOURCE_DIR}/apriltag_config.h.in" "${PROJECT_BINARY_DIR}/apriltag_config.h"
+        USE_SOURCE_PERMISSIONS)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 #
 # Library sources
 #
 aux_source_directory(common COMMON_SRC)
-set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
+set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c ${CMAKE_CURRENT_BINARY_DIR}/apriltag_config.h)
 
 #
 # Build library
@@ -224,7 +225,8 @@ set(EXAMPLE_SUPPORT_SOURCE
         example/pjpeg.c
         example/pjpeg-idct.c
         example/pnm.c
-        example/time_util.c)
+        example/time_util.c
+        ${CMAKE_CURRENT_BINARY_DIR}/apriltag_config.h)
 add_library(at_example_support STATIC ${EXAMPLE_SUPPORT_SOURCE})
 target_include_directories(at_example_support
         PRIVATE . ./common ${PROJECT_BINARY_DIR})
@@ -240,7 +242,7 @@ find_package(OpenCV COMPONENTS core imgproc videoio highgui QUIET)
 if(OpenCV_FOUND)
     add_executable(opencv_demo example/opencv_demo.cc)
     target_link_libraries(opencv_demo apriltag at_example_support ${OpenCV_LIBRARIES})
-    target_include_directories(apriltag_demo PRIVATE ${PROJECT_BINARY_DIR})
+    target_include_directories(opencv_demo PRIVATE ${PROJECT_BINARY_DIR})
     set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
     install(TARGETS opencv_demo RUNTIME DESTINATION bin)
 else()
