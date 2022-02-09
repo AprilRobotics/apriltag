@@ -1300,7 +1300,7 @@ image_u8_t *threshold(apriltag_detector_t *td, image_u8_t *im)
     }
 #endif
 
-    timeprofile_stamp(td->tp, "threshold");
+    AT_TIMESTAMP(td, "threshold");
 
     return threshim;
 }
@@ -1419,7 +1419,7 @@ image_u8_t *threshold_bayer(apriltag_detector_t *td, image_u8_t *im)
         free(im_max[i]);
     }
 
-    timeprofile_stamp(td->tp, "threshold");
+    AT_TIMESTAMP(td, "threshold");
 
     return threshim;
 }
