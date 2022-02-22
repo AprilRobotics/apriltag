@@ -25,12 +25,14 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
+#include "apriltag_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
-#include "zhash.h"
+#include "common/zhash.h"
+#include "common/diagnostic.h"
 
 // force a rehash when our capacity is less than this many times the size
 #define ZHASH_FACTOR_CRITICAL 2
@@ -58,8 +60,8 @@ zhash_t *zhash_create_capacity(size_t keysz, size_t valuesz,
                                uint32_t(*hash)(const void *a), int(*equals)(const void *a, const void*b),
                                int capacity)
 {
-    assert(hash != NULL);
-    assert(equals != NULL);
+    AT_ASSERT(hash != NULL);
+    AT_ASSERT(equals != NULL);
 
     // resize...
     int _nentries = ZHASH_FACTOR_REALLOC * capacity;
@@ -185,7 +187,7 @@ int zhash_put(zhash_t *zh, const void *key, const void *value, void *oldkey, voi
                 void *this_key = &zh->entries[idx * zh->entrysz + 1];
                 void *this_value = &zh->entries[idx * zh->entrysz + 1 + zh->keysz];
                 if (zhash_put(newhash, this_key, this_value, NULL, NULL))
-                    assert(0); // shouldn't already be present.
+                    AT_ASSERT(0); // shouldn't already be present.
             }
         }
 
@@ -231,7 +233,7 @@ int zhash_remove(zhash_t *zh, const void *key, void *old_key, void *old_value)
                     zh->size--;
                     // reinsert it
                     if (zhash_put(zh, &tmp[1], &tmp[1+zh->keysz], NULL, NULL))
-                        assert(0);
+                        AT_ASSERT(0);
                     free(tmp);
                 } else {
                     break;
@@ -257,7 +259,7 @@ zhash_t *zhash_copy(const zhash_t *zh)
             void *this_key = &zh->entries[entry_idx * zh->entrysz + 1];
             void *this_value = &zh->entries[entry_idx * zh->entrysz + 1 + zh->keysz];
             if (zhash_put(newhash, this_key, this_value, NULL, NULL))
-                assert(0); // shouldn't already be present.
+                AT_ASSERT(0); // shouldn't already be present.
         }
     }
 
@@ -327,7 +329,7 @@ int zhash_iterator_next(zhash_iterator_t *zit, void *outkey, void *outvalue)
 
 void zhash_iterator_remove(zhash_iterator_t *zit)
 {
-    assert(zit->zh); // can't call _remove on a iterator with const zhash
+    AT_ASSERT(zit->zh); // can't call _remove on a iterator with const zhash
     zhash_t *zh = zit->zh;
 
     zh->entries[zit->last_entry * zh->entrysz] = 0;
@@ -344,7 +346,7 @@ void zhash_iterator_remove(zhash_iterator_t *zit)
 
         // reinsert it
         if (zhash_put(zh, &tmp[1], &tmp[1+zh->keysz], NULL, NULL))
-            assert(0);
+            AT_ASSERT(0);
         free(tmp);
 
         entry_idx = (entry_idx + 1) & (zh->nentries - 1);
@@ -355,7 +357,7 @@ void zhash_iterator_remove(zhash_iterator_t *zit)
 
 void zhash_map_keys(zhash_t *zh, void (*f)())
 {
-    assert(zh != NULL);
+    AT_ASSERT(zh != NULL);
     if (f == NULL)
         return;
 
@@ -371,7 +373,7 @@ void zhash_map_keys(zhash_t *zh, void (*f)())
 
 void zhash_vmap_keys(zhash_t * zh, void (*f)())
 {
-    assert(zh != NULL);
+    AT_ASSERT(zh != NULL);
     if (f == NULL)
         return;
 
@@ -388,7 +390,7 @@ void zhash_vmap_keys(zhash_t * zh, void (*f)())
 
 void zhash_map_values(zhash_t * zh, void (*f)())
 {
-    assert(zh != NULL);
+    AT_ASSERT(zh != NULL);
     if (f == NULL)
         return;
 
@@ -403,7 +405,7 @@ void zhash_map_values(zhash_t * zh, void (*f)())
 
 void zhash_vmap_values(zhash_t * zh, void (*f)())
 {
-    assert(zh != NULL);
+    AT_ASSERT(zh != NULL);
     if (f == NULL)
         return;
 
@@ -419,7 +421,7 @@ void zhash_vmap_values(zhash_t * zh, void (*f)())
 
 zarray_t *zhash_keys(const zhash_t *zh)
 {
-    assert(zh != NULL);
+    AT_ASSERT(zh != NULL);
 
     zarray_t *za = zarray_create(zh->keysz);
 
@@ -436,7 +438,7 @@ zarray_t *zhash_keys(const zhash_t *zh)
 
 zarray_t *zhash_values(const zhash_t *zh)
 {
-    assert(zh != NULL);
+    AT_ASSERT(zh != NULL);
 
     zarray_t *za = zarray_create(zh->valuesz);
 
@@ -454,7 +456,7 @@ zarray_t *zhash_values(const zhash_t *zh)
 
 uint32_t zhash_uint32_hash(const void *_a)
 {
-    assert(_a != NULL);
+    AT_ASSERT(_a != NULL);
 
     uint32_t a = *((uint32_t*) _a);
     return a;
@@ -462,8 +464,8 @@ uint32_t zhash_uint32_hash(const void *_a)
 
 int zhash_uint32_equals(const void *_a, const void *_b)
 {
-    assert(_a != NULL);
-    assert(_b != NULL);
+    AT_ASSERT(_a != NULL);
+    AT_ASSERT(_b != NULL);
 
     uint32_t a = *((uint32_t*) _a);
     uint32_t b = *((uint32_t*) _b);
@@ -473,7 +475,7 @@ int zhash_uint32_equals(const void *_a, const void *_b)
 
 uint32_t zhash_uint64_hash(const void *_a)
 {
-    assert(_a != NULL);
+    AT_ASSERT(_a != NULL);
 
     uint64_t a = *((uint64_t*) _a);
     return (uint32_t) (a ^ (a >> 32));
@@ -481,8 +483,8 @@ uint32_t zhash_uint64_hash(const void *_a)
 
 int zhash_uint64_equals(const void *_a, const void *_b)
 {
-    assert(_a != NULL);
-    assert(_b != NULL);
+    AT_ASSERT(_a != NULL);
+    AT_ASSERT(_b != NULL);
 
     uint64_t a = *((uint64_t*) _a);
     uint64_t b = *((uint64_t*) _b);
@@ -499,7 +501,7 @@ union uintpointer
 
 uint32_t zhash_ptr_hash(const void *a)
 {
-    assert(a != NULL);
+    AT_ASSERT(a != NULL);
 
     union uintpointer ip;
     ip.p = * (void**)a;
@@ -514,8 +516,8 @@ uint32_t zhash_ptr_hash(const void *a)
 
 int zhash_ptr_equals(const void *a, const void *b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
 
     const void * ptra = * (void**)a;
     const void * ptrb = * (void**)b;
@@ -525,8 +527,8 @@ int zhash_ptr_equals(const void *a, const void *b)
 
 int zhash_str_equals(const void *_a, const void *_b)
 {
-    assert(_a != NULL);
-    assert(_b != NULL);
+    AT_ASSERT(_a != NULL);
+    AT_ASSERT(_b != NULL);
 
     char *a = * (char**)_a;
     char *b = * (char**)_b;
@@ -536,7 +538,7 @@ int zhash_str_equals(const void *_a, const void *_b)
 
 uint32_t zhash_str_hash(const void *_a)
 {
-    assert(_a != NULL);
+    AT_ASSERT(_a != NULL);
 
     char *a = * (char**)_a;
 

@@ -410,7 +410,7 @@ static inline char *zhash_str_str_get(zhash_t *zh, const char *key)
 
 static inline uint32_t zhash_int_hash(const void *_a)
 {
-    assert(_a != NULL);
+    AT_ASSERT(_a != NULL);
 
     uint32_t a = *((int*) _a);
     return a;
@@ -418,8 +418,8 @@ static inline uint32_t zhash_int_hash(const void *_a)
 
 static inline int zhash_int_equals(const void *_a, const void *_b)
 {
-    assert(_a != NULL);
-    assert(_b != NULL);
+    AT_ASSERT(_a != NULL);
+    AT_ASSERT(_b != NULL);
 
     int a = *((int*) _a);
     int b = *((int*) _b);

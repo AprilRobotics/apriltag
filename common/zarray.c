@@ -25,17 +25,17 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include "apriltag_config.h"
 
-#include "zarray.h"
+#include <string.h>
+
+#include "common/zarray.h"
+#include "common/diagnostic.h"
 
 int zstrcmp(const void * a_pp, const void * b_pp)
 {
-    assert(a_pp != NULL);
-    assert(b_pp != NULL);
+    AT_ASSERT(a_pp != NULL);
+    AT_ASSERT(b_pp != NULL);
 
     char * a = *(void**)a_pp;
     char * b = *(void**)b_pp;
@@ -45,9 +45,9 @@ int zstrcmp(const void * a_pp, const void * b_pp)
 
 void zarray_vmap(zarray_t *za, void (*f)())
 {
-    assert(za != NULL);
-    assert(f != NULL);
-    assert(za->el_sz == sizeof(void*));
+    AT_ASSERT(za != NULL);
+    AT_ASSERT(f != NULL);
+    AT_ASSERT(za->el_sz == sizeof(void*));
 
     for (int idx = 0; idx < za->size; idx++) {
         void *pp = &za->data[idx*za->el_sz];

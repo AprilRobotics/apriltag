@@ -25,14 +25,16 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
+#include "apriltag_config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <assert.h>
 #include <stdint.h>
 
-#include "zmaxheap.h"
+#include "common/zmaxheap.h"
+#include "common/diagnostic.h"
 
 #ifdef _WIN32
 static inline long int random(void)
@@ -141,8 +143,7 @@ void zmaxheap_ensure_capacity(zmaxheap_t *heap, int capacity)
 
 void zmaxheap_add(zmaxheap_t *heap, void *p, float v)
 {
-
-    assert (isfinite(v) && "zmaxheap_add: Trying to add non-finite number to heap.  NaN's prohibited, could allow INF with testing");
+    AT_ASSERT_MSG(isfinite(v), "zmaxheap_add: Trying to add non-finite number to heap. NaN's prohibited, could allow INF with testing");
     zmaxheap_ensure_capacity(heap, heap->size + 1);
 
     int idx = heap->size;
@@ -168,9 +169,9 @@ void zmaxheap_add(zmaxheap_t *heap, void *p, float v)
 
 void zmaxheap_vmap(zmaxheap_t *heap, void (*f)())
 {
-    assert(heap != NULL);
-    assert(f != NULL);
-    assert(heap->el_sz == sizeof(void*));
+    AT_ASSERT(heap != NULL);
+    AT_ASSERT(f != NULL);
+    AT_ASSERT(heap->el_sz == sizeof(void*));
 
     for (int idx = 0; idx < heap->size; idx++) {
         void *p = NULL;
@@ -221,7 +222,7 @@ int zmaxheap_remove_index(zmaxheap_t *heap, int idx, void *p, float *v)
         int left = 2*parent + 1;
         int right = left + 1;
 
-//            assert(parent_score == heap->values[parent]);
+//            AT_ASSERT(parent_score == heap->values[parent]);
 
         float left_score = (left < heap->size) ? heap->values[left] : -INFINITY;
         float right_score = (right < heap->size) ? heap->values[right] : -INFINITY;
@@ -234,12 +235,12 @@ int zmaxheap_remove_index(zmaxheap_t *heap, int idx, void *p, float *v)
 
         // if we got here, then one of the children is bigger than the parent.
         if (left_score >= right_score) {
-            assert(left < heap->size);
+            AT_ASSERT(left < heap->size);
             heap->swap(heap, parent, left);
             parent = left;
         } else {
             // right_score can't be less than left_score if right_score is -INFINITY.
-            assert(right < heap->size);
+            AT_ASSERT(right < heap->size);
             heap->swap(heap, parent, right);
             parent = right;
         }
@@ -333,11 +334,11 @@ static void validate(zmaxheap_t *heap)
         int right = 2*parent + 2;
 
         if (left < heap->size) {
-            assert(heap->values[parent] > heap->values[left]);
+            AT_ASSERT(heap->values[parent] > heap->values[left]);
         }
 
         if (right < heap->size) {
-            assert(heap->values[parent] > heap->values[right]);
+            AT_ASSERT(heap->values[parent] > heap->values[right]);
         }
     }
 }
@@ -369,13 +370,13 @@ void zmaxheap_test()
     int zcnt = 0;
 
     for (int iter = 0; iter < 5000000; iter++) {
-        assert(sz == heap->size);
+        AT_ASSERT(sz == heap->size);
 
         if ((random() & 1) == 0 && sz < cap) {
             // add a value
             int32_t v = (int32_t) (random() / 1000);
             float fv = v;
-            assert(v == fv);
+            AT_ASSERT(v == fv);
 
             vals[sz] = v;
             zmaxheap_add(heap, &v, fv);
@@ -398,11 +399,11 @@ void zmaxheap_test()
             float outfv;
             int res = zmaxheap_remove_max(heap, &outv, &outfv);
             if (sz == 0) {
-                assert(res == 0);
+                AT_ASSERT(res == 0);
             } else {
 //                printf("%d %d %d %f\n", sz, maxv, outv, outfv);
-                assert(outv == outfv);
-                assert(maxv == outv);
+                AT_ASSERT(outv == outfv);
+                AT_ASSERT(maxv == outv);
 
                 // shuffle erase the maximum from our list.
                 vals[maxi] = vals[sz - 1];

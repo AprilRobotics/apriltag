@@ -25,7 +25,8 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
-#include <assert.h>
+#include "apriltag_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +34,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "pam.h"
 #include "pnm.h"
 #include "image_u8x4.h"
+#include "common/diagnostic.h"
 
 // least common multiple of 64 (sandy bridge cache line) and 64 (stride needed
 // for 16byte-wide RGBA processing).
@@ -109,7 +111,7 @@ image_u8x4_t *image_u8x4_create_from_pam(const char *inpath)
         } else if (pam->depth == 4) {
             memcpy(&im->buf[y*im->stride], &pam->data[4*pam->width*y], 4*pam->width);
         } else {
-            assert(0); // not implemented
+            AT_ASSERT_MSG(0, "not implemented"); // not implemented
         }
     }
 

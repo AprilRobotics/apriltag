@@ -37,6 +37,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <unistd.h>
 #include <math.h>
 
+#include "apriltag_config.h"
 #include "apriltag.h"
 #include "tag36h11.h"
 #include "tag25h9.h"
@@ -47,6 +48,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
 
+#include "common/diagnostic.h"
 #include "common/getopt.h"
 #include "common/image_u8.h"
 #include "common/image_u8x4.h"
@@ -100,6 +102,7 @@ int main(int argc, char *argv[])
         tf = tagCustom48h12_create();
     } else {
         printf("Unrecognized tag family name. Use e.g. \"tag36h11\".\n");
+        AT_ASSERT(0);
         exit(-1);
     }
 

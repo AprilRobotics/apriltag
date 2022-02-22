@@ -24,14 +24,15 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
+#include "apriltag_config.h"
 
-#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "g2d.h"
+#include "common/g2d.h"
 #include "common/math_util.h"
+#include "common/diagnostic.h"
 
 #ifdef _WIN32
 static inline long int random(void)
@@ -199,7 +200,7 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
     int insz = zarray_size(points);
 
     // must have at least 2 points. (XXX need 3?)
-    assert(insz >= 2);
+    AT_ASSERT(insz >= 2);
 
     double *pleft = NULL;
     for (int i = 0; i < insz; i++) {
@@ -211,7 +212,7 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
     }
 
     // cannot be NULL since there must be at least one point.
-    assert(pleft != NULL);
+    AT_ASSERT(pleft != NULL);
 
     zarray_add(hull, pleft);
 
@@ -223,7 +224,7 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
     double *p = pleft;
 
     while (1) {
-        assert(p != NULL);
+        AT_ASSERT(p != NULL);
 
         double *q = NULL;
         double n0 = 0, n1 = 0; // the normal to the line (p, q) (not
@@ -262,7 +263,7 @@ zarray_t *g2d_convex_hull(const zarray_t *points)
 
         // we must have elected *some* line, so long as there are at
         // least 2 points in the polygon.
-        assert(q != NULL);
+        AT_ASSERT(q != NULL);
 
         // loop completed?
         if (q == pleft)
@@ -326,7 +327,7 @@ int g2d_polygon_contains_point(const zarray_t *poly, double q[2])
     // around it (accumulating 6.28 radians). If we're outside the
     // polygon, we'll accumulate zero.
     int psz = zarray_size(poly);
-    assert(psz > 0);
+    AT_ASSERT(psz > 0);
 
     int last_quadrant;
     int quad_acc = 0;
@@ -800,7 +801,7 @@ int main(int argc, char *argv[])
 
             int v0 = g2d_polygon_contains_point(polyE, q);
             int v1 = g2d_polygon_contains_point_ref(polyE, q);
-            assert(v0 == v1);
+            AT_ASSERT(v0 == v1);
         }
 
         timeprofile_stamp(tp, "both");
@@ -907,7 +908,7 @@ double p[][2] =  { { 0, 0},
              if (g2d_distance(q, p) < .00001)
                  on_edge = 1;
 
-             assert(on_edge || g2d_polygon_contains_point(hull, q));
+             AT_ASSERT(on_edge || g2d_polygon_contains_point(hull, q));
          }
 
          zarray_destroy(hull);

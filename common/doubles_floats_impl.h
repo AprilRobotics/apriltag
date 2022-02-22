@@ -633,10 +633,10 @@ static inline void TFN(s_mat_add)(const TNAME *A, int Arows, int Acols,
                                    const TNAME *B, int Brows, int Bcols,
                                    TNAME *R, int Rrows, int Rcols)
 {
-    assert(Arows == Brows);
-    assert(Arows == Rrows);
-    assert(Bcols == Bcols);
-    assert(Bcols == Rcols);
+    AT_ASSERT(Arows == Brows);
+    AT_ASSERT(Arows == Rrows);
+    AT_ASSERT(Bcols == Bcols);
+    AT_ASSERT(Bcols == Rcols);
 
     for (int i = 0; i < Arows; i++)
         for (int j = 0; j < Bcols; j++)
@@ -649,9 +649,9 @@ static inline void TFN(s_mat_AB)(const TNAME *A, int Arows, int Acols,
                                   const TNAME *B, int Brows, int Bcols,
                                   TNAME *R, int Rrows, int Rcols)
 {
-    assert(Acols == Brows);
-    assert(Rrows == Arows);
-    assert(Bcols == Rcols);
+    AT_ASSERT(Acols == Brows);
+    AT_ASSERT(Rrows == Arows);
+    AT_ASSERT(Bcols == Rcols);
 
     for (int Rrow = 0; Rrow < Rrows; Rrow++) {
         for (int Rcol = 0; Rcol < Rcols; Rcol++) {
@@ -669,9 +669,9 @@ static inline void TFN(s_mat_ABt)(const TNAME *A, int Arows, int Acols,
                                   const TNAME *B, int Brows, int Bcols,
                                   TNAME *R, int Rrows, int Rcols)
 {
-    assert(Acols == Bcols);
-    assert(Rrows == Arows);
-    assert(Brows == Rcols);
+    AT_ASSERT(Acols == Bcols);
+    AT_ASSERT(Rrows == Arows);
+    AT_ASSERT(Brows == Rcols);
 
     for (int Rrow = 0; Rrow < Rrows; Rrow++) {
         for (int Rcol = 0; Rcol < Rcols; Rcol++) {
@@ -699,8 +699,8 @@ static inline void TFN(s_mat_Ab)(const TNAME *A, int Arows, int Acols,
                                   const TNAME *B, int Blength,
                                   TNAME *R, int Rlength)
 {
-    assert(Acols == Blength);
-    assert(Arows == Rlength);
+    AT_ASSERT(Acols == Blength);
+    AT_ASSERT(Arows == Rlength);
 
     for (int Ridx = 0; Ridx < Rlength; Ridx++) {
         TNAME acc = 0;
@@ -714,9 +714,9 @@ static inline void TFN(s_mat_AtB)(const TNAME *A, int Arows, int Acols,
                                    const TNAME *B, int Brows, int Bcols,
                                    TNAME *R, int Rrows, int Rcols)
 {
-    assert(Arows == Brows);
-    assert(Rrows == Acols);
-    assert(Bcols == Rcols);
+    AT_ASSERT(Arows == Brows);
+    AT_ASSERT(Rrows == Acols);
+    AT_ASSERT(Bcols == Rcols);
 
     for (int Rrow = 0; Rrow < Rrows; Rrow++) {
         for (int Rcol = 0; Rcol < Rcols; Rcol++) {
@@ -941,8 +941,8 @@ static inline void TFN(s_elu_to_mat44)(const TNAME eye[3], const TNAME lookat[3]
 static inline void TFN(s_mat33_chol)(const TNAME *A, int Arows, int Acols,
                                      TNAME *R, int Brows, int Bcols)
 {
-    assert(Arows == Brows);
-    assert(Bcols == Bcols);
+    AT_ASSERT(Arows == Brows);
+    AT_ASSERT(Bcols == Bcols);
 
     // A[0] = R[0]*R[0]
     R[0] = (TNAME)sqrt(A[0]);
@@ -994,12 +994,12 @@ static inline void TFN(s_mat33_sym_solve)(const TNAME *A, int Arows, int Acols,
                                           const TNAME *B, int Brows, int Bcols,
                                           TNAME *R, int Rrows, int Rcols)
 {
-    assert(Arows == Acols);
-    assert(Acols == 3);
-    assert(Brows == 3);
-    assert(Bcols == 1);
-    assert(Rrows == 3);
-    assert(Rcols == 1);
+    AT_ASSERT(Arows == Acols);
+    AT_ASSERT(Acols == 3);
+    AT_ASSERT(Brows == 3);
+    AT_ASSERT(Bcols == 1);
+    AT_ASSERT(Rrows == 3);
+    AT_ASSERT(Rcols == 1);
 
     TNAME L[9];
     TFN(s_mat33_chol)(A, 3, 3, L, 3, 3);
@@ -1023,10 +1023,10 @@ static inline void TFN(s_mat_solve_chol)(const TNAME *A, int Arows, int Acols,
                                          const TNAME *B, int Brows, int Bcols,
                                          TNAME *R, int Rrows, int Rcols)
 {
-    assert(Arows == Acols);
-    assert(Arows == Brows);
-    assert(Acols == Rrows);
-    assert(Bcols == Rcols);
+    AT_ASSERT(Arows == Acols);
+    AT_ASSERT(Arows == Brows);
+    AT_ASSERT(Acols == Rrows);
+    AT_ASSERT(Bcols == Rcols);
 
     //
 }

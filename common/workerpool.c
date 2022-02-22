@@ -25,23 +25,21 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
+#include "apriltag_config.h"
+
 #define __USE_GNU
 #include <pthread.h>
 #include <sched.h>
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <unistd.h>
 #endif
 
-#include "workerpool.h"
-#include "timeprofile.h"
-#include "math_util.h"
-#include "string_util.h"
+#include "common/workerpool.h"
+#include "common/diagnostic.h"
 
 struct workerpool {
     int nthreads;
@@ -102,7 +100,7 @@ void *worker_thread(void *p)
 
 workerpool_t *workerpool_create(int nthreads)
 {
-    assert(nthreads > 0);
+    AT_ASSERT(nthreads > 0);
 
     workerpool_t *wp = calloc(1, sizeof(workerpool_t));
     wp->nthreads = nthreads;
@@ -189,11 +187,12 @@ void workerpool_run(workerpool_t *wp)
         pthread_cond_broadcast(&wp->startcond);
 
         while (wp->end_count < wp->nthreads) {
-//            printf("caught %d\n", wp->end_count);
             pthread_cond_wait(&wp->endcond, &wp->mutex);
         }
 
         pthread_mutex_unlock(&wp->mutex);
+
+        AT_ASSERT(wp->end_count == wp->nthreads);
 
         wp->taskspos = 0;
 

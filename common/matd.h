@@ -27,9 +27,10 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #pragma once
 
-#include <assert.h>
 #include <stddef.h>
 #include <string.h>
+
+#include "common/diagnostic.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -249,7 +250,7 @@ static inline void matd_set_data(matd_t *m, const double *data)
  */
 static inline int matd_is_scalar(const matd_t *a)
 {
-    assert(a != NULL);
+    AT_ASSERT(a != NULL);
     return a->ncols <= 1 && a->nrows <= 1;
 }
 
@@ -260,7 +261,7 @@ static inline int matd_is_scalar(const matd_t *a)
  */
 static inline int matd_is_vector(const matd_t *a)
 {
-    assert(a != NULL);
+    AT_ASSERT(a != NULL);
     return a->ncols == 1 || a->nrows == 1;
 }
 
@@ -270,7 +271,7 @@ static inline int matd_is_vector(const matd_t *a)
  */
 static inline int matd_is_vector_len(const matd_t *a, int len)
 {
-    assert(a != NULL);
+    AT_ASSERT(a != NULL);
     return (a->ncols == 1 && a->nrows == (unsigned int)len) || (a->ncols == (unsigned int)len && a->nrows == 1);
 }
 

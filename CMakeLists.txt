@@ -1,12 +1,27 @@
 cmake_minimum_required(VERSION 3.1)
+include(CMakeDependentOption)
 project(apriltag VERSION 3.2.0 LANGUAGES C CXX)
 
 if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)
 endif()
+
+# Set a default build type if none was specified
+set(default_build_type "Release")
+
+# Build options
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(ASAN "Use AddressSanitizer for debug builds to detect memory issues" OFF)
 
+#
+# Diagnostic options
+#
+option(AT_DIAG_ENABLE_ASSERT "Enable asserts" ON)
+
+
+#
+# Configure ASAN for all CPP source files in debug builds
+#
 if (ASAN)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} \
         -fsanitize=address \
@@ -26,9 +41,9 @@ if (ASAN)
     ")
 endif()
 
-# Set a default build type if none was specified
-set(default_build_type "Release")
-
+#
+# Configure the build type
+#
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
     set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE  STRING "Choose the type of build." FORCE)
@@ -36,13 +51,29 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-aux_source_directory(common COMMON_SRC)
-set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
+#
+# Build apriltag_config.h
+#
+configure_file(
+        "${PROJECT_SOURCE_DIR}/apriltag_config.h.in" "${PROJECT_BINARY_DIR}/apriltag_config.h")
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-# Library
+#
+# Library sources
+#
+aux_source_directory(common COMMON_SRC)
+set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c ${CMAKE_CURRENT_BINARY_DIR}/apriltag_config.h)
+
+#
+# Build library
+#
 file(GLOB TAG_FILES ${PROJECT_SOURCE_DIR}/tag*.c)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_BINARY_DIR})
 
+#
+# Link the platform threads library
+#
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC
     # winmm is necessary for __imp_timeGetTime
@@ -53,9 +84,15 @@ else()
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads m)
 endif()
 
+#
+# Setup the shared library options
+#
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
+#
+# Configure installation directory
+#
 include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
@@ -63,7 +100,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/apriltag")
 
 
-# install header file hierarchy
+# Install header file hierarchy
 file(GLOB HEADER_FILES RELATIVE ${PROJECT_SOURCE_DIR} *.h common/*.h)
 list(REMOVE_ITEM HEADER_FILES apriltag_detect.docstring.h apriltag_py_type.docstring.h)
 
@@ -79,7 +116,7 @@ set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
 set(targets_export_name "${PROJECT_NAME}Targets")
 set(config_install_dir "share/${PROJECT_NAME}/cmake")
 
-# Include module with fuction 'write_basic_package_version_file'
+# Include module with function 'write_basic_package_version_file'
 include(CMakePackageConfigHelpers)
 
 # Configure '<PROJECT-NAME>Config.cmake'
@@ -122,7 +159,6 @@ install(FILES "${PROJECT_BINARY_DIR}/apriltag.pc" DESTINATION "${CMAKE_INSTALL_L
 
 
 # Python wrapper
-include(CMakeDependentOption)
 cmake_dependent_option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" ON BUILD_SHARED_LIBS OFF)
 
 if(BUILD_PYTHON_WRAPPER)
@@ -147,7 +183,7 @@ if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD
     endforeach()
 
     add_custom_command(OUTPUT apriltag_pywrap.o
-        COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c
+        COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -I${PROJECT_SOURCE_DIR} -c -o apriltag_pywrap.o ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c
         DEPENDS ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
     add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
         COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,lib apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}

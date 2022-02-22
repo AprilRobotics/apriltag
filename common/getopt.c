@@ -27,7 +27,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
@@ -413,14 +412,14 @@ const char *getopt_get_string(getopt_t *gopt, const char *lname)
     zhash_get(gopt->lopts, &lname, &goo);
     // could return null, but this would be the only
     // method that doesn't assert on a missing key
-    assert (goo != NULL);
+    AT_ASSERT(goo != NULL);
     return goo->svalue;
 }
 
 int getopt_get_int(getopt_t *getopt, const char *lname)
 {
     const char *v = getopt_get_string(getopt, lname);
-    assert(v != NULL);
+    AT_ASSERT(v != NULL);
 
     errno = 0;
     char *endptr = (char *) v;
@@ -442,7 +441,7 @@ int getopt_get_int(getopt_t *getopt, const char *lname)
 int getopt_get_bool(getopt_t *getopt, const char *lname)
 {
     const char *v = getopt_get_string(getopt, lname);
-    assert (v!=NULL);
+    AT_ASSERT(v!=NULL);
     int val = !strcmp(v, "true");
     return val;
 }
@@ -450,7 +449,7 @@ int getopt_get_bool(getopt_t *getopt, const char *lname)
 double getopt_get_double (getopt_t *getopt, const char *lname)
 {
     const char *v = getopt_get_string (getopt, lname);
-    assert (v!=NULL);
+    AT_ASSERT(v!=NULL);
 
     errno = 0;
     char *endptr = (char *) v;

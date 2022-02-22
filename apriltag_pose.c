@@ -1,10 +1,11 @@
+#include "apriltag_config.h"
+
 #include <math.h>
 #include <stdio.h>
 
 #include "apriltag_pose.h"
-#include "apriltag_math.h"
 #include "common/homography.h"
-#include "common/image_u8x3.h"
+#include "common/diagnostic.h"
 
 
 /**
@@ -23,7 +24,7 @@ matd_t* calculate_F(matd_t* v) {
  */
 double matd_to_double(matd_t *a)
 {
-    assert(matd_is_scalar(a));
+    AT_ASSERT(matd_is_scalar(a));
     double d = a->data[0];
     matd_destroy(a);
     return d;

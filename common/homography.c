@@ -24,6 +24,7 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
+#include "apriltag_config.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -32,6 +33,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/zarray.h"
 #include "common/homography.h"
 #include "common/math_util.h"
+#include "common/diagnostic.h"
 
 // correspondences is a list of float[4]s, consisting of the points x
 // and y concatenated. We will compute a homography such that y = Hx

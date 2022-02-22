@@ -31,8 +31,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <float.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <assert.h>
 #include <string.h> // memcpy
+#include "common/diagnostic.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,8 +103,8 @@ static inline int irand(int bound)
     int v = (int) (randf()*bound);
     if (v == bound)
         return (bound-1);
-    //assert(v >= 0);
-    //assert(v < bound);
+    AT_ASSERT(v >= 0);
+    AT_ASSERT(v < bound);
     return v;
 }
 
@@ -150,7 +150,7 @@ static inline int theta_to_int(double theta, int max)
     if (v == max)
         v = 0;
 
-    assert (v >= 0 && v < max);
+    AT_ASSERT(v >= 0 && v < max);
 
     return v;
 }

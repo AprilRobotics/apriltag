@@ -25,16 +25,17 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
-#include <assert.h>
+#include "apriltag_config.h"
+
 #include <ctype.h>
-#include <errno.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "string_util.h"
-#include "zarray.h"
+#include "common/string_util.h"
+#include "common/zarray.h"
+#include "common/diagnostic.h"
 
 struct string_buffer
 {
@@ -47,7 +48,7 @@ struct string_buffer
 
 char *sprintf_alloc(const char *fmt, ...)
 {
-    assert(fmt != NULL);
+    AT_ASSERT(fmt != NULL);
 
     va_list args;
 
@@ -60,7 +61,7 @@ char *sprintf_alloc(const char *fmt, ...)
 
 char *vsprintf_alloc(const char *fmt, va_list orig_args)
 {
-    assert(fmt != NULL);
+    AT_ASSERT(fmt != NULL);
 
     int size = MIN_PRINTF_ALLOC;
     char *buf = malloc(size * sizeof(char));
@@ -86,7 +87,7 @@ char *vsprintf_alloc(const char *fmt, va_list orig_args)
     returnsize = vsnprintf(buf, size, fmt, args);
     va_end(args);
 
-    assert(returnsize <= size);
+    AT_ASSERT(returnsize <= size);
     return buf;
 }
 
@@ -128,8 +129,8 @@ char *_str_concat_private(const char *first, ...)
 // Returns the index of the first character that differs:
 int str_diff_idx(const char * a, const char * b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
 
     int i = 0;
 
@@ -148,8 +149,8 @@ int str_diff_idx(const char * a, const char * b)
 
 zarray_t *str_split(const char *str, const char *delim)
 {
-    assert(str != NULL);
-    assert(delim != NULL);
+    AT_ASSERT(str != NULL);
+    AT_ASSERT(delim != NULL);
 
     zarray_t *parts = zarray_create(sizeof(char*));
     string_buffer_t *sb = string_buffer_create();
@@ -224,14 +225,14 @@ void str_split_destroy(zarray_t *za)
 
 char *str_trim(char *str)
 {
-    assert(str != NULL);
+    AT_ASSERT(str != NULL);
 
     return str_lstrip(str_rstrip(str));
 }
 
 char *str_lstrip(char *str)
 {
-    assert(str != NULL);
+    AT_ASSERT(str != NULL);
 
     char *ptr = str;
     char *end = str + strlen(str);
@@ -243,7 +244,7 @@ char *str_lstrip(char *str)
 
 char *str_rstrip(char *str)
 {
-    assert(str != NULL);
+    AT_ASSERT(str != NULL);
 
     char *ptr = str + strlen(str) - 1;
     for(; ptr+1 != str && isspace(*ptr); ptr--);
@@ -253,8 +254,8 @@ char *str_rstrip(char *str)
 
 int str_indexof(const char *haystack, const char *needle)
 {
-	assert(haystack != NULL);
-	assert(needle != NULL);
+	AT_ASSERT(haystack != NULL);
+	AT_ASSERT(needle != NULL);
 
     // use signed types for hlen/nlen because hlen - nlen can be negative.
     int hlen = (int) strlen(haystack);
@@ -272,8 +273,8 @@ int str_indexof(const char *haystack, const char *needle)
 
 int str_last_indexof(const char *haystack, const char *needle)
 {
-	assert(haystack != NULL);
-	assert(needle != NULL);
+	AT_ASSERT(haystack != NULL);
+	AT_ASSERT(needle != NULL);
 
     // use signed types for hlen/nlen because hlen - nlen can be negative.
     int hlen = (int) strlen(haystack);
@@ -291,7 +292,7 @@ int str_last_indexof(const char *haystack, const char *needle)
 // in-place modification.
 char *str_tolowercase(char *s)
 {
-	assert(s != NULL);
+	AT_ASSERT(s != NULL);
 
     size_t slen = strlen(s);
     for (int i = 0; i < slen; i++) {
@@ -304,7 +305,7 @@ char *str_tolowercase(char *s)
 
 char *str_touppercase(char *s)
 {
-    assert(s != NULL);
+    AT_ASSERT(s != NULL);
 
     size_t slen = strlen(s);
     for (int i = 0; i < slen; i++) {
@@ -318,7 +319,7 @@ char *str_touppercase(char *s)
 string_buffer_t* string_buffer_create()
 {
     string_buffer_t *sb = (string_buffer_t*) calloc(1, sizeof(string_buffer_t));
-    assert(sb != NULL);
+    AT_ASSERT(sb != NULL);
     sb->alloc = 32;
     sb->s = calloc(sb->alloc, 1);
     return sb;
@@ -338,7 +339,7 @@ void string_buffer_destroy(string_buffer_t *sb)
 
 void string_buffer_append(string_buffer_t *sb, char c)
 {
-    assert(sb != NULL);
+    AT_ASSERT(sb != NULL);
 
     if (sb->size+2 >= sb->alloc) {
         sb->alloc *= 2;
@@ -350,7 +351,7 @@ void string_buffer_append(string_buffer_t *sb, char c)
 }
 
 char string_buffer_pop_back(string_buffer_t *sb) {
-    assert(sb != NULL);
+    AT_ASSERT(sb != NULL);
     if (sb->size == 0)
         return 0;
 
@@ -361,8 +362,8 @@ char string_buffer_pop_back(string_buffer_t *sb) {
 
 void string_buffer_appendf(string_buffer_t *sb, const char *fmt, ...)
 {
-    assert(sb != NULL);
-    assert(fmt != NULL);
+    AT_ASSERT(sb != NULL);
+    AT_ASSERT(fmt != NULL);
 
     int size = MIN_PRINTF_ALLOC;
     char *buf = malloc(size * sizeof(char));
@@ -384,7 +385,7 @@ void string_buffer_appendf(string_buffer_t *sb, const char *fmt, ...)
         returnsize = vsnprintf(buf, size, fmt, args);
         va_end(args);
 
-        assert(returnsize <= size);
+        AT_ASSERT(returnsize <= size);
     }
 
     string_buffer_append_string(sb, buf);
@@ -393,8 +394,8 @@ void string_buffer_appendf(string_buffer_t *sb, const char *fmt, ...)
 
 void string_buffer_append_string(string_buffer_t *sb, const char *str)
 {
-    assert(sb != NULL);
-    assert(str != NULL);
+    AT_ASSERT(sb != NULL);
+    AT_ASSERT(str != NULL);
 
     size_t len = strlen(str);
 
@@ -410,15 +411,15 @@ void string_buffer_append_string(string_buffer_t *sb, const char *str)
 
 bool string_buffer_ends_with(string_buffer_t *sb, const char *str)
 {
-    assert(sb != NULL);
-    assert(str != NULL);
+    AT_ASSERT(sb != NULL);
+    AT_ASSERT(str != NULL);
 
     return str_ends_with(sb->s, str);
 }
 
 char *string_buffer_to_string(string_buffer_t *sb)
 {
-    assert(sb != NULL);
+    AT_ASSERT(sb != NULL);
 
     return strdup(sb->s);
 }
@@ -426,14 +427,14 @@ char *string_buffer_to_string(string_buffer_t *sb)
 // returns length of string (not counting \0)
 size_t string_buffer_size(string_buffer_t *sb)
 {
-    assert(sb != NULL);
+    AT_ASSERT(sb != NULL);
 
     return sb->size;
 }
 
 void string_buffer_reset(string_buffer_t *sb)
 {
-    assert(sb != NULL);
+    AT_ASSERT(sb != NULL);
 
     sb->s[0] = 0;
     sb->size = 0;
@@ -441,7 +442,7 @@ void string_buffer_reset(string_buffer_t *sb)
 
 string_feeder_t *string_feeder_create(const char *str)
 {
-    assert(str != NULL);
+    AT_ASSERT(str != NULL);
 
     string_feeder_t *sf = (string_feeder_t*) calloc(1, sizeof(string_feeder_t));
     sf->s = strdup(str);
@@ -454,13 +455,13 @@ string_feeder_t *string_feeder_create(const char *str)
 
 int string_feeder_get_line(string_feeder_t *sf)
 {
-    assert(sf != NULL);
+    AT_ASSERT(sf != NULL);
     return sf->line;
 }
 
 int string_feeder_get_column(string_feeder_t *sf)
 {
-    assert(sf != NULL);
+    AT_ASSERT(sf != NULL);
     return sf->col;
 }
 
@@ -476,15 +477,15 @@ void string_feeder_destroy(string_feeder_t *sf)
 
 bool string_feeder_has_next(string_feeder_t *sf)
 {
-    assert(sf != NULL);
+    AT_ASSERT(sf != NULL);
 
     return sf->s[sf->pos] != 0 && sf->pos <= sf->len;
 }
 
 char string_feeder_next(string_feeder_t *sf)
 {
-    assert(sf != NULL);
-    assert(sf->pos <= sf->len);
+    AT_ASSERT(sf != NULL);
+    AT_ASSERT(sf->pos <= sf->len);
 
     char c = sf->s[sf->pos++];
     if (c == '\n') {
@@ -499,9 +500,9 @@ char string_feeder_next(string_feeder_t *sf)
 
 char *string_feeder_next_length(string_feeder_t *sf, size_t length)
 {
-    assert(sf != NULL);
-    assert(length >= 0);
-    assert(sf->pos <= sf->len);
+    AT_ASSERT(sf != NULL);
+    AT_ASSERT(length >= 0);
+    AT_ASSERT(sf->pos <= sf->len);
 
     if (sf->pos + length > sf->len)
         length = sf->len - sf->pos;
@@ -514,17 +515,17 @@ char *string_feeder_next_length(string_feeder_t *sf, size_t length)
 
 char string_feeder_peek(string_feeder_t *sf)
 {
-    assert(sf != NULL);
-    assert(sf->pos <= sf->len);
+    AT_ASSERT(sf != NULL);
+    AT_ASSERT(sf->pos <= sf->len);
 
     return sf->s[sf->pos];
 }
 
 char *string_feeder_peek_length(string_feeder_t *sf, size_t length)
 {
-    assert(sf != NULL);
-    assert(length >= 0);
-    assert(sf->pos <= sf->len);
+    AT_ASSERT(sf != NULL);
+    AT_ASSERT(length >= 0);
+    AT_ASSERT(sf->pos <= sf->len);
 
     if (sf->pos + length > sf->len)
         length = sf->len - sf->pos;
@@ -536,32 +537,32 @@ char *string_feeder_peek_length(string_feeder_t *sf, size_t length)
 
 bool string_feeder_starts_with(string_feeder_t *sf, const char *str)
 {
-    assert(sf != NULL);
-    assert(str != NULL);
-    assert(sf->pos <= sf->len);
+    AT_ASSERT(sf != NULL);
+    AT_ASSERT(str != NULL);
+    AT_ASSERT(sf->pos <= sf->len);
 
     return str_starts_with(&sf->s[sf->pos], str);
 }
 
 void string_feeder_require(string_feeder_t *sf, const char *str)
 {
-    assert(sf != NULL);
-    assert(str != NULL);
-    assert(sf->pos <= sf->len);
+    AT_ASSERT(sf != NULL);
+    AT_ASSERT(str != NULL);
+    AT_ASSERT(sf->pos <= sf->len);
 
     size_t len = strlen(str);
 
     for (int i = 0; i < len; i++) {
         char c = string_feeder_next(sf);
-        assert(c == str[i]);
+        AT_ASSERT(c == str[i]);
     }
 }
 
 ////////////////////////////////////////////
 bool str_ends_with(const char *haystack, const char *needle)
 {
-    assert(haystack != NULL);
-    assert(needle != NULL);
+    AT_ASSERT(haystack != NULL);
+    AT_ASSERT(needle != NULL);
 
     size_t lens = strlen(haystack);
     size_t lenneedle = strlen(needle);
@@ -577,8 +578,8 @@ inline
 #endif
 bool str_starts_with(const char *haystack, const char *needle)
 {
-    assert(haystack != NULL);
-    assert(needle != NULL);
+    AT_ASSERT(haystack != NULL);
+    AT_ASSERT(needle != NULL);
 
     // haystack[pos] doesn't have to be compared to zero; if it were
     // zero, it either doesn't match needle (in which case the loop
@@ -593,12 +594,12 @@ bool str_starts_with(const char *haystack, const char *needle)
 
 bool str_starts_with_any(const char *haystack, const char **needles, int num_needles)
 {
-    assert(haystack != NULL);
-    assert(needles != NULL);
-    assert(num_needles >= 0);
+    AT_ASSERT(haystack != NULL);
+    AT_ASSERT(needles != NULL);
+    AT_ASSERT(num_needles >= 0);
 
     for (int i = 0; i < num_needles; i++) {
-        assert(needles[i] != NULL);
+        AT_ASSERT(needles[i] != NULL);
         if (str_starts_with(haystack, needles[i]))
             return true;
     }
@@ -608,12 +609,12 @@ bool str_starts_with_any(const char *haystack, const char **needles, int num_nee
 
 bool str_matches_any(const char *haystack, const char **needles, int num_needles)
 {
-    assert(haystack != NULL);
-    assert(needles != NULL);
-    assert(num_needles >= 0);
+    AT_ASSERT(haystack != NULL);
+    AT_ASSERT(needles != NULL);
+    AT_ASSERT(num_needles >= 0);
 
     for (int i = 0; i < num_needles; i++) {
-        assert(needles[i] != NULL);
+        AT_ASSERT(needles[i] != NULL);
         if (!strcmp(haystack, needles[i]))
             return true;
     }
@@ -623,10 +624,10 @@ bool str_matches_any(const char *haystack, const char **needles, int num_needles
 
 char *str_substring(const char *str, size_t startidx, long endidx)
 {
-    assert(str != NULL);
-    assert(startidx >= 0 && startidx <= strlen(str)+1);
-    assert(endidx < 0 || endidx >= startidx);
-    assert(endidx < 0 || endidx <= strlen(str)+1);
+    AT_ASSERT(str != NULL);
+    AT_ASSERT(startidx >= 0 && startidx <= strlen(str)+1);
+    AT_ASSERT(endidx < 0 || endidx >= startidx);
+    AT_ASSERT(endidx < 0 || endidx <= strlen(str)+1);
 
     if (endidx < 0)
         endidx = (long) strlen(str);
@@ -640,9 +641,9 @@ char *str_substring(const char *str, size_t startidx, long endidx)
 
 char *str_replace(const char *haystack, const char *needle, const char *replacement)
 {
-    assert(haystack != NULL);
-    assert(needle != NULL);
-    assert(replacement != NULL);
+    AT_ASSERT(haystack != NULL);
+    AT_ASSERT(needle != NULL);
+    AT_ASSERT(replacement != NULL);
 
     string_buffer_t *sb = string_buffer_create();
     size_t haystack_len = strlen(haystack);

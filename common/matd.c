@@ -25,17 +25,19 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
+#include "apriltag_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <assert.h>
 #include <math.h>
 #include <float.h>
 
 #include "common/math_util.h"
 #include "common/svd22.h"
 #include "common/matd.h"
+#include "common/diagnostic.h"
 
 // a matd_t with rows=0 cols=0 is a SCALAR.
 
@@ -44,8 +46,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 matd_t *matd_create(int rows, int cols)
 {
-    assert(rows >= 0);
-    assert(cols >= 0);
+    AT_ASSERT(rows >= 0);
+    AT_ASSERT(cols >= 0);
 
     if (rows == 0 || cols == 0)
         return matd_create_scalar(0);
@@ -106,12 +108,12 @@ matd_t *matd_identity(int dim)
 // row and col are zero-based
 TYPE matd_get(const matd_t *m, int row, int col)
 {
-    assert(m != NULL);
-    assert(!matd_is_scalar(m));
-    assert(row >= 0);
-    assert(row < m->nrows);
-    assert(col >= 0);
-    assert(col < m->ncols);
+    AT_ASSERT(m != NULL);
+    AT_ASSERT(!matd_is_scalar(m));
+    AT_ASSERT(row >= 0);
+    AT_ASSERT(row < m->nrows);
+    AT_ASSERT(col >= 0);
+    AT_ASSERT(col < m->ncols);
 
     return MATD_EL(m, row, col);
 }
@@ -119,40 +121,40 @@ TYPE matd_get(const matd_t *m, int row, int col)
 // row and col are zero-based
 void matd_put(matd_t *m, int row, int col, TYPE value)
 {
-    assert(m != NULL);
+    AT_ASSERT(m != NULL);
 
     if (matd_is_scalar(m)) {
         matd_put_scalar(m, value);
         return;
     }
 
-    assert(row >= 0);
-    assert(row < m->nrows);
-    assert(col >= 0);
-    assert(col < m->ncols);
+    AT_ASSERT(row >= 0);
+    AT_ASSERT(row < m->nrows);
+    AT_ASSERT(col >= 0);
+    AT_ASSERT(col < m->ncols);
 
     MATD_EL(m, row, col) = value;
 }
 
 TYPE matd_get_scalar(const matd_t *m)
 {
-    assert(m != NULL);
-    assert(matd_is_scalar(m));
+    AT_ASSERT(m != NULL);
+    AT_ASSERT(matd_is_scalar(m));
 
     return (m->data[0]);
 }
 
 void matd_put_scalar(matd_t *m, TYPE value)
 {
-    assert(m != NULL);
-    assert(matd_is_scalar(m));
+    AT_ASSERT(m != NULL);
+    AT_ASSERT(matd_is_scalar(m));
 
     m->data[0] = value;
 }
 
 matd_t *matd_copy(const matd_t *m)
 {
-    assert(m != NULL);
+    AT_ASSERT(m != NULL);
 
     matd_t *x = matd_create(m->nrows, m->ncols);
     if (matd_is_scalar(m))
@@ -165,10 +167,10 @@ matd_t *matd_copy(const matd_t *m)
 
 matd_t *matd_select(const matd_t * a, int r0, int r1, int c0, int c1)
 {
-    assert(a != NULL);
+    AT_ASSERT(a != NULL);
 
-    assert(r0 >= 0 && r0 < a->nrows);
-    assert(c0 >= 0 && c0 < a->ncols);
+    AT_ASSERT(r0 >= 0 && r0 < a->nrows);
+    AT_ASSERT(c0 >= 0 && c0 < a->ncols);
 
     int nrows = r1 - r0 + 1;
     int ncols = c1 - c0 + 1;
@@ -182,10 +184,30 @@ matd_t *matd_select(const matd_t * a, int r0, int r1, int c0, int c1)
     return r;
 }
 
+void matd_print_flat(const matd_t *m, const char *pre, const char *post)
+{
+    AT_ASSERT(m != NULL);
+    AT_ASSERT(pre != NULL && post != NULL);
+
+    if (matd_is_scalar(m)) {
+        fprintf(stderr, "%s{%g}%s", pre, MATD_EL(m, 0, 0), post);
+    } else {
+        fprintf(stderr, "%s {", pre);
+        for (int i = 0; i < m->nrows; i++) {
+            fprintf(stderr, " { ");
+            for (int j = 0; j < m->ncols; j++) {
+                fprintf(stderr, ((j + 1 < m->ncols) ? "%g, " : "%g "), MATD_EL(m, i, j));
+            }
+             fprintf(stderr, ((i + 1 < m->nrows) ? " }, " : " } "));
+        }
+        fprintf(stderr, "} %s", post);
+    }
+}
+
 void matd_print(const matd_t *m, const char *fmt)
 {
-    assert(m != NULL);
-    assert(fmt != NULL);
+    AT_ASSERT(m != NULL);
+    AT_ASSERT(fmt != NULL);
 
     if (matd_is_scalar(m)) {
         printf(fmt, MATD_EL(m, 0, 0));
@@ -202,8 +224,8 @@ void matd_print(const matd_t *m, const char *fmt)
 
 void matd_print_transpose(const matd_t *m, const char *fmt)
 {
-    assert(m != NULL);
-    assert(fmt != NULL);
+    AT_ASSERT(m != NULL);
+    AT_ASSERT(fmt != NULL);
 
     if (matd_is_scalar(m)) {
         printf(fmt, MATD_EL(m, 0, 0));
@@ -223,21 +245,21 @@ void matd_destroy(matd_t *m)
     if (!m)
         return;
 
-    assert(m != NULL);
+    AT_ASSERT(m != NULL);
     free(m);
 }
 
 matd_t *matd_multiply(const matd_t *a, const matd_t *b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
 
     if (matd_is_scalar(a))
         return matd_scale(b, a->data[0]);
     if (matd_is_scalar(b))
         return matd_scale(a, b->data[0]);
 
-    assert(a->ncols == b->nrows);
+    AT_ASSERT(a->ncols == b->nrows);
     matd_t *m = matd_create(a->nrows, b->ncols);
 
     for (int i = 0; i < m->nrows; i++) {
@@ -255,7 +277,7 @@ matd_t *matd_multiply(const matd_t *a, const matd_t *b)
 
 matd_t *matd_scale(const matd_t *a, double s)
 {
-    assert(a != NULL);
+    AT_ASSERT(a != NULL);
 
     if (matd_is_scalar(a))
         return matd_create_scalar(a->data[0] * s);
@@ -273,7 +295,8 @@ matd_t *matd_scale(const matd_t *a, double s)
 
 void matd_scale_inplace(matd_t *a, double s)
 {
-    assert(a != NULL);
+
+    AT_ASSERT(a != NULL);
 
     if (matd_is_scalar(a)) {
         a->data[0] *= s;
@@ -289,10 +312,10 @@ void matd_scale_inplace(matd_t *a, double s)
 
 matd_t *matd_add(const matd_t *a, const matd_t *b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(a->nrows == b->nrows);
-    assert(a->ncols == b->ncols);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
+    AT_ASSERT(a->nrows == b->nrows);
+    AT_ASSERT(a->ncols == b->ncols);
 
     if (matd_is_scalar(a))
         return matd_create_scalar(a->data[0] + b->data[0]);
@@ -310,10 +333,10 @@ matd_t *matd_add(const matd_t *a, const matd_t *b)
 
 void matd_add_inplace(matd_t *a, const matd_t *b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(a->nrows == b->nrows);
-    assert(a->ncols == b->ncols);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
+    AT_ASSERT(a->nrows == b->nrows);
+    AT_ASSERT(a->ncols == b->ncols);
 
     if (matd_is_scalar(a)) {
         a->data[0] += b->data[0];
@@ -330,10 +353,10 @@ void matd_add_inplace(matd_t *a, const matd_t *b)
 
 matd_t *matd_subtract(const matd_t *a, const matd_t *b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(a->nrows == b->nrows);
-    assert(a->ncols == b->ncols);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
+    AT_ASSERT(a->nrows == b->nrows);
+    AT_ASSERT(a->ncols == b->ncols);
 
     if (matd_is_scalar(a))
         return matd_create_scalar(a->data[0] - b->data[0]);
@@ -351,10 +374,10 @@ matd_t *matd_subtract(const matd_t *a, const matd_t *b)
 
 void matd_subtract_inplace(matd_t *a, const matd_t *b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(a->nrows == b->nrows);
-    assert(a->ncols == b->ncols);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
+    AT_ASSERT(a->nrows == b->nrows);
+    AT_ASSERT(a->ncols == b->ncols);
 
     if (matd_is_scalar(a)) {
         a->data[0] -= b->data[0];
@@ -371,7 +394,7 @@ void matd_subtract_inplace(matd_t *a, const matd_t *b)
 
 matd_t *matd_transpose(const matd_t *a)
 {
-    assert(a != NULL);
+    AT_ASSERT(a != NULL);
 
     if (matd_is_scalar(a))
         return matd_create_scalar(a->data[0]);
@@ -419,13 +442,13 @@ double matd_det_general(const matd_t *a)
 
 double matd_det(const matd_t *a)
 {
-    assert(a != NULL);
-    assert(a->nrows == a->ncols);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(a->nrows == a->ncols);
 
     switch(a->nrows) {
         case 0:
             // scalar: invalid
-            assert(a->nrows > 0);
+            AT_ASSERT(a->nrows > 0);
             break;
 
         case 1:
@@ -470,7 +493,7 @@ double matd_det(const matd_t *a)
             return matd_det_general(a);
     }
 
-    assert(0);
+    AT_ASSERT(0);
     return 0;
 }
 
@@ -481,8 +504,8 @@ matd_t *matd_inverse(const matd_t *x)
 {
     matd_t *m = NULL;
 
-    assert(x != NULL);
-    assert(x->nrows == x->ncols);
+    AT_ASSERT(x != NULL);
+    AT_ASSERT(x->nrows == x->ncols);
 
     if (matd_is_scalar(x)) {
         if (x->data[0] == 0)
@@ -555,7 +578,7 @@ static inline matd_t *matd_op_gobble_right(const char *expr, int *pos, matd_t *a
         switch (expr[*pos]) {
 
             case '\'': {
-                assert(acc != NULL); // either a syntax error or a math op failed, producing null
+                AT_ASSERT(acc != NULL); // either a syntax error or a math op failed, producing null
                 matd_t *res = matd_transpose(acc);
                 garb[*garbpos] = res;
                 (*garbpos)++;
@@ -567,9 +590,9 @@ static inline matd_t *matd_op_gobble_right(const char *expr, int *pos, matd_t *a
 
                 // handle inverse ^-1. No other exponents are allowed.
             case '^': {
-                assert(acc != NULL);
-                assert(expr[*pos+1] == '-');
-                assert(expr[*pos+2] == '1');
+                AT_ASSERT(acc != NULL);
+                AT_ASSERT(expr[*pos+1] == '-');
+                AT_ASSERT(expr[*pos+2] == '1');
 
                 matd_t *res = matd_inverse(acc);
                 garb[*garbpos] = res;
@@ -733,7 +756,7 @@ static matd_t *matd_op_recurse(const char *expr, int *pos, matd_t *acc, matd_t *
                     return acc;
 
                 // don't support unary plus
-                assert(acc != NULL);
+                AT_ASSERT(acc != NULL);
                 (*pos)++;
                 matd_t *rhs = matd_op_recurse(expr, pos, NULL, args, argpos, garb, garbpos, 1);
                 rhs = matd_op_gobble_right(expr, pos, rhs, garb, garbpos);
@@ -782,7 +805,7 @@ static matd_t *matd_op_recurse(const char *expr, int *pos, matd_t *acc, matd_t *
 
             default: {
                 fprintf(stderr, "matd_op(): Unknown character: '%c'\n", expr[*pos]);
-                assert(expr[*pos] != expr[*pos]);
+                AT_ASSERT(expr[*pos] != expr[*pos]);
             }
         }
     }
@@ -795,7 +818,7 @@ matd_t *matd_op(const char *expr, ...)
     int nargs = 0;
     int exprlen = 0;
 
-    assert(expr != NULL);
+    AT_ASSERT(expr != NULL);
 
     for (const char *p = expr; *p != 0; p++) {
         if (*p == 'M' || *p == 'F')
@@ -803,7 +826,7 @@ matd_t *matd_op(const char *expr, ...)
         exprlen++;
     }
 
-    assert(nargs > 0);
+    AT_ASSERT(nargs > 0);
 
     if (!exprlen) // expr = ""
         return NULL;
@@ -844,8 +867,8 @@ matd_t *matd_op(const char *expr, ...)
 
 double matd_vec_mag(const matd_t *a)
 {
-    assert(a != NULL);
-    assert(matd_is_vector(a));
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(matd_is_vector(a));
 
     double mag = 0.0;
     int len = a->nrows*a->ncols;
@@ -856,10 +879,10 @@ double matd_vec_mag(const matd_t *a)
 
 double matd_vec_dist(const matd_t *a, const matd_t *b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(matd_is_vector(a) && matd_is_vector(b));
-    assert(a->nrows*a->ncols == b->nrows*b->ncols);
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
+    AT_ASSERT(matd_is_vector(a) && matd_is_vector(b));
+    AT_ASSERT(a->nrows*a->ncols == b->nrows*b->ncols);
 
     int lena = a->nrows*a->ncols;
     return matd_vec_dist_n(a, b, lena);
@@ -867,14 +890,14 @@ double matd_vec_dist(const matd_t *a, const matd_t *b)
 
 double matd_vec_dist_n(const matd_t *a, const matd_t *b, int n)
 {
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(matd_is_vector(a) && matd_is_vector(b));
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
+    AT_ASSERT(matd_is_vector(a) && matd_is_vector(b));
 
     int lena = a->nrows*a->ncols;
     int lenb = b->nrows*b->ncols;
 
-    assert(n <= lena && n <= lenb);
+    AT_ASSERT(n <= lena && n <= lenb);
 
     double mag = 0.0;
     for (int i = 0; i < n; i++)
@@ -903,12 +926,12 @@ static inline int max_idx(const matd_t *A, int row, int maxcol)
 
 double matd_vec_dot_product(const matd_t *a, const matd_t *b)
 {
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(matd_is_vector(a) && matd_is_vector(b));
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
+    AT_ASSERT(matd_is_vector(a) && matd_is_vector(b));
     int adim = a->ncols*a->nrows;
     int bdim = b->ncols*b->nrows;
-    assert(adim == bdim);
+    AT_ASSERT(adim == bdim);
 
     double acc = 0;
     for (int i = 0; i < adim; i++) {
@@ -920,11 +943,11 @@ double matd_vec_dot_product(const matd_t *a, const matd_t *b)
 
 matd_t *matd_vec_normalize(const matd_t *a)
 {
-    assert(a != NULL);
-    assert(matd_is_vector(a));
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(matd_is_vector(a));
 
     double mag = matd_vec_mag(a);
-    assert(mag > 0);
+    AT_ASSERT(mag > 0);
 
     matd_t *b = matd_create(a->nrows, a->ncols);
 
@@ -937,9 +960,9 @@ matd_t *matd_vec_normalize(const matd_t *a)
 
 matd_t *matd_crossproduct(const matd_t *a, const matd_t *b)
 { // only defined for vecs (col or row) of length 3
-    assert(a != NULL);
-    assert(b != NULL);
-    assert(matd_is_vector_len(a, 3) && matd_is_vector_len(b, 3));
+    AT_ASSERT(a != NULL);
+    AT_ASSERT(b != NULL);
+    AT_ASSERT(matd_is_vector_len(a, 3) && matd_is_vector_len(b, 3));
 
     matd_t * r = matd_create(a->nrows, a->ncols);
 
@@ -952,8 +975,8 @@ matd_t *matd_crossproduct(const matd_t *a, const matd_t *b)
 
 TYPE matd_err_inf(const matd_t *a, const matd_t *b)
 {
-    assert(a->nrows == b->nrows);
-    assert(a->ncols == b->ncols);
+    AT_ASSERT(a->nrows == b->nrows);
+    AT_ASSERT(a->ncols == b->ncols);
 
     TYPE maxf = 0;
 
@@ -1145,7 +1168,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
     // as a function of rows*cols. maxiters ~= 1.5*nrows*ncols
     // we're a bit conservative below.
     int maxiters = 200 + 2 * A->nrows * A->ncols;
-    assert(maxiters > 0); // reassure clang
+    AT_ASSERT(maxiters > 0); // reassure clang
     int iter;
 
     double maxv; // maximum non-zero value being reduced this iteration
@@ -1253,7 +1276,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
                 }
             }
 
-            assert(maxi >= 0);
+            AT_ASSERT(maxi >= 0);
             maxj = maxrowidx[maxi];
 
             // save these for the next iteration.
@@ -1287,7 +1310,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
             if (maxv < tol)
                 break;
         } else {
-            assert(0);
+            AT_ASSERT(0);
         }
 
 //        printf(">>> %5d %3d, %3d %15g\n", maxi, maxj, iter, maxv);
@@ -1500,7 +1523,7 @@ matd_svd_t matd_svd_flags(matd_t *A, int flags)
   if (maxerr > 1e-5) {
   printf("bad maxerr: %15f\n", maxerr);
   matd_print(A, "%15f");
-  assert(0);
+  AT_ASSERT(0);
   }
 
 */
@@ -1515,7 +1538,7 @@ matd_plu_t *matd_plu(const matd_t *a)
     matd_t *lu = matd_copy(a);
 
     // only for square matrices.
-    assert(a->nrows == a->ncols);
+    AT_ASSERT(a->nrows == a->ncols);
 
     matd_plu_t *mlu = calloc(1, sizeof(matd_plu_t));
 
@@ -1783,9 +1806,9 @@ int main(int argc, char *argv[])
         MATD_EL(S,0,0) = s.S[0];
         MATD_EL(S,1,1) = s.S[1];
 
-        assert(s.S[0] >= s.S[1]);
-        assert(s.S[0] >= 0);
-        assert(s.S[1] >= 0);
+        AT_ASSERT(s.S[0] >= s.S[1]);
+        AT_ASSERT(s.S[0] >= 0);
+        AT_ASSERT(s.S[1] >= 0);
         if (s.S[0] == 0) {
 //            printf("*"); fflush(NULL);
 //            printf("%15f %15f %15f %15f\n", MATD_EL(A,0,0), MATD_EL(A,0,1), MATD_EL(A,1,0), MATD_EL(A,1,1));
@@ -1812,7 +1835,7 @@ int main(int argc, char *argv[])
 
         matd_destroy(USV);
 
-        assert(maxerr < 0.00001);
+        AT_ASSERT(maxerr < 0.00001);
     }
 }
 
@@ -1839,7 +1862,7 @@ int main(int argc, char *argv[])
 
   matd_t *matd_cholesky(const matd_t *A)
   {
-  assert(A->nrows == A->ncols);
+  AT_ASSERT(A->nrows == A->ncols);
   double *L_data = matd_cholesky_raw(A->data, A->nrows);
   matd_t *L = matd_create_data(A->nrows, A->ncols, L_data);
   free(L_data);
@@ -1850,7 +1873,7 @@ int main(int argc, char *argv[])
 // used in NGV.
 matd_chol_t *matd_chol(matd_t *A)
 {
-    assert(A->nrows == A->ncols);
+    AT_ASSERT(A->nrows == A->ncols);
     int N = A->nrows;
 
     // make upper right
@@ -1859,7 +1882,7 @@ matd_chol_t *matd_chol(matd_t *A)
     // don't actually need to clear lower-left... we won't touch it.
 /*    for (int i = 0; i < U->nrows; i++) {
       for (int j = 0; j < i; j++) {
-//            assert(MATD_EL(U, i, j) == MATD_EL(U, j, i));
+//            AT_ASSERT(MATD_EL(U, i, j) == MATD_EL(U, j, i));
 MATD_EL(U, i, j) = 0;
 }
 }
@@ -2000,7 +2023,7 @@ matd_t *matd_chol_solve(const matd_chol_t *chol, const matd_t *b)
 // inverse via LU... for now, doesn't seem to be.
 matd_t *matd_chol_inverse(matd_t *a)
 {
-    assert(a->nrows == a->ncols);
+    AT_ASSERT(a->nrows == a->ncols);
 
     matd_chol_t *chol = matd_chol(a);
 

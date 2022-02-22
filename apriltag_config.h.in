@@ -1,0 +1,18 @@
+#pragma once
+
+//
+// Diagnostic compilation options
+//
+#cmakedefine AT_DIAG_ENABLE_TEXT
+#cmakedefine AT_DIAG_ENABLE_DEBUG
+#cmakedefine AT_DIAG_TEXT_STDERR
+#cmakedefine AT_DIAG_ENABLE_ASSERT
+#cmakedefine AT_DIAG_ENABLE_TRACING
+#cmakedefine AT_DIAG_ENABLE_TIMESTAMPS
+#cmakedefine AT_DIAG_MATH
+
+// Internal debug options
+#cmakedefine AT_DEBUG_GAUSSIAN
+
+// Experimental code
+#cmakedefine AT_TEST_THRESHOLD_DEGLITCH

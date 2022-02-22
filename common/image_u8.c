@@ -25,7 +25,6 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -115,7 +114,7 @@ image_u8_t *image_u8_create_from_pnm_alignment(const char *path, int alignment)
                     for (int x = 0; x < im->width; x++)
                         im->buf[y*im->stride + x] = pnm->buf[2*(y*im->width + x)];
             } else {
-                assert(0);
+                AT_ASSERT(0);
             }
 
             break;
@@ -148,7 +147,7 @@ image_u8_t *image_u8_create_from_pnm_alignment(const char *path, int alignment)
                     }
                 }
             } else {
-                assert(0);
+                AT_ASSERT(0);
             }
 
             break;
@@ -247,7 +246,7 @@ void image_u8_draw_annulus(image_u8_t *im, float x0, float y0, float r0, float r
     r0 = r0*r0;
     r1 = r1*r1;
 
-    assert(r0 < r1);
+    AT_ASSERT(r0 < r1);
 
     for (int y = y0-r1; y <= y0+r1; y++) {
         for (int x = x0-r1; x <= x0+r1; x++) {
@@ -296,7 +295,7 @@ void image_u8_darken(image_u8_t *im)
 
 static void convolve(const uint8_t *x, uint8_t *y, int sz, const uint8_t *k, int ksz)
 {
-    assert((ksz&1)==1);
+    AT_ASSERT((ksz&1)==1);
 
     for (int i = 0; i < ksz/2 && i < sz; i++)
         y[i] = x[i];
@@ -316,7 +315,7 @@ static void convolve(const uint8_t *x, uint8_t *y, int sz, const uint8_t *k, int
 
 void image_u8_convolve_2D(image_u8_t *im, const uint8_t *k, int ksz)
 {
-    assert((ksz & 1) == 1); // ksz must be odd.
+    AT_ASSERT((ksz & 1) == 1); // ksz must be odd.
 
     for (int y = 0; y < im->height; y++) {
 
@@ -348,7 +347,7 @@ void image_u8_gaussian_blur(image_u8_t *im, double sigma, int ksz)
     if (sigma == 0)
         return;
 
-    assert((ksz & 1) == 1); // ksz must be odd.
+    AT_ASSERT((ksz & 1) == 1); // ksz must be odd.
 
     // build the kernel.
     double *dk = malloc(sizeof(double)*ksz);

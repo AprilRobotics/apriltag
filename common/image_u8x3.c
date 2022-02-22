@@ -25,16 +25,18 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
-#include <assert.h>
+#include "apriltag_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#include "math_util.h"
+#include "common/math_util.h"
 #include "pnm.h"
 
 #include "image_u8x3.h"
+#include "common/diagnostic.h"
 
 // least common multiple of 64 (sandy bridge cache line) and 48 (stride needed
 // for 16byte-wide RGB processing). (It's possible that 48 would be enough).
@@ -184,7 +186,7 @@ void image_u8x3_draw_line(image_u8x3_t *im, float x0, float y0, float x1, float 
 
 static void convolve(const uint8_t *x, uint8_t *y, int sz, const uint8_t *k, int ksz)
 {
-    assert((ksz&1)==1);
+    AT_ASSERT((ksz&1)==1);
 
     for (int i = 0; i < ksz/2 && i < sz; i++)
         y[i] = x[i];
@@ -207,7 +209,7 @@ void image_u8x3_gaussian_blur(image_u8x3_t *im, double sigma, int ksz)
     if (sigma == 0)
         return;
 
-    assert((ksz & 1) == 1); // ksz must be odd.
+    AT_ASSERT((ksz & 1) == 1); // ksz must be odd.
 
     // build the kernel.
     double *dk = malloc(sizeof(double)*ksz);

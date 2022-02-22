@@ -28,9 +28,9 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "pam.h"
+#include "diagnostic.h"
 
 pam_t *pam_create_from_file(const char *inpath)
 {
@@ -137,7 +137,7 @@ pam_t *pam_create_from_file(const char *inpath)
         goto fail;
     }
 
-    assert(pam->maxval == 255);
+    AT_ASSERT(pam->maxval == 255);
 
     pam->datalen = pam->width * pam->height * pam->depth;
     pam->data = malloc(pam->datalen);
@@ -176,7 +176,7 @@ int pam_write_file(pam_t *pam, const char *outpath)
             tupl = "GRAYSCALE";
             break;
         default:
-            assert(0);
+            AT_ASSERT(0);
     }
 
     fprintf(f, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH %d\nMAXVAL %d\nTUPLTYPE %s\nENDHDR\n",
@@ -222,8 +222,8 @@ pam_t *pam_convert(pam_t *in, int type)
     if (type == in->type)
         return pam_copy(in);
 
-    assert(type == PAM_RGB_ALPHA); // we don't support a lot yet
-    assert(in->maxval == 255);
+    AT_ASSERT(type == PAM_RGB_ALPHA); // we don't support a lot yet
+    AT_ASSERT(in->maxval == 255);
 
     int w = in->width;
     int h = in->height;
@@ -238,7 +238,7 @@ pam_t *pam_convert(pam_t *in, int type)
     out->data = malloc(out->datalen);
 
     if (in->type == PAM_RGB) {
-        assert(in->depth == 3);
+        AT_ASSERT(in->depth == 3);
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 out->data[y*4*w + 4*x + 0] = in->data[y*3*w + 3*x + 0];
@@ -248,8 +248,7 @@ pam_t *pam_convert(pam_t *in, int type)
             }
         }
     } else {
-        printf("pam.c unsupported type %d\n", in->type);
-        assert(0);
+        AT_ASSERT_MSG(0, "pam.c unsupported type %d", in->type);
     }
 
     return out;

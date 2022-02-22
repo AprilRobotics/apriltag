@@ -30,14 +30,13 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
+#include "apriltag_config.h"
 #include "apriltag.h"
 
 #include <math.h>
-#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include <inttypes.h>
 
 #include "common/image_u8.h"
 #include "common/image_u8x3.h"
@@ -48,7 +47,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/timeprofile.h"
 #include "common/math_util.h"
 #include "common/g2d.h"
-#include "common/floats.h"
+#include "common/diagnostic.h"
 
 #include "apriltag_math.h"
 
@@ -198,8 +197,8 @@ static void quick_decode_uninit(apriltag_family_t *fam)
 
 static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 {
-    assert(family->impl == NULL);
-    assert(family->ncodes < 65536);
+    AT_ASSERT(family->impl == NULL);
+    AT_ASSERT(family->ncodes < 65536);
 
     struct quick_decode *qd = calloc(1, sizeof(struct quick_decode));
     int capacity = family->ncodes;
@@ -1411,8 +1410,8 @@ void apriltag_detections_destroy(zarray_t *detections)
 
 image_u8_t *apriltag_to_image(apriltag_family_t *fam, int idx)
 {
-    assert(fam != NULL);
-    assert(idx >= 0 && idx < fam->ncodes);
+    AT_ASSERT(fam != NULL);
+    AT_ASSERT(idx >= 0 && idx < fam->ncodes);
 
     uint64_t code = fam->codes[idx];
 

@@ -25,16 +25,18 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
+#include "apriltag_config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "pjpeg.h"
 
-#include "image_u8.h"
+#include "common/image_u8.h"
 #include "image_u8x3.h"
+#include "common/diagnostic.h"
 
 // https://www.w3.org/Graphics/JPEG/itu-t81.pdf
 
@@ -207,7 +209,7 @@ static inline uint32_t bd_peek_bits(struct bit_decoder *bd, int nbits)
 
 static inline uint32_t bd_consume_bits(struct bit_decoder *bd, int nbits)
 {
-    assert(nbits < 32);
+    AT_ASSERT(nbits < 32);
 
     bd_ensure(bd, nbits);
 
@@ -221,7 +223,7 @@ static inline uint32_t bd_consume_bits(struct bit_decoder *bd, int nbits)
 // discard without regard for byte stuffing!
 static inline void bd_discard_bytes(struct bit_decoder *bd, int nbytes)
 {
-    assert(bd->nbits_avail == 0);
+    AT_ASSERT(bd->nbits_avail == 0);
     bd->inpos += nbytes;
 }
 
@@ -701,11 +703,11 @@ void pjpeg_destroy(pjpeg_t *pj)
 // just grab the first component.
 image_u8_t *pjpeg_to_u8_baseline(pjpeg_t *pj)
 {
-    assert(pj->ncomponents > 0);
+    AT_ASSERT(pj->ncomponents > 0);
 
     pjpeg_component_t *comp = &pj->components[0];
 
-    assert(comp->width >= pj->width && comp->height >= pj->height);
+    AT_ASSERT(comp->width >= pj->width && comp->height >= pj->height);
 
     image_u8_t *im = image_u8_create(pj->width, pj->height);
     for (int y = 0; y < im->height; y++)
@@ -736,7 +738,7 @@ static inline uint8_t clamp_u8(int32_t v)
 // color conversion formulas taken from JFIF spec v 1.02
 image_u8x3_t *pjpeg_to_u8x3_baseline(pjpeg_t *pj)
 {
-    assert(pj->ncomponents == 3);
+    AT_ASSERT(pj->ncomponents == 3);
 
     pjpeg_component_t *Y = &pj->components[0];
     pjpeg_component_t *Cb = &pj->components[1];
@@ -856,7 +858,7 @@ pjpeg_t *pjpeg_create_from_buffer(uint8_t *buf, int buflen, uint32_t flags, int 
         pjd.in = mjpeg_dht;
         pjd.inlen = sizeof(mjpeg_dht);
         int result = pjpeg_decode_buffer(&pjd);
-        assert(result == 0);
+        AT_ASSERT(result == 0);
     }
 
     pjd.in = buf;
