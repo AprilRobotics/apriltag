@@ -40,6 +40,7 @@ option(AT_DIAG_ENABLE_DEBUG "Enable debug level diagnostics (chatty)" OFF)
 option(AT_DIAG_ENABLE_ASSERT "Enable asserts" ON)
 option(AT_DIAG_ENABLE_TRACING "Enable tracing of the detector algorithm" ON)
 option(AT_DIAG_ENABLE_TIMESTAMPS "Enable profiling of the detector through timestamps" ON)
+option(AT_DIAG_MATH "Enable math diagnostics" OFF)
 
 #
 # Developer debug flags
@@ -68,8 +69,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 configure_file(
-        "${PROJECT_SOURCE_DIR}/apriltag_config.h.in" "${PROJECT_BINARY_DIR}/apriltag_config.h"
-        USE_SOURCE_PERMISSIONS)
+        "${PROJECT_SOURCE_DIR}/apriltag_config.h.in" "${PROJECT_BINARY_DIR}/apriltag_config.h")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -200,7 +200,7 @@ if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD
     endforeach()
 
     add_custom_command(OUTPUT apriltag_pywrap.o
-        COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c
+        COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -I${PROJECT_SOURCE_DIR} -c -o apriltag_pywrap.o ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c
         DEPENDS ${PROJECT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
     add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
         COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,lib apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}
