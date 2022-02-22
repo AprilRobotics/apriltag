@@ -91,7 +91,6 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     float       decimate        = 1.0;
     float       blur            = 0.0;
     bool        refine_edges    = true;
-    bool        debug           = false;
     PyObject*   py_refine_edges = NULL;
     PyObject*   py_debug        = NULL;
 
@@ -117,11 +116,15 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto done;
     }
 
-    if(py_refine_edges != NULL)
+    if(py_refine_edges != NULL) {
         refine_edges = PyObject_IsTrue(py_refine_edges);
-    if(py_debug        != NULL)
-        debug        = PyObject_IsTrue(py_debug);
+    }
 
+    if(py_debug        != NULL) {
+        PyErr_Format(PyExc_RuntimeError, "debug is not currently supported under the new diag interfaces for Python",
+                     family, SUPPORTED_TAG_FAMILIES(FAMILY_STRING));
+        goto done;
+    }
 
     if(0) ; SUPPORTED_TAG_FAMILIES(TAG_SET_DESTROY_FUNC)
     else
@@ -145,7 +148,6 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     self->td->quad_sigma          = blur;
     self->td->nthreads            = Nthreads;
     self->td->refine_edges        = refine_edges;
-    self->td->debug               = debug;
 
     success = true;
 
