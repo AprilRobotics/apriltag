@@ -40,7 +40,7 @@ extern "C" {
 
 struct timeprofile_entry
 {
-    char name[32];
+    const char *name;
     int64_t utime;
 };
 
@@ -73,12 +73,12 @@ static inline void timeprofile_clear(timeprofile_t *tp)
     tp->utime = utime_now();
 }
 
+// Caller owns name memory, use static memory: timeprofile_stamp(tp, "profile-section"); 
 static inline void timeprofile_stamp(timeprofile_t *tp, const char *name)
 {
     struct timeprofile_entry tpe;
 
-    strncpy(tpe.name, name, sizeof(tpe.name));
-    tpe.name[sizeof(tpe.name)-1] = 0;
+    tpe.name = name;
     tpe.utime = utime_now();
 
     zarray_add(tp->stamps, &tpe);
