@@ -25,3 +25,4 @@ void output_detections_ps(const image_u8_t *im_orig, const zarray_t *detections)
     (diag).lines = output_lines_ps;                     \
     (diag).quads_final = output_quads_ps;               \
     (diag).detections = output_detections_all;
+
