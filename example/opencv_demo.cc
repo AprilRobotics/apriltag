@@ -275,16 +275,15 @@ int main(int argc, char *argv[])
         imshow("Tag Detections", frame);
 #endif
 
-
-        // replace with waitKey() if a delay is desired
-        if (pollKey() >= 0) {
+        // add a delay if desired
+        if (waitKey(0) >= 0) {
             break;
         }
 
         frame_counter++;
         if (frame_counter > 30) {
             cout << "FPS "
-                << std::fixed << std::setprecision(3) << meter.getFPS() << endl;
+                << std::fixed << std::setprecision(3) << (meter.getCounter() / meter.getTimeSec()) << endl;
             frame_counter = 0.0f;
         }
         meter.stop();
