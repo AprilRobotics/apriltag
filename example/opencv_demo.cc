@@ -44,7 +44,7 @@ extern "C" {
 
 #include "common/image_u8.h"
 #include "example/getopt.h"
-#include "example/image_u8x3.h"
+#include "common/image_u8x3.h"
 }
 
 using namespace std;

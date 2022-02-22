@@ -35,7 +35,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "pjpeg.h"
 
 #include "common/image_u8.h"
-#include "example/image_u8x3.h"
+#include "image_u8x3.h"
 #include "common/diagnostic.h"
 
 // https://www.w3.org/Graphics/JPEG/itu-t81.pdf

@@ -49,11 +49,11 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/zarray.h"
 
 #include "getopt.h"
-#include "image_u8x4.h"
-#include "pjpeg.h"
-#include "pnm.h"
+#include "common/image_u8x4.h"
+#include "common/pjpeg.h"
+#include "common/pnm.h"
 #include "apriltag_debug.h"
-#include "postscript_utils.h"
+#include "common/postscript_utils.h"
 
 // Invoke:
 //

@@ -10,8 +10,8 @@
 #include "common/zarray.h"
 #include "common/unionfind.h"
 
-#include "example/image_u8x3.h"
-#include "example/postscript_utils.h"
+#include "common/image_u8x3.h"
+#include "common/postscript_utils.h"
 #include "example/apriltag_debug.h"
 
 void output_quads_ps(const image_u8_t *im_orig, const zarray_t *quads)

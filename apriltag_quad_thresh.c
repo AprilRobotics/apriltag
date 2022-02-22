@@ -36,7 +36,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "apriltag.h"
 #include "common/zarray.h"
 #include "common/unionfind.h"
-#include "example/timeprofile.h"
 #include "common/zmaxheap.h"
 #include "common/math_util.h"
 #include "common/diagnostic.h"

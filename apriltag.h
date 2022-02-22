@@ -37,8 +37,9 @@ extern "C" {
 #include "common/image_u8.h"
 #include "common/zarray.h"
 #include "common/workerpool.h"
-#include "example/timeprofile.h"
 #include "common/unionfind.h"
+#include "common/timeprofile.h"
+
 #include <pthread.h>
 
 #define APRILTAG_TASKS_PER_THREAD_TARGET 10

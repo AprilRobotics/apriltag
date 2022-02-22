@@ -39,11 +39,9 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdio.h>
 
 #include "common/image_u8.h"
-#include "example/image_u8x3.h"
 #include "common/zarray.h"
 #include "common/matd.h"
 #include "common/homography.h"
-#include "example/timeprofile.h"
 #include "common/math_util.h"
 #include "common/g2d.h"
 #include "common/diagnostic.h"

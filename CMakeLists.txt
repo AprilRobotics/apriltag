@@ -226,17 +226,20 @@ endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BU
 
 #
 # Example support library
+# NOTE: the following files could also be moved this library as
+# they are not used by the core library
+#
+#   common/image_u8x3.c
+#   common/image_u8x4.c
+#   common/pam.c
+#   common/pjpeg.c
+#   common/pjpeg-idct.c
+#   common/pnm.c
+#   common/time_util.c
 #
 set(EXAMPLE_SUPPORT_SOURCE
         example/apriltag_debug.c
         example/getopt.c
-        example/image_u8x3.c
-        example/image_u8x4.c
-        example/pam.c
-        example/pjpeg.c
-        example/pjpeg-idct.c
-        example/pnm.c
-        example/time_util.c
         ${CMAKE_CURRENT_BINARY_DIR}/apriltag_config.h)
 add_library(at_example_support STATIC ${EXAMPLE_SUPPORT_SOURCE})
 target_include_directories(at_example_support
