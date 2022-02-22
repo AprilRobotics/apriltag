@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     meter.start();
 
     // Initialize camera
-    VideoCapture cap(0, CAP_ANY);
+    VideoCapture cap(0);
     if (!cap.isOpened()) {
         cerr << "Couldn't open video capture device" << endl;
         return -1;
