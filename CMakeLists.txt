@@ -6,31 +6,12 @@ if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)
 endif()
 
+# Set a default build type if none was specified
+set(default_build_type "Release")
+
 # Build options
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(ASAN "Use AddressSanitizer for debug builds to detect memory issues" OFF)
-
-if (ASAN)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} \
-        -fsanitize=address \
-        -fsanitize=bool \
-        -fsanitize=bounds \
-        -fsanitize=enum \
-        -fsanitize=float-cast-overflow \
-        -fsanitize=float-divide-by-zero \
-        -fsanitize=nonnull-attribute \
-        -fsanitize=returns-nonnull-attribute \
-        -fsanitize=signed-integer-overflow \
-        -fsanitize=undefined \
-        -fsanitize=vla-bound \
-        -fno-sanitize=alignment \
-        -fsanitize=leak \
-        -fsanitize=object-size \
-    ")
-endif()
-
-# Set a default build type if none was specified
-set(default_build_type "Release")
 
 #
 # Diagnostic options
@@ -52,15 +33,43 @@ option(AT_DEBUG_GAUSSIAN "Debug the gaussian blur kernel" OFF)
 #
 option(AT_TEST_THRESHOLD_DEGLITCH "Enable threshold deglitching for noisy images" OFF)
 
+#
+# Use the default homography option (there are two solvers present)
+#
 option(AT_HOMOGRAPHY_METHOD_INVERSE "Use inverse method" ON)
 cmake_dependent_option(AT_HOMOGRAPHY_METHOD_CHO_OR_PLU "Use CHO matrix solver" OFF AT_HOMOGRAPHY_METHOD_INVERSE CHO)
 
 #
-# Textual diagnostic options
+# Textual diagnostic through stderr
 #
 cmake_dependent_option(AT_DIAG_TEXT_STDERR "Enable text diagnostic through stderr" ON AT_DIAG_ENABLE_TEXT OFF)
 
 
+#
+# Configure ASAN for all CPP source files in debug builds
+#
+if (ASAN)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} \
+        -fsanitize=address \
+        -fsanitize=bool \
+        -fsanitize=bounds \
+        -fsanitize=enum \
+        -fsanitize=float-cast-overflow \
+        -fsanitize=float-divide-by-zero \
+        -fsanitize=nonnull-attribute \
+        -fsanitize=returns-nonnull-attribute \
+        -fsanitize=signed-integer-overflow \
+        -fsanitize=undefined \
+        -fsanitize=vla-bound \
+        -fno-sanitize=alignment \
+        -fsanitize=leak \
+        -fsanitize=object-size \
+    ")
+endif()
+
+#
+# Configure the build type
+#
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
     set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE  STRING "Choose the type of build." FORCE)
@@ -68,9 +77,11 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
+#
+# Build apriltag_config.h
+#
 configure_file(
         "${PROJECT_SOURCE_DIR}/apriltag_config.h.in" "${PROJECT_BINARY_DIR}/apriltag_config.h")
-
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 #
