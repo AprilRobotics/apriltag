@@ -157,6 +157,12 @@ matd_t *matd_select(const matd_t *a, int r0, int r1, int c0, int c1);
 void matd_print(const matd_t *m, const char *fmt);
 
 /**
+ * Prints the supplied matrix 'm' to standard output on a single line, pre will
+ * be printed before the matrix and post after.
+ */
+void matd_print_flat(const matd_t *m, const char *pre, const char *post);
+
+/**
  * Prints the transpose of the supplied matrix 'm' to standard output by applying
  * the supplied printf format specifier 'fmt' for each individual element. Each
  * row will be printed on a separate newline.

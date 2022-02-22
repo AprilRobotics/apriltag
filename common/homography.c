@@ -32,6 +32,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/zarray.h"
 #include "common/homography.h"
 #include "common/math_util.h"
+#include "common/diagnostic.h"
 
 // correspondences is a list of float[4]s, consisting of the points x
 // and y concatenated. We will compute a homography such that y = Hx
@@ -344,10 +345,12 @@ matd_t *homography_to_pose(const matd_t *H, double fx, double fy, double cx, dou
         matd_destroy(R);
     }
 
-    return matd_create_data(4, 4, (double[]) { R00, R01, R02, TX,
+    matd_t *out = matd_create_data(4, 4, (double[]) { R00, R01, R02, TX,
                                                R10, R11, R12, TY,
                                                R20, R21, R22, TZ,
                                                 0, 0, 0, 1 });
+    AT_DMATH1(out, H, "homography_to_pose (fx: %g, fy: %g, cx: %g, cy: %g)", fx, fy, cx, cy);
+    return out;
 }
 
 // Similar to above

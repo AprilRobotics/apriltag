@@ -448,6 +448,7 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
     matd_destroy(R_gamma);
     matd_destroy(R_z);
     matd_destroy(R_1_prime);
+    AT_DMATH(ret, "fix_pos_ambiguities")
     return ret;
 }
 

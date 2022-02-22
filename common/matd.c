@@ -55,6 +55,7 @@ matd_t *matd_create(int rows, int cols)
     matd_t *m = calloc(1, sizeof(matd_t) + (rows*cols*sizeof(double)));
     m->nrows = rows;
     m->ncols = cols;
+    AT_DMATH(m, "create(%d, %d)", rows, cols);
 
     return m;
 }
@@ -65,6 +66,7 @@ matd_t *matd_create_scalar(TYPE v)
     m->nrows = 0;
     m->ncols = 0;
     m->data[0] = v;
+    AT_DMATH(m, "create_scalar");
 
     return m;
 }
@@ -78,6 +80,7 @@ matd_t *matd_create_data(int rows, int cols, const TYPE *data)
     for (int i = 0; i < rows * cols; i++)
         m->data[i] = data[i];
 
+    AT_DMATH(m, "create_create_data(%d, %d)", rows, cols);
     return m;
 }
 
@@ -90,6 +93,7 @@ matd_t *matd_create_dataf(int rows, int cols, const float *data)
     for (int i = 0; i < rows * cols; i++)
         m->data[i] = (double)data[i];
 
+    AT_DMATH(m, "create_create_dataf(%d, %d)", rows, cols);
     return m;
 }
 
@@ -102,6 +106,7 @@ matd_t *matd_identity(int dim)
     for (int i = 0; i < dim; i++)
         MATD_EL(m, i, i) = 1;
 
+    AT_DMATH(m, "identity(%d)", dim);
     return m;
 }
 
@@ -162,6 +167,7 @@ matd_t *matd_copy(const matd_t *m)
     else
         memcpy(x->data, m->data, sizeof(TYPE)*m->ncols*m->nrows);
 
+    AT_DMATH(x, "copy(%d, %d)", m->nrows, m->ncols);
     return x;
 }
 
@@ -181,7 +187,28 @@ matd_t *matd_select(const matd_t * a, int r0, int r1, int c0, int c1)
         for (int col = c0; col <= c1; col++)
             MATD_EL(r,row-r0,col-c0) = MATD_EL(a,row,col);
 
+    AT_DMATH(r, "select(%d, %d, %d, %d)", r0, r1, c0, c1);
     return r;
+}
+
+void matd_print_flat(const matd_t *m, const char *pre, const char *post)
+{
+    AT_ASSERT(m != NULL);
+    AT_ASSERT(pre != NULL && post != NULL);
+
+    if (matd_is_scalar(m)) {
+        fprintf(stderr, "%s{%g}%s", pre, MATD_EL(m, 0, 0), post);
+    } else {
+        fprintf(stderr, "%s {", pre);
+        for (int i = 0; i < m->nrows; i++) {
+            fprintf(stderr, " { ");
+            for (int j = 0; j < m->ncols; j++) {
+                fprintf(stderr, ((j + 1 < m->ncols) ? "%g, " : "%g "), MATD_EL(m, i, j));
+            }
+             fprintf(stderr, ((i + 1 < m->nrows) ? " }, " : " } "));
+        }
+        fprintf(stderr, "} %s", post);
+    }
 }
 
 void matd_print(const matd_t *m, const char *fmt)
@@ -226,6 +253,7 @@ void matd_destroy(matd_t *m)
         return;
 
     AT_ASSERT(m != NULL);
+    AT_DMATH(m, "destroy");
     free(m);
 }
 
@@ -252,6 +280,8 @@ matd_t *matd_multiply(const matd_t *a, const matd_t *b)
         }
     }
 
+    AT_DMATH2(m, a, b, "multipy");
+
     return m;
 }
 
@@ -269,12 +299,14 @@ matd_t *matd_scale(const matd_t *a, double s)
             MATD_EL(m, i, j) = s * MATD_EL(a, i, j);
         }
     }
+    AT_DMATH(m, "scale(%g)", s);
 
     return m;
 }
 
 void matd_scale_inplace(matd_t *a, double s)
 {
+
     AT_ASSERT(a != NULL);
 
     if (matd_is_scalar(a)) {
@@ -287,6 +319,7 @@ void matd_scale_inplace(matd_t *a, double s)
             MATD_EL(a, i, j) *= s;
         }
     }
+    AT_DMATH(a, "scale_in_place(%g)", s);
 }
 
 matd_t *matd_add(const matd_t *a, const matd_t *b)
@@ -307,6 +340,7 @@ matd_t *matd_add(const matd_t *a, const matd_t *b)
         }
     }
 
+    AT_DMATH2(m, a, b, "add");
     return m;
 }
 
@@ -327,6 +361,7 @@ void matd_add_inplace(matd_t *a, const matd_t *b)
             MATD_EL(a, i, j) += MATD_EL(b, i, j);
         }
     }
+    AT_DMATH1(a, b, "add_in_place");
 }
 
 
@@ -348,6 +383,7 @@ matd_t *matd_subtract(const matd_t *a, const matd_t *b)
         }
     }
 
+    AT_DMATH2(m, a, b, "subtract");
     return m;
 }
 
@@ -368,6 +404,7 @@ void matd_subtract_inplace(matd_t *a, const matd_t *b)
             MATD_EL(a, i, j) -= MATD_EL(b, i, j);
         }
     }
+    AT_DMATH1(a, b, "subtract_inplace");
 }
 
 
@@ -385,6 +422,8 @@ matd_t *matd_transpose(const matd_t *a)
             MATD_EL(m, j, i) = MATD_EL(a, i, j);
         }
     }
+
+    AT_DMATH1(m, a, "transpose");
     return m;
 }
 
@@ -411,6 +450,8 @@ double matd_det_general(const matd_t *a)
     // for an uneven number of permutations).
     double det = mlu->pivsign * detL * detU;
 
+    AT_DMATH0("det_general %g %d (%g %g)", det, mlu->pivsign, detL, detU);
+
     // Cleanup
     matd_plu_destroy(mlu);
     matd_destroy(L);
@@ -430,23 +471,31 @@ double matd_det(const matd_t *a)
             AT_ASSERT(a->nrows > 0);
             break;
 
-        case 1:
+        case 1: {
             // 1x1 matrix
-            return a->data[0];
+            const double det = a->data[0];
+            AT_DMATH_OF(a, "det scalar %g", det);
+            return det;
+        }
 
-        case 2:
+        case 2: {
             // 2x2 matrix
-            return a->data[0] * a->data[3] - a->data[1] * a->data[2];
+            const double det = a->data[0] * a->data[3] - a->data[1] * a->data[2];
+            AT_DMATH_OF(a, "det 2x2 %g", det);
+            return det;
+        }
 
-        case 3:
+        case 3: {
             // 3x3 matrix
-            return  a->data[0]*a->data[4]*a->data[8]
-                - a->data[0]*a->data[5]*a->data[7]
-                + a->data[1]*a->data[5]*a->data[6]
-                - a->data[1]*a->data[3]*a->data[8]
-                + a->data[2]*a->data[3]*a->data[7]
-                - a->data[2]*a->data[4]*a->data[6];
-
+            const double det = a->data[0] * a->data[4] * a->data[8]
+                   - a->data[0] * a->data[5] * a->data[7]
+                   + a->data[1] * a->data[5] * a->data[6]
+                   - a->data[1] * a->data[3] * a->data[8]
+                   + a->data[2] * a->data[3] * a->data[7]
+                   - a->data[2] * a->data[4] * a->data[6];
+            AT_DMATH_OF(a, "det 3x3 %g", det);
+            return det;
+        }
         case 4: {
             // 4x4 matrix
             double m00 = MATD_EL(a,0,0), m01 = MATD_EL(a,0,1), m02 = MATD_EL(a,0,2), m03 = MATD_EL(a,0,3);
@@ -454,7 +503,7 @@ double matd_det(const matd_t *a)
             double m20 = MATD_EL(a,2,0), m21 = MATD_EL(a,2,1), m22 = MATD_EL(a,2,2), m23 = MATD_EL(a,2,3);
             double m30 = MATD_EL(a,3,0), m31 = MATD_EL(a,3,1), m32 = MATD_EL(a,3,2), m33 = MATD_EL(a,3,3);
 
-            return m00 * m11 * m22 * m33 - m00 * m11 * m23 * m32 -
+            const double det = m00 * m11 * m22 * m33 - m00 * m11 * m23 * m32 -
                 m00 * m21 * m12 * m33 + m00 * m21 * m13 * m32 + m00 * m31 * m12 * m23 -
                 m00 * m31 * m13 * m22 - m10 * m01 * m22 * m33 +
                 m10 * m01 * m23 * m32 + m10 * m21 * m02 * m33 -
@@ -466,6 +515,7 @@ double matd_det(const matd_t *a)
                 m30 * m01 * m13 * m22 + m30 * m11 * m02 * m23 -
                 m30 * m11 * m03 * m22 - m30 * m21 * m02 * m13 +
                 m30 * m21 * m03 * m12;
+            AT_DMATH_OF(a, "det 4x4 %g", det);
         }
 
         default:
@@ -490,7 +540,9 @@ matd_t *matd_inverse(const matd_t *x)
         if (x->data[0] == 0)
             return NULL;
 
-        return matd_create_scalar(1.0 / x->data[0]);
+        matd_t *m = matd_create_scalar(1.0 / x->data[0]);
+        AT_DMATH1(m, x, "inverse (scalar)");
+        return m;
     }
 
     switch(x->nrows) {
@@ -503,6 +555,7 @@ matd_t *matd_inverse(const matd_t *x)
 
             m = matd_create(x->nrows, x->nrows);
             MATD_EL(m, 0, 0) = 1.0 * invdet;
+            AT_DMATH1(m, x, "inverse (vec)");
             return m;
         }
 
@@ -518,6 +571,7 @@ matd_t *matd_inverse(const matd_t *x)
             MATD_EL(m, 0, 1) = - MATD_EL(x, 0, 1) * invdet;
             MATD_EL(m, 1, 0) = - MATD_EL(x, 1, 0) * invdet;
             MATD_EL(m, 1, 1) = MATD_EL(x, 0, 0) * invdet;
+            AT_DMATH1(m, x, "inverse (2x2)");
             return m;
         }
 
@@ -532,6 +586,7 @@ matd_t *matd_inverse(const matd_t *x)
             }
 
             matd_plu_destroy(plu);
+            AT_DMATH1(inv, x, "inverse (plu)");
 
             return inv;
         }
@@ -813,11 +868,13 @@ matd_t *matd_op(const char *expr, ...)
     va_list ap;
     va_start(ap, expr);
 
+    AT_DMATH0("op_start: '%s'", expr);
     matd_t **args = malloc(sizeof(matd_t*)*nargs);
     for (int i = 0; i < nargs; i++) {
         args[i] = va_arg(ap, matd_t*);
         // XXX: sanity check argument; emit warning/error if args[i]
         // doesn't look like a matd_t*.
+        AT_DMATH_OF(args[i], "  arg[%d]", i);
     }
 
     va_end(ap);
@@ -840,7 +897,7 @@ matd_t *matd_op(const char *expr, ...)
         matd_destroy(garb[i]);
     }
     free(garb);
-
+    AT_DMATH(res_copy, "op_complete");
     return res_copy;
 }
 
@@ -853,7 +910,9 @@ double matd_vec_mag(const matd_t *a)
     int len = a->nrows*a->ncols;
     for (int i = 0; i < len; i++)
         mag += sq(a->data[i]);
-    return sqrt(mag);
+    const double sqrt_mag = sqrt(mag);
+    AT_DMATH_OF(a, "vec_mag: %g (%g^)", sqrt_mag, mag);
+    return sqrt_mag;
 }
 
 double matd_vec_dist(const matd_t *a, const matd_t *b)
@@ -864,7 +923,10 @@ double matd_vec_dist(const matd_t *a, const matd_t *b)
     AT_ASSERT(a->nrows*a->ncols == b->nrows*b->ncols);
 
     int lena = a->nrows*a->ncols;
-    return matd_vec_dist_n(a, b, lena);
+    double dist = matd_vec_dist_n(a, b, lena);
+    AT_DMATH0("vec_dist: %g =", dist);
+
+    return dist;
 }
 
 double matd_vec_dist_n(const matd_t *a, const matd_t *b, int n)
@@ -881,7 +943,9 @@ double matd_vec_dist_n(const matd_t *a, const matd_t *b, int n)
     double mag = 0.0;
     for (int i = 0; i < n; i++)
         mag += sq(a->data[i] - b->data[i]);
-    return sqrt(mag);
+    const double sqrt_mag = sqrt(mag);
+    AT_DMATH0("vec_dist_n: %g =", sqrt_mag);
+    return sqrt_mag;
 }
 
 // find the index of the off-diagonal element with the largest mag
@@ -916,6 +980,7 @@ double matd_vec_dot_product(const matd_t *a, const matd_t *b)
     for (int i = 0; i < adim; i++) {
         acc += a->data[i] * b->data[i];
     }
+    AT_DMATH0("vec_dot: %g =", acc);
     return acc;
 }
 
@@ -934,6 +999,7 @@ matd_t *matd_vec_normalize(const matd_t *a)
     for(int i = 0; i < len; i++)
         b->data[i] = a->data[i] / mag;
 
+    AT_DMATH1(b, a, "vec_norm");
     return b;
 }
 
@@ -949,6 +1015,7 @@ matd_t *matd_crossproduct(const matd_t *a, const matd_t *b)
     r->data[1] = a->data[2] * b->data[0] - a->data[0] * b->data[2];
     r->data[2] = a->data[0] * b->data[1] - a->data[1] * b->data[0];
 
+    AT_DMATH2(r, a, b, "crossproduct");
     return r;
 }
 
@@ -969,6 +1036,7 @@ TYPE matd_err_inf(const matd_t *a, const matd_t *b)
         }
     }
 
+    AT_DMATH0("err_inf: %g", maxf);
     return maxf;
 }
 
@@ -1453,6 +1521,10 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
     res.S = B;
     res.V = RS;
 
+    AT_DMATH(res.U, "svd.U");
+    AT_DMATH(res.S, "svd.S");
+    AT_DMATH(res.V, "svd.V");
+
     return res;
 }
 
@@ -1585,7 +1657,7 @@ matd_plu_t *matd_plu(const matd_t *a)
     mlu->lu = lu;
     mlu->piv = piv;
     mlu->pivsign = pivsign;
-
+    AT_DMATH1(lu, a, "plu, sign: %d", pivsign);
     return mlu;
 }
 
@@ -1595,6 +1667,7 @@ void matd_plu_destroy(matd_plu_t *mlu)
     free(mlu->piv);
     memset(mlu, 0, sizeof(matd_plu_t));
     free(mlu);
+    AT_DMATH0("plu_destroy");
 }
 
 double matd_plu_det(const matd_plu_t *mlu)
@@ -1607,6 +1680,7 @@ double matd_plu_det(const matd_plu_t *mlu)
             det *= MATD_EL(lu, i, i);
     }
 
+    AT_DMATH0("plu_det: %g", det);
     return det;
 }
 
@@ -1687,6 +1761,7 @@ matd_t *matd_plu_solve(const matd_plu_t *mlu, const matd_t *b)
         }
     }
 
+    AT_DMATH(x, "plu_solv");
     return x;
 }
 
@@ -1893,6 +1968,7 @@ MATD_EL(U, i, j) = 0;
     matd_chol_t *chol = calloc(1, sizeof(matd_chol_t));
     chol->is_spd = is_spd;
     chol->u = U;
+    AT_DMATH(U, "chol: spd: %d", is_spd);
     return chol;
 }
 
@@ -1900,6 +1976,7 @@ void matd_chol_destroy(matd_chol_t *chol)
 {
     matd_destroy(chol->u);
     free(chol);
+    AT_DMATH0("chol_destroy");
 }
 
 // Solve: (U')x = b, U is upper triangular
@@ -1985,6 +2062,7 @@ matd_t *matd_chol_solve(const matd_chol_t *chol, const matd_t *b)
         }
     }
 
+    AT_DMATH(x, "chol_solv");
     return x;
 }
 
