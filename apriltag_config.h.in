@@ -3,15 +3,16 @@
 //
 // Diagnostic compilation options
 //
-#cmakedefine01 AT_DIAG_ENABLE_TEXT
-#cmakedefine01 AT_DIAG_ENABLE_DEBUG
-#cmakedefine01 AT_DIAG_TEXT_STDERR
-#cmakedefine01 AT_DIAG_ENABLE_ASSERT
-#cmakedefine01 AT_DIAG_ENABLE_TRACING
-#cmakedefine01 AT_DIAG_ENABLE_TIMESTAMPS
+#cmakedefine AT_DIAG_ENABLE_TEXT
+#cmakedefine AT_DIAG_ENABLE_DEBUG
+#cmakedefine AT_DIAG_TEXT_STDERR
+#cmakedefine AT_DIAG_ENABLE_ASSERT
+#cmakedefine AT_DIAG_ENABLE_TRACING
+#cmakedefine AT_DIAG_ENABLE_TIMESTAMPS
+#cmakedefine AT_DIAG_MATH
 
 // Internal debug options
-#cmakedefine01 AT_DEBUG_GAUSSIAN
+#cmakedefine AT_DEBUG_GAUSSIAN
 
 // Experimental code
-#cmakedefine01 AT_TEST_THRESHOLD_DEGLITCH
+#cmakedefine AT_TEST_THRESHOLD_DEGLITCH
