@@ -37,18 +37,15 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include <inttypes.h>
 
 #include "common/image_u8.h"
 #include "common/image_u8x3.h"
-#include "common/zhash.h"
 #include "common/zarray.h"
 #include "common/matd.h"
 #include "common/homography.h"
 #include "common/timeprofile.h"
 #include "common/math_util.h"
 #include "common/g2d.h"
-#include "common/floats.h"
 
 #include "apriltag_math.h"
 

@@ -26,11 +26,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #include <math.h>
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
-
-#include "common/doubles.h"
 
 /** SVD 2x2.
 
