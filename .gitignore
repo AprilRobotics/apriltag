@@ -5,6 +5,4 @@
 example/opencv_demo
 example/apriltag_demo
 build/
-build-debug/
-build-release/
-.idea/
+build-*/
