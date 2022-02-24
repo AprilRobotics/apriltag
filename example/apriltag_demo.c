@@ -31,9 +31,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #include <stdio.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <ctype.h>
 #include <unistd.h>
 #include <math.h>
 
@@ -51,7 +48,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/diagnostic.h"
 #include "common/getopt.h"
 #include "common/image_u8.h"
-#include "common/image_u8x4.h"
 #include "common/pjpeg.h"
 #include "common/zarray.h"
 
