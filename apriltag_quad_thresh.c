@@ -241,8 +241,13 @@ void fit_line(struct line_fit_pt *lfps, int sz, int i0, int i1, double *lineparm
         }
 
         double length = sqrtf(M);
-        lineparm[2] = nx/length;
-        lineparm[3] = ny/length;
+        if (length > 0) {
+            lineparm[2] = nx / length;
+            lineparm[3] = ny / length;
+        } else {
+            lineparm[2] = 0;
+            lineparm[3] = 0;
+        }
     }
 
     // sum of squared errors =
@@ -921,7 +926,6 @@ int fit_quad(
         // compute intersection
         quad->p[i][0] = lines[i][0] + L0*A00;
         quad->p[i][1] = lines[i][1] + L0*A10;
-
         res = 1;
     }
 
