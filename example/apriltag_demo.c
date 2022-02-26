@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
                 int err = 0;
                 pjpeg_t *pjpeg = pjpeg_create_from_file(path, 0, &err);
                 if (pjpeg == NULL) {
-                    printf("pjpeg error %d\n", err);
+                    printf("pjpeg failed to load: %s, error %d\n", path, err);
                     continue;
                 }
 
@@ -185,6 +185,8 @@ int main(int argc, char *argv[])
                 printf("couldn't load %s\n", path);
                 continue;
             }
+
+            printf("image: %s %dx%d\n", path, im->width, im->height);
 
             zarray_t *detections = apriltag_detector_detect(td, im);
 
