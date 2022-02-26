@@ -66,6 +66,11 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    cout << "Enabling video capture" << endl;
+    
+    TickMeter meter;
+    meter.start();
+
     // Initialize camera
     VideoCapture cap(0);
     if (!cap.isOpened()) {
@@ -105,6 +110,15 @@ int main(int argc, char *argv[])
     td->nthreads = getopt_get_int(getopt, "threads");
     td->debug = getopt_get_bool(getopt, "debug");
     td->refine_edges = getopt_get_bool(getopt, "refine-edges");
+
+    float frame_counter = 0.0f;
+    meter.stop();
+    cout << "Detector " << famname << " initialized in " 
+        << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
+    cout << "  " << cap.get(CAP_PROP_FRAME_WIDTH ) << "x" <<
+                    cap.get(CAP_PROP_FRAME_HEIGHT ) << " @" <<
+                    cap.get(CAP_PROP_FPS) << "FPS" << endl;
+    meter.reset();
 
     Mat frame, gray;
     while (true) {
