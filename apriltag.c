@@ -501,6 +501,7 @@ static int quad_update_homographies(struct quad *quad)
     if (quad->H != NULL) {
         quad->Hinv = matd_inverse(quad->H);
         if (quad->Hinv != NULL) {
+	    // Success!
             return 0;
         }
         matd_destroy(quad->H);
