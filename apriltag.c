@@ -441,6 +441,7 @@ static matd_t* homography_compute2(double c[4][4]) {
 
         if (max_val < epsilon) {
             fprintf(stderr, "WRN: Matrix is singular.\n");
+            return NULL;
         }
 
         // Swap to get best row.
@@ -494,12 +495,15 @@ static int quad_update_homographies(struct quad *quad)
 
     // XXX Tunable
     quad->H = homography_compute2(corr_arr);
-
-    quad->Hinv = matd_inverse(quad->H);
-
-    if (quad->H && quad->Hinv)
-        return 0;
-
+    if (quad->H != NULL) {
+        quad->Hinv = matd_inverse(quad->H);
+        if (quad->Hinv != NULL) {
+	    // Success!
+            return 0;
+        }
+        matd_destroy(quad->H);
+        quad->H = NULL;
+    }
     return -1;
 }
 
@@ -893,7 +897,7 @@ static void quad_decode_task(void *_u)
         }
 
         // make sure the homographies are computed...
-        if (quad_update_homographies(quad_original))
+        if (quad_update_homographies(quad_original) != 0)
             continue;
 
         for (int famidx = 0; famidx < zarray_size(td->tag_families); famidx++) {
