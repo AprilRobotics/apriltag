@@ -61,6 +61,19 @@ To install to a different directory than /usr/local:
 
     $ PREFIX=/some/path sudo make install
 
+Debugging
+=========
+
+You can enable [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) to debug memory issues for Debug builds by setting the `ASAN` option:
+```
+cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Debug -DASAN=ON
+cmake --build build
+```
+
+Mostly you can then run your executables as usual and inspect the sanitiser output. If you get a message like `ASan runtime does not come first in initial library list; you should either link runtime to your application or manually preload it with LD_PRELOAD.` you have to preload the corresponding `libasan.so.5` like this:
+```
+LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5 ./build/opencv_demo
+```
 
 Flexible Layouts
 ================
