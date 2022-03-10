@@ -44,10 +44,11 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
 
+// This demo program is also used to profile and test the internals of the apriltag library, the internals should
+// under normal usage not be used.
 #include "common/getopt.h"
 #include "common/image_u8.h"
 #include "common/pjpeg.h"
-#include "common/zarray.h"
 
 // Invoke:
 //
@@ -101,107 +102,108 @@ int main(int argc, char *argv[])
 
     apriltag_detector_t *td = apriltag_detector_create();
     apriltag_detector_add_family_bits(td, tf, getopt_get_int(getopt, "hamming"));
-    td->quad_decimate = getopt_get_double(getopt, "decimate");
-    td->quad_sigma = getopt_get_double(getopt, "blur");
-    td->nthreads = getopt_get_int(getopt, "threads");
-    td->debug = getopt_get_bool(getopt, "debug");
-    td->refine_edges = getopt_get_bool(getopt, "refine-edges");
 
+    // Demo program parameters
     int quiet = getopt_get_bool(getopt, "quiet");
-
     int maxiters = getopt_get_int(getopt, "iters");
 
     const int hamm_hist_max = 10;
 
-    for (int iter = 0; iter < maxiters; iter++) {
+    // Load the source images
+    zarray_t *images = zarray_create(sizeof(image_u8_t*));
 
-        int total_quads = 0;
-        int total_hamm_hist[hamm_hist_max];
-        memset(total_hamm_hist, 0, sizeof(total_hamm_hist));
-        double total_time = 0;
+    for (int input = 0; input < zarray_size(inputs); input++) {
+        char *path = NULL;
+        zarray_get(inputs, input, &path);
+        if (!quiet)
+            printf("loading %s\n", path);
+        else
+            printf("%20s ", path);
 
-        if (maxiters > 1)
-            printf("iter %d / %d\n", iter + 1, maxiters);
 
-        for (int input = 0; input < zarray_size(inputs); input++) {
-
-            int hamm_hist[hamm_hist_max];
-            memset(hamm_hist, 0, sizeof(hamm_hist));
-
-            char *path;
-            zarray_get(inputs, input, &path);
-            if (!quiet)
-                printf("loading %s\n", path);
-            else
-                printf("%20s ", path);
-
-            image_u8_t *im = NULL;
-            if (str_ends_with(path, "pnm") || str_ends_with(path, "PNM") ||
-                str_ends_with(path, "pgm") || str_ends_with(path, "PGM"))
-                im = image_u8_create_from_pnm(path);
-            else if (str_ends_with(path, "jpg") || str_ends_with(path, "JPG")) {
-                int err = 0;
-                pjpeg_t *pjpeg = pjpeg_create_from_file(path, 0, &err);
-                if (pjpeg == NULL) {
-                    printf("pjpeg failed to load: %s, error %d\n", path, err);
-                    continue;
-                }
-
-                if (1) {
-                    im = pjpeg_to_u8_baseline(pjpeg);
-                } else {
-                    printf("illumination invariant\n");
-
-                    image_u8x3_t *imc =  pjpeg_to_u8x3_baseline(pjpeg);
-
-                    im = image_u8_create(imc->width, imc->height);
-
-                    for (int y = 0; y < imc->height; y++) {
-                        for (int x = 0; x < imc->width; x++) {
-                            double r = imc->buf[y*imc->stride + 3*x + 0] / 255.0;
-                            double g = imc->buf[y*imc->stride + 3*x + 1] / 255.0;
-                            double b = imc->buf[y*imc->stride + 3*x + 2] / 255.0;
-
-                            double alpha = 0.42;
-                            double v = 0.5 + log(g) - alpha*log(b) - (1-alpha)*log(r);
-                            int iv = v * 255;
-                            if (iv < 0)
-                                iv = 0;
-                            if (iv > 255)
-                                iv = 255;
-
-                            im->buf[y*im->stride + x] = iv;
-                        }
-                    }
-                    image_u8x3_destroy(imc);
-                    if (td->debug)
-                        image_u8_write_pnm(im, "debug_invariant.pnm");
-                }
-
-                pjpeg_destroy(pjpeg);
-            }
-
-            if (im == NULL) {
-                printf("couldn't load %s\n", path);
+        image_u8_t *im = NULL;
+        if (str_ends_with(path, "pnm") || str_ends_with(path, "PNM") ||
+            str_ends_with(path, "pgm") || str_ends_with(path, "PGM"))
+            im = image_u8_create_from_pnm(path);
+        else if (str_ends_with(path, "jpg") || str_ends_with(path, "JPG")) {
+            int err = 0;
+            pjpeg_t *pjpeg = pjpeg_create_from_file(path, 0, &err);
+            if (pjpeg == NULL) {
+                printf("pjpeg failed to load: %s, error %d\n", path, err);
                 continue;
             }
 
-            printf("image: %s %dx%d\n", path, im->width, im->height);
+            if (1) {
+                im = pjpeg_to_u8_baseline(pjpeg);
+            } else {
+                printf("illumination invariant\n");
+
+                image_u8x3_t *imc = pjpeg_to_u8x3_baseline(pjpeg);
+
+                im = image_u8_create(imc->width, imc->height);
+
+                for (int y = 0; y < imc->height; y++) {
+                    for (int x = 0; x < imc->width; x++) {
+                        double r = imc->buf[y * imc->stride + 3 * x + 0] / 255.0;
+                        double g = imc->buf[y * imc->stride + 3 * x + 1] / 255.0;
+                        double b = imc->buf[y * imc->stride + 3 * x + 2] / 255.0;
+
+                        double alpha = 0.42;
+                        double v = 0.5 + log(g) - alpha * log(b) - (1 - alpha) * log(r);
+                        int iv = v * 255;
+                        if (iv < 0)
+                            iv = 0;
+                        if (iv > 255)
+                            iv = 255;
+
+                        im->buf[y * im->stride + x] = iv;
+                    }
+                }
+                image_u8x3_destroy(imc);
+                if (td->debug)
+                    image_u8_write_pnm(im, "debug_invariant.pnm");
+            }
+
+            pjpeg_destroy(pjpeg);
+        }
+
+        if (im == NULL) {
+            printf("couldn't load %s\n", path);
+            continue;
+        }
+        zarray_add(images, &im);
+        printf("loaded image: %s %dx%d\n", path, im->width, im->height);
+    }
+
+    int total_quads = 0;
+    int total_detections = 0;
+    int total_hamm_hist[hamm_hist_max];
+    memset(total_hamm_hist, 0, sizeof(total_hamm_hist));
+    double total_time = 0;
+
+    for (int iter = 0; iter < maxiters; iter++) {
+        if (maxiters > 1 && (iter % 100) == 0)
+            printf("iter %d / %d\n", iter + 1, maxiters);
+
+        image_u8_t *im = NULL;
+        for (int i = 0; i < zarray_size(images); ++i) {
+            zarray_get(images, i, &im);
+            int hamm_hist[hamm_hist_max];
+            memset(hamm_hist, 0, sizeof(hamm_hist));
 
             zarray_t *detections = apriltag_detector_detect(td, im);
-
-            for (int i = 0; i < zarray_size(detections); i++) {
+            int sz = zarray_size(detections);
+            total_detections += sz;
+            for (int di = 0; di < sz; ++di) {
                 apriltag_detection_t *det;
-                zarray_get(detections, i, &det);
-
-                if (!quiet)
+                zarray_get(detections, di, &det);
+                if (!quiet) {
                     printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, margin %8.3f\n",
-                           i, det->family->nbits, det->family->h, det->id, det->hamming, det->decision_margin);
-
+                           di, det->family->nbits, det->family->h, det->id, det->hamming, det->decision_margin);
+                }
                 hamm_hist[det->hamming]++;
                 total_hamm_hist[det->hamming]++;
             }
-
             apriltag_detections_destroy(detections);
 
             if (!quiet) {
@@ -209,35 +211,39 @@ int main(int argc, char *argv[])
             }
 
             total_quads += td->nquads;
+            double t = timeprofile_total_ms(td->tp);
+            total_time += t;
 
-            if (!quiet)
+            if (!quiet) {
                 printf("hamm ");
 
-            for (int i = 0; i < hamm_hist_max; i++)
-                printf("%5d ", hamm_hist[i]);
+                for (int hi = 0; hi < hamm_hist_max; hi++)
+                    printf("%5d ", hamm_hist[hi]);
 
-            double t =  timeprofile_total_utime(td->tp) / 1.0E3;
-            total_time += t;
-            printf("%12.3f ", t);
-            printf("%5d", td->nquads);
+                printf("\ntime %.2fms ", t);
+                printf("quads %5d", td->nquads);
 
-            printf("\n");
-
-            image_u8_destroy(im);
+                printf("\n");
+            }
         }
-
-
-        printf("Summary\n");
-
-        printf("hamm ");
-
-        for (int i = 0; i < hamm_hist_max; i++)
-            printf("%5d ", total_hamm_hist[i]);
-        printf("%12.3f ", total_time);
-        printf("%5d", total_quads);
-        printf("\n");
-
     }
+    printf("Summary\n");
+    printf("hamm ");
+    for (int hi = 0; hi < hamm_hist_max; hi++)
+        printf("%5d ", total_hamm_hist[hi]);
+    printf("\ntime %.2fms ", total_time);
+    printf("avg_time %.2fms ", total_time / maxiters);
+    printf("quads %5d ", total_quads);
+    printf("avg_quads %5d ", total_quads / maxiters);
+    printf("detections %5d ", total_detections);
+    printf("avg_detections %5d", total_detections / maxiters);
+    printf("\n");
+    for (int i = 0 ; i < zarray_size(images); ++i) {
+        image_u8_t *im;
+        zarray_get(images, i, &im);
+        image_u8_destroy(im);
+    }
+    zarray_destroy(images);
 
     // don't deallocate contents of inputs; those are the argv
     apriltag_detector_destroy(td);
