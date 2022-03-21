@@ -147,7 +147,8 @@ struct apriltag_detector
     // What Gaussian blur should be applied to the segmented image
     // (used for quad detection?)  Parameter is the standard deviation
     // in pixels.  Very noisy images benefit from non-zero values (e.g. 0.8).
-    // Gaussian blur kernel size is (int)(4*sigma). Add 1 if even
+    // Gaussian blur kernel size is (int)(4*fabssigma)). Add 1 if even.
+    // Negaive values will sharpen the image instead of blur
     // Sample kernel sizes are below:
     //
     // max sigma          kernel size
