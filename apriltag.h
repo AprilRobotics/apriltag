@@ -130,39 +130,56 @@ struct apriltag_detector
     // User-configurable parameters.
 
     // How many threads should be used?
+    //
+    // Default: 1
     int nthreads;
 
     // detection of quads can be done on a lower-resolution image,
     // improving speed at a cost of pose accuracy and a slight
     // decrease in detection rate. Decoding the binary payload is
-    // still done at full resolution. .
+    // still done at full resolution. Decimation of 2.0 will reduce
+    // image dimensions by half. Values <=1.0 are ignored.
+    // Valid decimation rates are 1.5 and positive integers
+    //
+    // Default: 2.0
     float quad_decimate;
 
     // What Gaussian blur should be applied to the segmented image
     // (used for quad detection?)  Parameter is the standard deviation
-    // in pixels.  Very noisy images benefit from non-zero values
-    // (e.g. 0.8).
+    // in pixels.  Very noisy images benefit from non-zero values (e.g. 0.8).
+    // Gaussian blur kernel size is (int)(4*sigma). Add 1 if even
+    // Sample kernel sizes are below:
+    //
+    // max sigma          kernel size
+    // 0.0 -> 0.499       1  (disabled)
+    // 0.5 -> 0.999       3
+    // 1.0 -> 1.499       5
+    // 1.5 -> 1.999       7
+    //
+    // Default: 0.0
     float quad_sigma;
 
     // When non-zero, the edges of the each quad are adjusted to "snap
     // to" strong gradients nearby. This is useful when decimation is
     // employed, as it can increase the quality of the initial quad
     // estimate substantially. Generally recommended to be on (1).
+    // Very computationally inexpensive
     //
-    // Very computationally inexpensive. Option is ignored if
-    // quad_decimate = 1.
+    // Default: 1
     int refine_edges;
 
     // How much sharpening should be done to decoded images? This
     // can help decode small tags but may or may not help in odd
     // lighting conditions or low light conditions.
     //
-    // The default value is 0.25.
+    // Default: 0.25.
     double decode_sharpening;
 
     // When non-zero, write a variety of debugging images to the
     // current working directory at various stages through the
     // detection process. (Somewhat slow).
+    //
+    // Default: 0
     int debug;
 
     struct apriltag_quad_thresh_params qtp;
