@@ -1,0 +1,82 @@
+# This workflow builds the client (UI), the server, builds the JAR.
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ master ]
+
+jobs:
+   
+  apriltag-build-host:
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 10.14
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact-name: Win64
+          - os: macos-latest
+            artifact-name: macOS
+          - os: ubuntu-latest
+            artifact-name: Linux
+
+    runs-on: ${{ matrix.os }}
+    name: "Libapriltag - Build - ${{ matrix.artifact-name }}"
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 0
+
+      - run: git fetch --tags --force
+      - run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      # Upload client artifact.
+      - uses: actions/upload-artifact@master
+        with:
+          name: apriltag-${{ matrix.artifact-name }}
+          path: build/*.so
+      - uses: actions/upload-artifact@master
+        with:
+          name: apriltag-${{ matrix.artifact-name }}
+          path: build/*.dll
+
+  apriltag-build-docker:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - container: wpilib/roborio-cross-ubuntu:2022-18.04
+            artifact-name: Athena
+          - container: wpilib/raspbian-cross-ubuntu:10-18.04
+            artifact-name: Raspbian
+          - container: wpilib/aarch64-cross-ubuntu:bionic-18.04
+            artifact-name: Aarch64
+
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    
+    name: "Libapriltag - Build - ${{ matrix.artifact-name }}"
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 0
+      - run: git fetch --tags --force
+      - run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      # Upload client artifact.
+      - uses: actions/upload-artifact@master
+        with:
+          name: apriltag-${{ matrix.artifact-name }}
+          path: build/*.so
