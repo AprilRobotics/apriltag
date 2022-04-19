@@ -26,8 +26,8 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #define __USE_GNU
-#include <pthread.h>
-#include <sched.h>
+#include "common/pthreads_cross.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

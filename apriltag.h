@@ -38,7 +38,7 @@ extern "C" {
 #include "common/zarray.h"
 #include "common/workerpool.h"
 #include "common/timeprofile.h"
-#include <pthread.h>
+#include "common/pthreads_cross.h"
 
 #define APRILTAG_TASKS_PER_THREAD_TARGET 10
 

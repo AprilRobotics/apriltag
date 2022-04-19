@@ -37,7 +37,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 aux_source_directory(common COMMON_SRC)
-set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
+set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c tagStandard41h12.c tag16h5.c tag25h9.c tag36h11.c tagCircle21h7.c tagCircle49h12.c tagCustom48h12.c tagStandard52h13.c)
 
 # Library
 file(GLOB TAG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/tag*.c)
@@ -46,8 +46,8 @@ add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
 if (MSVC)
     # FindThreads will not find pthread.h with MSVC
     # winmm is necessary for __imp_timeGetTime
-    find_library(PTHREAD_LIBRARIES NAMES pthreads)
-    target_link_libraries(${PROJECT_NAME} ${PTHREAD_LIBRARIES} winmm)
+    #find_library(PTHREAD_LIBRARIES NAMES pthreads)
+    #target_link_libraries(${PROJECT_NAME} ${PTHREAD_LIBRARIES} winmm)
 else()
     find_package(Threads REQUIRED)
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads m)
@@ -56,7 +56,7 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
-include(GNUInstallDirs)
+#include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
@@ -91,6 +91,10 @@ configure_package_config_file(
         "${project_config}"
         INSTALL_DESTINATION "${config_install_dir}"
 )
+install(FILES CMake/apriltagConfig.cmake DESTINATION share/apriltag/cmake)
+export(TARGETS apriltags
+    NAMESPACE apriltag::
+    FILE apriltagTargets.cmake)
 
 # Configure '<PROJECT-NAME>ConfigVersion.cmake'
 # Note: PROJECT_VERSION is used as a VERSION
