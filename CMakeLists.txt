@@ -44,10 +44,8 @@ file(GLOB TAG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/tag*.c)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
 
 if (MSVC)
-    # FindThreads will not find pthread.h with MSVC
-    # winmm is necessary for __imp_timeGetTime
-    #find_library(PTHREAD_LIBRARIES NAMES pthreads)
-    #target_link_libraries(${PROJECT_NAME} ${PTHREAD_LIBRARIES} winmm)
+    # disable dumb warnings
+    add_definitions("/D_CRT_SECURE_NO_WARNINGS /wd4005 /wd4018 /wd4098 /wd4200 /wd4244 /wd4267 /wd4996")
 else()
     find_package(Threads REQUIRED)
     target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads m)
@@ -56,7 +54,13 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
 
-#include(GNUInstallDirs)
+find_package(JNI)
+if (JNI_FOUND)
+    # Fixes odd AWT dependency
+    set (JNI_INCLUDE_DIRS ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2})
+    message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
+endif()
+
 target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
