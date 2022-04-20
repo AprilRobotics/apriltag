@@ -48,7 +48,7 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: apriltag-${{ matrix.artifact-name }}
-          path: build/*.dll
+          path: build/Debug/*.dll
 
   apriltag-build-docker:
     strategy:
