@@ -92,6 +92,7 @@ jobs:
           tag: 'Dev'
           rm: true
           files: |
-            *.dll
-            *.so
+            **/*.dll
+            **/*.so
+            **/*.dylib
         if: github.event_name == 'push'
