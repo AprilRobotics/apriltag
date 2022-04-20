@@ -56,7 +56,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 //
 // tagtest [options] input.pnm
 
-#ifdef _WIN32
+#ifndef hamm_hist_max
 #define  hamm_hist_max 10
 #endif
 
