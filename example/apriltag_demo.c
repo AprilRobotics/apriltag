@@ -56,9 +56,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 //
 // tagtest [options] input.pnm
 
-#ifdef _WIN32
 #define  hamm_hist_max 10
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -117,10 +115,6 @@ int main(int argc, char *argv[])
     int quiet = getopt_get_bool(getopt, "quiet");
 
     int maxiters = getopt_get_int(getopt, "iters");
-
-#ifdef __linux__
-    const int hamm_hist_max = 10;
-#endif
 
     for (int iter = 0; iter < maxiters; iter++) {
 

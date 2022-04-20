@@ -44,11 +44,10 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: apriltag-${{ matrix.artifact-name }}
-          path: build/*.so
-      - uses: actions/upload-artifact@master
-        with:
-          name: apriltag-${{ matrix.artifact-name }}
-          path: build/*.dll
+          path: |
+            build/*.so
+            build/Debug/*.dll
+            build/*.dylib
 
   apriltag-build-docker:
     strategy:
@@ -80,3 +79,19 @@ jobs:
         with:
           name: apriltag-${{ matrix.artifact-name }}
           path: build/*.so
+
+  apriltag-release:
+    needs: [apriltag-build-host, apriltag-build-docker]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+
+      - uses: pyTooling/Actions/releaser@r0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: 'Dev'
+          rm: true
+          files: |
+            *.dll
+            *.so
+        if: github.event_name == 'push'
