@@ -31,7 +31,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <math.h>
 
 #ifdef __linux__
