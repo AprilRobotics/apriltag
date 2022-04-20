@@ -39,7 +39,7 @@ jobs:
       - run: |
           cmake -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build
-          find
+          find -R
 
       # Upload client artifact.
       - uses: actions/upload-artifact@master
