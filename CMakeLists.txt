@@ -138,6 +138,7 @@ if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD
     set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
     cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
     separate_arguments(PY_CFLAGS)
+    list(REMOVE_ITEM PY_CFLAGS -flto)
     separate_arguments(PY_LDFLAGS)
 
     foreach(X detect py_type)
