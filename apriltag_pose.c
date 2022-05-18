@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "common/debug_print.h"
 #include "apriltag_pose.h"
 #include "common/homography.h"
 
@@ -436,7 +437,7 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
         matd_destroy(R_beta);
     } else if (n_minima > 1)  {
         // This can happen if our prior pose estimate was not very good.
-        fprintf(stderr, "Error, more than one new minimum found.\n");
+        debug_print("Error, more than one new minimum found.\n");
     }
     matd_destroy(I3);
     matd_destroy(M1);

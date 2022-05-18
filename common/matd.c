@@ -36,6 +36,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/math_util.h"
 #include "common/svd22.h"
 #include "common/matd.h"
+#include "common/debug_print.h"
 
 // a matd_t with rows=0 cols=0 is a SCALAR.
 
@@ -781,7 +782,7 @@ static matd_t *matd_op_recurse(const char *expr, int *pos, matd_t *acc, matd_t *
             }
 
             default: {
-                fprintf(stderr, "matd_op(): Unknown character: '%c'\n", expr[*pos]);
+                debug_print("Unknown character: '%c'\n", expr[*pos]);
                 assert(expr[*pos] != expr[*pos]);
             }
         }
@@ -1375,7 +1376,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
     free(maxrowidx);
 
     if (!(flags & MATD_SVD_NO_WARNINGS) && iter == maxiters) {
-        printf("WARNING: maximum iters (maximum = %d, matrix %d x %d, max=%.15f)\n",
+        debug_print("WARNING: maximum iters (maximum = %d, matrix %d x %d, max=%.15f)\n",
                iter, A->nrows, A->ncols, maxv);
 
 //        matd_print(A, "%15f");
