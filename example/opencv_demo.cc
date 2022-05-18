@@ -105,6 +105,12 @@ int main(int argc, char *argv[])
 
     apriltag_detector_t *td = apriltag_detector_create();
     apriltag_detector_add_family(td, tf);
+
+    if (errno == ENOMEM) {
+        printf("Unable to add family to detector due to insufficient memory to allocate the tag-family decoder with the default maximum hamming value of 2. Try choosing an alternative tag family.\n");
+        exit(-1);
+    }
+    
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");
@@ -133,6 +139,11 @@ int main(int argc, char *argv[])
         };
 
         zarray_t *detections = apriltag_detector_detect(td, &im);
+
+        if (errno==EAGAIN) {
+            printf("Unable to create the %d threads requested.\n",td->nthreads);
+            exit(-1);
+        }
 
         // Draw detection outlines
         for (int i = 0; i < zarray_size(detections); i++) {

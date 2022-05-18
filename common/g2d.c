@@ -403,10 +403,12 @@ int g2d_polygon_contains_point(const zarray_t *poly, double q[2])
 
     int v = (quad_acc >= 2) || (quad_acc <= -2);
 
-    if (0 && v != g2d_polygon_contains_point_ref(poly, q)) {
+    #if 0
+    if (v != g2d_polygon_contains_point_ref(poly, q)) {
         printf("FAILURE %d %d\n", v, quad_acc);
         exit(-1);
     }
+    #endif
 
     return v;
 }
