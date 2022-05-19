@@ -145,7 +145,16 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     self->td->refine_edges        = refine_edges;
     self->td->debug               = debug;
 
-    success = true;
+    switch(errno){
+        case EINVAL:
+                PyErr_SetString(PyExc_RuntimeError, "Unable to add family to detector. \"maxhamming\" parameter should not exceed 3");
+                break;
+        case ENOMEM:
+                PyErr_Format(PyExc_RuntimeError, "Unable to add family to detector due to insufficient memory to allocate the tag-family decoder. Try reducing \"maxhamming\" from %d or choose an alternative tag family",maxhamming);
+                break;
+        default:
+            success = true;
+    }
 
  done:
     if(!success)
@@ -230,6 +239,11 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
 
     zarray_t* detections = apriltag_detector_detect(self->td, &im);
     int N = zarray_size(detections);
+
+    if (N==0 && errno==EAGAIN){
+        PyErr_Format(PyExc_RuntimeError, "Unable to create %d threads for detector", self->td->nthreads);
+        goto done;
+    }
 
     detections_tuple = PyTuple_New(N);
     if(detections_tuple == NULL)

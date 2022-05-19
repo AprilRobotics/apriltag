@@ -33,6 +33,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdio.h>
 #include <unistd.h>
 #include <math.h>
+#include <errno.h>
 
 #include "apriltag.h"
 #include "tag36h11.h"
@@ -101,6 +102,16 @@ int main(int argc, char *argv[])
 
     apriltag_detector_t *td = apriltag_detector_create();
     apriltag_detector_add_family_bits(td, tf, getopt_get_int(getopt, "hamming"));
+
+    switch(errno){
+        case EINVAL:
+            printf("\"hamming\" parameter is out-of-range.\n");
+            exit(-1);
+        case ENOMEM:
+            printf("Unable to add family to detector due to insufficient memory to allocate the tag-family decoder. Try reducing \"hamming\" from %d or choose an alternative tag family.\n", getopt_get_int(getopt, "hamming"));
+            exit(-1);
+    }
+
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");
@@ -189,6 +200,11 @@ int main(int argc, char *argv[])
             printf("image: %s %dx%d\n", path, im->width, im->height);
 
             zarray_t *detections = apriltag_detector_detect(td, im);
+
+            if (errno==EAGAIN) {
+                printf("Unable to create the %d threads requested.\n",td->nthreads);
+                exit(-1);
+            }
 
             for (int i = 0; i < zarray_size(detections); i++) {
                 apriltag_detection_t *det;
