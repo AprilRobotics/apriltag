@@ -229,6 +229,8 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     for (int i = 0; i < qd->nentries; i++)
         qd->entries[i].rcode = UINT64_MAX;
 
+    errno = 0;
+
     for (int i = 0; i < family->ncodes; i++) {
         uint64_t code = family->codes[i];
 
