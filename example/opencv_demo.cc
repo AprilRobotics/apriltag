@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 
         zarray_t *detections = apriltag_detector_detect(td, &im);
 
-        if (errno==EAGAIN) {
+        if (errno == EAGAIN) {
             printf("Unable to create the %d threads requested.\n",td->nthreads);
             exit(-1);
         }

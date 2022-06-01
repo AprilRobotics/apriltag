@@ -240,7 +240,7 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
     zarray_t* detections = apriltag_detector_detect(self->td, &im);
     int N = zarray_size(detections);
 
-    if (N==0 && errno==EAGAIN){
+    if (N == 0 && errno == EAGAIN){
         PyErr_Format(PyExc_RuntimeError, "Unable to create %d threads for detector", self->td->nthreads);
         goto done;
     }
