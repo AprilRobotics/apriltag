@@ -128,6 +128,7 @@ int main(int argc, char *argv[])
 
     Mat frame, gray;
     while (true) {
+        errno = 0;
         cap >> frame;
         cvtColor(frame, gray, COLOR_BGR2GRAY);
 
