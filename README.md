@@ -4,8 +4,6 @@ AprilTag is a visual fiducial system popular in robotics research. This reposito
 
 You can find tag images for the pre-generated layouts [here](https://github.com/AprilRobotics/apriltag-imgs). We recommend using the tagStandard41h12 layout.
 
-[![Build Status](https://travis-ci.com/AprilRobotics/apriltag.svg?branch=master)](https://travis-ci.com/AprilRobotics/apriltag)
-
 Papers
 ======
 AprilTag is the subject of the following papers.
