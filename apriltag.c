@@ -229,6 +229,8 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     for (int i = 0; i < qd->nentries; i++)
         qd->entries[i].rcode = UINT64_MAX;
 
+    errno = 0;
+
     for (int i = 0; i < family->ncodes; i++) {
         uint64_t code = family->codes[i];
 
@@ -298,7 +300,7 @@ static void quick_decode_codeword(apriltag_family_t *tf, uint64_t rcode,
     struct quick_decode *qd = (struct quick_decode*) tf->impl;
 
     // qd might be null if detector_add_family_bits() failed
-    for (int ridx = 0; qd!=NULL && ridx < 4; ridx++) {
+    for (int ridx = 0; qd != NULL && ridx < 4; ridx++) {
 
         for (int bucket = rcode % qd->nentries;
              qd->entries[bucket].rcode != UINT64_MAX;
