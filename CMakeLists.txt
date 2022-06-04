@@ -44,6 +44,7 @@ file(GLOB TAG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/tag*.c)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
 
 if (MSVC)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "_CRT_SECURE_NO_WARNINGS")
     # FindThreads will not find pthread.h with MSVC
     # winmm is necessary for __imp_timeGetTime
     #find_library(PTHREAD_LIBRARIES NAMES pthreads)
@@ -161,16 +162,11 @@ if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD
     install(CODE "execute_process(COMMAND cp ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} ${PY_DEST})")
 endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
 
-if (BUILD_APRIL_TAG_EXAMPLES )
-    # Examples
-    # apriltag_demo
-    add_executable(apriltag_demo example/apriltag_demo.c)
-    target_link_libraries(apriltag_demo ${PROJECT_NAME})
 
 # Examples
 # apriltag_demo
 add_executable(apriltag_demo example/apriltag_demo.c)
-target_link_libraries(apriltag_demo apriltag)
+target_link_libraries(apriltag_demo ${PROJECT_NAME})
 
 # opencv_demo
 find_package(OpenCV COMPONENTS core imgproc videoio highgui QUIET)

@@ -1,0 +1,15 @@
+# This config builds the project on windows.
+
+name: Windows-CI
+
+# This determines when this workflow is run
+on: [push, pull_request] # on all pushes and PRs
+
+jobs:
+  CI_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - run: mkdir build; cd build; cmake .. -DBUILD_SHARED_LIBS:BOOL=OFF; cmake --build . --config Release
