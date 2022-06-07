@@ -32,6 +32,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <string.h>
 
 #include "pjpeg.h"
+#include "debug_print.h"
 
 #include "image_u8.h"
 #include "image_u8x3.h"
@@ -834,9 +835,9 @@ pjpeg_t *pjpeg_create_from_file(const char *path, uint32_t flags, int *error)
     fseek(f, 0, SEEK_SET);
     int res = fread(buf, 1, buflen, f);
 
-    int error_code = ferror(f);
-    if (error_code ){
-        printf ("Read failed with error code: %d\n", error_code );
+    if ( ferror(f) ){
+        debug_print ("Read failed");
+        clearerr(f);
     }
 
     fclose(f);

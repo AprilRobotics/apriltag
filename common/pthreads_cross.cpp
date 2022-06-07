@@ -1,3 +1,24 @@
+/**
+Copyright John Schember <john@nachtimwald.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 #include "common/pthreads_cross.h"
 #include <time.h>
 
@@ -7,11 +28,6 @@ typedef struct {
     SRWLOCK lock;
     bool    exclusive;
 } pthread_rwlock_t;
-
-//struct timespec {
-//    long tv_sec;
-//    long tv_nsec;
-//};
 
 int pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr);
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
@@ -203,24 +219,6 @@ int sched_yield() {
     return (int)SwitchToThread();
 }
 
-#ifdef _WIN32
-unsigned int pcthread_get_num_procs()
-{
-    SYSTEM_INFO sysinfo;
-
-    GetSystemInfo(&sysinfo);
-    return sysinfo.dwNumberOfProcessors;
-}
-
-#else
-
-#include <unistd.h>
-unsigned int pcthread_get_num_procs()
-{
-    return (unsigned int)sysconf(_SC_NPROCESSORS_ONLN);
-}
-#endif
-
 void ms_to_timespec(struct timespec *ts, unsigned int ms)
 {
     if (ts == NULL)
@@ -242,4 +240,19 @@ static unsigned int timespec_to_ms(const struct timespec *abstime)
     return t;
 }
 
+unsigned int pcthread_get_num_procs()
+{
+    SYSTEM_INFO sysinfo;
+
+    GetSystemInfo(&sysinfo);
+    return sysinfo.dwNumberOfProcessors;
+}
+
+#else
+
+#include <unistd.h>
+unsigned int pcthread_get_num_procs()
+{
+    return (unsigned int)sysconf(_SC_NPROCESSORS_ONLN);
+}
 #endif

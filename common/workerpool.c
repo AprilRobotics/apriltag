@@ -40,6 +40,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #include "workerpool.h"
 #include "debug_print.h"
+#include "timeprofile.h"
 
 struct workerpool {
     int nthreads;
