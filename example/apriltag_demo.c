@@ -31,9 +31,15 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #include <stdio.h>
-#include <unistd.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <ctype.h>
 #include <math.h>
 #include <errno.h>
+
+#ifdef __linux__
+    #include <unistd.h>
+#endif
 
 #include "apriltag.h"
 #include "tag36h11.h"
@@ -50,9 +56,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "common/pjpeg.h"
 #include "common/zarray.h"
 
-// Invoke:
-//
-// tagtest [options] input.pnm
+#define  HAMM_HIST_MAX 10
 
 int main(int argc, char *argv[])
 {
@@ -122,13 +126,11 @@ int main(int argc, char *argv[])
 
     int maxiters = getopt_get_int(getopt, "iters");
 
-    const int hamm_hist_max = 10;
-
     for (int iter = 0; iter < maxiters; iter++) {
 
         int total_quads = 0;
-        int total_hamm_hist[hamm_hist_max];
-        memset(total_hamm_hist, 0, sizeof(total_hamm_hist));
+        int total_hamm_hist[HAMM_HIST_MAX];
+        memset(total_hamm_hist, 0, sizeof(int)*HAMM_HIST_MAX);
         double total_time = 0;
 
         if (maxiters > 1)
@@ -136,7 +138,7 @@ int main(int argc, char *argv[])
 
         for (int input = 0; input < zarray_size(inputs); input++) {
 
-            int hamm_hist[hamm_hist_max];
+            int hamm_hist[HAMM_HIST_MAX];
             memset(hamm_hist, 0, sizeof(hamm_hist));
 
             char *path;
@@ -229,7 +231,7 @@ int main(int argc, char *argv[])
             if (!quiet)
                 printf("hamm ");
 
-            for (int i = 0; i < hamm_hist_max; i++)
+            for (int i = 0; i < HAMM_HIST_MAX; i++)
                 printf("%5d ", hamm_hist[i]);
 
             double t =  timeprofile_total_utime(td->tp) / 1.0E3;
@@ -247,7 +249,7 @@ int main(int argc, char *argv[])
 
         printf("hamm ");
 
-        for (int i = 0; i < hamm_hist_max; i++)
+        for (int i = 0; i < HAMM_HIST_MAX; i++)
             printf("%5d ", total_hamm_hist[i]);
         printf("%12.3f ", total_time);
         printf("%5d", total_quads);
