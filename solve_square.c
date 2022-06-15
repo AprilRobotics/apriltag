@@ -126,7 +126,7 @@ double solve_square(
      *             abc
      *          ---------
      *          |   |   |       abc -> X
-     *          |   ----|pqr    pqr -> Y 
+     *          |   ----|pqr    pqr -> Y
      *          |  xyz  |       Z points inside
      *          ---------
      */
@@ -311,7 +311,7 @@ matd_t* create_square_rotation(matd_t *abc, matd_t *pqr)
 
     double th1 = acos(matd_vec_dot_product(X, abc));
     matd_t* axis1 = matd_crossproduct(X, abc);
-    matd_t* R1; 
+    matd_t* R1;
     if (matd_vec_mag(axis1) == 0)
         R1 = create_rotation_matrix(0, X);
     else {
