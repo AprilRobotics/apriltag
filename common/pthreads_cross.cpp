@@ -228,7 +228,7 @@ void ms_to_timespec(struct timespec *ts, unsigned int ms)
     ts->tv_nsec = (ms % 1000) * 1000000;
 }
 
-static unsigned int timespec_to_ms(const struct timespec *abstime)
+unsigned int timespec_to_ms(const struct timespec *abstime)
 {
     DWORD t;
 

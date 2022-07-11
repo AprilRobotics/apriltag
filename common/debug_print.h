@@ -36,12 +36,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 #define DEBUG 0
 #endif
 
-#ifdef _WIN32
-#define debug_print(fmt, ...) \
-        do { if (DEBUG) fprintf(stderr, "%s:%d:%s(): " fmt, strrchr("\\"__FILE__,'\\')+1, \
-                                __LINE__, __func__, __VA_ARGS__); fflush(stderr);} while (0)
-#else
 #define debug_print(fmt, ...) \
         do { if (DEBUG) fprintf(stderr, "%s:%d:%s(): " fmt, strrchr("/"__FILE__,'/')+1, \
                                 __LINE__, __func__, ##__VA_ARGS__); fflush(stderr);} while (0)
-#endif
