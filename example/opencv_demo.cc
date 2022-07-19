@@ -26,6 +26,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 */
 
 #include <iostream>
+#include <iomanip>
 
 #include "opencv2/opencv.hpp"
 
@@ -121,9 +122,15 @@ int main(int argc, char *argv[])
     meter.stop();
     cout << "Detector " << famname << " initialized in " 
         << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
+#if CV_MAJOR_VERSION > 3
     cout << "  " << cap.get(CAP_PROP_FRAME_WIDTH ) << "x" <<
                     cap.get(CAP_PROP_FRAME_HEIGHT ) << " @" <<
                     cap.get(CAP_PROP_FPS) << "FPS" << endl;
+#else
+    cout << "  " << cap.get(CV_CAP_PROP_FRAME_WIDTH ) << "x" <<
+                    cap.get(CV_CAP_PROP_FRAME_HEIGHT ) << " @" <<
+                    cap.get(CV_CAP_PROP_FPS) << "FPS" << endl;
+#endif
     meter.reset();
 
     Mat frame, gray;
