@@ -12,6 +12,7 @@ jobs:
       matrix:
         env:
           # ROS 1
+          - {ROS_DISTRO: kinetic}
           - {ROS_DISTRO: melodic}
           - {ROS_DISTRO: noetic}
           # ROS 2
