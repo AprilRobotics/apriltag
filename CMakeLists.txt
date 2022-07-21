@@ -164,7 +164,8 @@ add_executable(apriltag_demo example/apriltag_demo.c)
 target_link_libraries(apriltag_demo ${PROJECT_NAME})
 
 # opencv_demo
-find_package(OpenCV COMPONENTS core imgproc videoio highgui QUIET)
+# NB: contrib required for TickMeter in OpenCV 2.4. This is only required for 16.04 backwards compatibility and can be removed in the future.
+find_package(OpenCV COMPONENTS core imgproc videoio highgui contrib QUIET)
 if(OpenCV_FOUND)
     add_executable(opencv_demo example/opencv_demo.cc)
     target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
