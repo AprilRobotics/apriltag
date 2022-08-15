@@ -98,7 +98,7 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
                         "maxhamming",
                         "decimate",
                         "blur",
-                        "refine-edges",
+                        "refine_edges",
                         "debug",
                         NULL };
 
