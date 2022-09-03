@@ -367,7 +367,7 @@ apriltag_detector_t *apriltag_detector_create()
 
     td->qtp.max_line_fit_mse = 10.0;
     td->qtp.cos_critical_rad = cos(10 * M_PI / 180);
-    td->qtp.deglitch = 0;
+    td->qtp.deglitch = false;
     td->qtp.min_white_black_diff = 5;
 
     td->tag_families = zarray_create(sizeof(apriltag_family_t*));
@@ -376,11 +376,11 @@ apriltag_detector_t *apriltag_detector_create()
 
     td->tp = timeprofile_create();
 
-    td->refine_edges = 1;
+    td->refine_edges = true;
     td->decode_sharpening = 0.25;
 
 
-    td->debug = 0;
+    td->debug = false;
 
     // NB: defer initialization of td->wp so that the user can
     // override td->nthreads.
