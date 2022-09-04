@@ -171,7 +171,7 @@ if(OpenCV_FOUND)
     set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
     install(TARGETS opencv_demo RUNTIME DESTINATION bin)
 else()
-    message(WARNING "OpenCV not found: Not building demo")
+    message(STATUS "OpenCV not found: Not building demo")
 endif(OpenCV_FOUND)
 
 # install example programs
