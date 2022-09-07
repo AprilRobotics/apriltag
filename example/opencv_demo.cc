@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     }
 
     cout << "Enabling video capture" << endl;
-    
+
     TickMeter meter;
     meter.start();
 
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         printf("Unable to add family to detector due to insufficient memory to allocate the tag-family decoder with the default maximum hamming value of 2. Try choosing an alternative tag family.\n");
         exit(-1);
     }
-    
+
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 
     float frame_counter = 0.0f;
     meter.stop();
-    cout << "Detector " << famname << " initialized in " 
+    cout << "Detector " << famname << " initialized in "
         << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
 #if CV_MAJOR_VERSION > 3
     cout << "  " << cap.get(CAP_PROP_FRAME_WIDTH ) << "x" <<
