@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
     getopt_t *getopt = getopt_create();
 
     getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
+    getopt_add_int(getopt, 'c', "camera", "0", "camera ID");
     getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
     getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
     getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
     meter.start();
 
     // Initialize camera
-    VideoCapture cap(0);
+    VideoCapture cap(getopt_get_int(getopt, "camera"));
     if (!cap.isOpened()) {
         cerr << "Couldn't open video capture device" << endl;
         return -1;
