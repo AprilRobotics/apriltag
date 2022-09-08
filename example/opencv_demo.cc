@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
     getopt_t *getopt = getopt_create();
 
     getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
+    getopt_add_int(getopt, 'c', "camera", "0", "camera ID");
     getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
     getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
     getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
@@ -68,12 +69,12 @@ int main(int argc, char *argv[])
     }
 
     cout << "Enabling video capture" << endl;
-    
+
     TickMeter meter;
     meter.start();
 
     // Initialize camera
-    VideoCapture cap(0);
+    VideoCapture cap(getopt_get_int(getopt, "camera"));
     if (!cap.isOpened()) {
         cerr << "Couldn't open video capture device" << endl;
         return -1;
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
         printf("Unable to add family to detector due to insufficient memory to allocate the tag-family decoder with the default maximum hamming value of 2. Try choosing an alternative tag family.\n");
         exit(-1);
     }
-    
+
     td->quad_decimate = getopt_get_double(getopt, "decimate");
     td->quad_sigma = getopt_get_double(getopt, "blur");
     td->nthreads = getopt_get_int(getopt, "threads");
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
 
     float frame_counter = 0.0f;
     meter.stop();
-    cout << "Detector " << famname << " initialized in " 
+    cout << "Detector " << famname << " initialized in "
         << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
 #if CV_MAJOR_VERSION > 3
     cout << "  " << cap.get(CAP_PROP_FRAME_WIDTH ) << "x" <<

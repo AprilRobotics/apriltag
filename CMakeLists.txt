@@ -8,7 +8,7 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(ASAN "Use AddressSanitizer for debug builds to detect memory issues" OFF)
 
 if (ASAN)
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} \
+    set(ASAN_FLAGS "\
         -fsanitize=address \
         -fsanitize=bool \
         -fsanitize=bounds \
@@ -24,6 +24,8 @@ if (ASAN)
         -fsanitize=leak \
         -fsanitize=object-size \
     ")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ASAN_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ASAN_FLAGS}")
 endif()
 
 # Set a default build type if none was specified
