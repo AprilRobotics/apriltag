@@ -453,6 +453,40 @@ static inline void TFN(s_mat_to_xyz)(const TNAME M[16], TNAME xyz[3])
     xyz[2] = M[11];
 }
 
+static inline void TFN(s_mat33_to_quat)(const TNAME M[9], TNAME q[4])
+{
+    double T = M[0] + M[4] + M[8] + 1.0;
+    double S;
+
+    if (T > 0.0000001) {
+        S = sqrt(T) * 2;
+        q[0] = (TNAME)(0.25 * S);
+        q[1] = (TNAME)((M[7] - M[5]) / S);
+        q[2] = (TNAME)((M[2] - M[6]) / S);
+        q[3] = (TNAME)((M[3] - M[1]) / S);
+    } else if (M[0] > M[4] && M[0] > M[8]) {   // Column 0:
+        S = sqrt(1.0 + M[0] - M[4] - M[8]) * 2;
+        q[0] = (TNAME)((M[7] - M[5]) / S);
+        q[1] = (TNAME)(0.25 * S);
+        q[2] = (TNAME)((M[3] + M[1]) / S);
+        q[3] = (TNAME)((M[2] + M[6]) / S);
+    } else if (M[4] > M[8]) {                  // Column 1:
+        S = sqrt(1.0 + M[4] - M[0] - M[8]) * 2;
+        q[0] = (TNAME)((M[2] - M[6]) / S);
+        q[1] = (TNAME)((M[3] + M[1]) / S);
+        q[2] = (TNAME)(0.25 * S);
+        q[3] = (TNAME)((M[7] + M[5]) / S);
+    } else {                                    // Column 2:
+        S = sqrt(1.0 + M[8] - M[0] - M[4]);
+        q[0] = (TNAME)((M[3] - M[1]) / S);
+        q[1] = (TNAME)((M[2] + M[6]) / S);
+        q[2] = (TNAME)((M[7] + M[5]) / S);
+        q[3] = (TNAME)(0.25 * S);
+    }
+
+    TFN(s_normalize)(q, 4, q);
+}
+
 static inline void TFN(s_mat_to_quat)(const TNAME M[16], TNAME q[4])
 {
     double T = M[0] + M[5] + M[10] + 1.0;
