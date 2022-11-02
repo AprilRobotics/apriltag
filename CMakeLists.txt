@@ -5,6 +5,7 @@ if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)
 endif()
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(BUILD_EXAMPLES "Build example executables" ON)
 option(ASAN "Use AddressSanitizer for debug builds to detect memory issues" OFF)
 
 if (ASAN)
@@ -160,28 +161,30 @@ install(FILES ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} DESTINATION ${PY_DE
 endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
 
 # Examples
-# apriltag_demo
-add_executable(apriltag_demo example/apriltag_demo.c)
-target_link_libraries(apriltag_demo ${PROJECT_NAME})
+if (BUILD_EXAMPLES)
+    # apriltag_demo
+    add_executable(apriltag_demo example/apriltag_demo.c)
+    target_link_libraries(apriltag_demo ${PROJECT_NAME})
 
-# opencv_demo
-set(_OpenCV_REQUIRED_COMPONENTS core imgproc videoio highgui)
-find_package(OpenCV COMPONENTS ${_OpenCV_REQUIRED_COMPONENTS} QUIET CONFIG)
-if(OpenCV_FOUND)
-    # NB: contrib required for TickMeter in OpenCV 2.4. This is only required for 16.04 backwards compatibility and can be removed in the future.
-    #     If we add it to the find_package initially, the demo won't build for newer OpenCV versions
-    if(OpenCV_VERSION VERSION_LESS "3.0.0")
-        list(APPEND _OpenCV_REQUIRED_COMPONENTS contrib)
-        find_package(OpenCV COMPONENTS ${_OpenCV_REQUIRED_COMPONENTS} CONFIG)
-    endif()
+    # opencv_demo
+    set(_OpenCV_REQUIRED_COMPONENTS core imgproc videoio highgui)
+    find_package(OpenCV COMPONENTS ${_OpenCV_REQUIRED_COMPONENTS} QUIET CONFIG)
+    if(OpenCV_FOUND)
+        # NB: contrib required for TickMeter in OpenCV 2.4. This is only required for 16.04 backwards compatibility and can be removed in the future.
+        #     If we add it to the find_package initially, the demo won't build for newer OpenCV versions
+        if(OpenCV_VERSION VERSION_LESS "3.0.0")
+            list(APPEND _OpenCV_REQUIRED_COMPONENTS contrib)
+            find_package(OpenCV COMPONENTS ${_OpenCV_REQUIRED_COMPONENTS} CONFIG)
+        endif()
 
-    add_executable(opencv_demo example/opencv_demo.cc)
-    target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
-    set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
-    install(TARGETS opencv_demo RUNTIME DESTINATION bin)
-else()
-    message(STATUS "OpenCV not found: Not building demo")
-endif(OpenCV_FOUND)
+        add_executable(opencv_demo example/opencv_demo.cc)
+        target_link_libraries(opencv_demo apriltag ${OpenCV_LIBRARIES})
+        set_target_properties(opencv_demo PROPERTIES CXX_STANDARD 11)
+        install(TARGETS opencv_demo RUNTIME DESTINATION bin)
+    else()
+        message(STATUS "OpenCV not found: Not building demo")
+    endif(OpenCV_FOUND)
 
-# install example programs
-install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
+    # install example programs
+    install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
+endif()
