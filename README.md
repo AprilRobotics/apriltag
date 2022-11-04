@@ -15,7 +15,6 @@ AprilTag is the subject of the following papers.
 [Flexible Layouts for Fiducial Tags](https://april.eecs.umich.edu/papers/details.php?name=krogius2019iros)
 
 
-
 Usage
 =====
 [User Guide](https://github.com/AprilRobotics/apriltag/wiki/AprilTag-User-Guide)
@@ -25,7 +24,7 @@ Install
 
 Officially only Linux operating systems are supported, although users have had success installing on Windows too.
 
-The default installation will place headers in /usr/local/include and shared library in /usr/local/lib. It also installs a pkg-config script into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed.
+The default installation will place headers in /usr/local/include and shared libraries in /usr/local/lib. It also installs a pkg-config script into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed.
 
 ## cmake
 If you have CMake installed, then do:
