@@ -14,7 +14,7 @@ jobs:
         ros_distribution: [melodic, noetic, humble]
         config: ["default"] # nice name
         cmake_args: ['[ ]'] # empty list of options
-        include:         
+        include:
           - docker_image: ubuntu:18.04
             ros_distribution: melodic
             ros_version: 1
