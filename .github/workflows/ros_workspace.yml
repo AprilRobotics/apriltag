@@ -14,7 +14,7 @@ jobs:
         ros_distribution: [melodic, noetic, humble]
         config: ["default"] # nice name
         cmake_args: ['[ ]'] # empty list of options
-        include:         
+        include:
           - docker_image: ubuntu:18.04
             ros_distribution: melodic
             ros_version: 1
@@ -48,7 +48,7 @@ jobs:
         #  submodules: recursive
 
       - name: Setup ROS environment
-        uses: ros-tooling/setup-ros@v0.3
+        uses: ros-tooling/setup-ros@v0.4
 
       - name: ROS 1 CI Action
         if: ${{ matrix.ros_version == 1 }}
@@ -93,7 +93,7 @@ jobs:
           submodules: recursive
 
       - name: Setup ROS environment
-        uses: ros-tooling/setup-ros@v0.3
+        uses: ros-tooling/setup-ros@v0.4
 
       - name: ROS 1 CI Action
         if: ${{ matrix.ros_version == 1 }}
@@ -123,28 +123,14 @@ jobs:
 
   # build on macOS native
   build_macos:
-    name: macOS (${{ matrix.ros_distribution }}, ${{ matrix.config }})
+    name: macOS (${{ matrix.ros_distribution }})
 
     runs-on: macos-latest
 
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [noetic, humble]
-        config: ["default"] # nice name
-        cmake_args: ['[ ]'] # empty list of options
-        include:
-          - ros_distribution: noetic
-            ros_version: 1
-
-          - ros_distribution: humble
-            ros_version: 2
-
-          # build static library, this will set BUILD_PYTHON_WRAPPER to OFF
-          - ros_distribution: humble
-            ros_version: 2
-            config: "static"
-            cmake_args: '[ "-DBUILD_SHARED_LIBS=OFF" ]'
+        ros_distribution: [humble]
 
     steps:
       - uses: actions/checkout@v3
@@ -152,17 +138,9 @@ jobs:
           submodules: recursive
 
       - name: Setup ROS environment
-        uses: ros-tooling/setup-ros@v0.3
-
-      - name: ROS 1 CI Action
-        if: ${{ matrix.ros_version == 1 }}
-        uses: ros-tooling/action-ros-ci@v0.2
-        with:
-          package-name: apriltag
-          target-ros1-distro: ${{ matrix.ros_distribution }}
+        uses: ros-tooling/setup-ros@v0.4
 
       - name: ROS 2 CI Action
-        if: ${{ matrix.ros_version == 2 }}
         uses: ros-tooling/action-ros-ci@v0.2
         with:
           package-name: apriltag
@@ -170,6 +148,6 @@ jobs:
           colcon-defaults: |
             {
               "build": {
-                "cmake-args": ${{ matrix.cmake_args }}
+                "cmake-args": [ "-DBUILD_PYTHON_WRAPPER=OFF" ]
               }
             }
