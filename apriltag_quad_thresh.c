@@ -1670,7 +1670,7 @@ zarray_t* gradient_clusters(apriltag_detector_t *td, image_u8_t* threshim, int w
     int nclustermap = 0.2*w*h;
 
     int sz = h - 1;
-    int chunksize = 1 + sz / td->nthreads;
+    int chunksize = 1 + sz / (APRILTAG_TASKS_PER_THREAD_TARGET * td->nthreads);
     struct cluster_task *tasks = malloc(sizeof(struct cluster_task)*(sz / chunksize + 1));
 
     int ntasks = 0;
