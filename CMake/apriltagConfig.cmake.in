@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+if(NOT MSVC)
+  include(CMakeFindDependencyMacro)
+  find_dependency(Threads)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/@targets_export_name@.cmake")
+check_required_components("@PROJECT_NAME@")
+
+if(NOT TARGET apriltag AND ${CMAKE_VERSION} VERSION_GREATER "3.10.99")
+  # Make imported target globally visible in order to create an ALIAS
+  # IMPORTED_GLOBAL is only available in CMake 3.11+
+  set_target_properties(apriltag::apriltag PROPERTIES IMPORTED_GLOBAL TRUE)
+  # Create alias for backwards compatibility with 3.1.2 and earlier (will be removed in the future - please migrate to apriltag::apriltag)
+  add_library(apriltag ALIAS apriltag::apriltag)
+endif()

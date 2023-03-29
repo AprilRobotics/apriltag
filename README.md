@@ -4,8 +4,6 @@ AprilTag is a visual fiducial system popular in robotics research. This reposito
 
 You can find tag images for the pre-generated layouts [here](https://github.com/AprilRobotics/apriltag-imgs). We recommend using the tagStandard41h12 layout.
 
-[![Build Status](https://travis-ci.com/AprilRobotics/apriltag.svg?branch=master)](https://travis-ci.com/AprilRobotics/apriltag)
-
 Papers
 ======
 AprilTag is the subject of the following papers.
@@ -25,26 +23,55 @@ Usage
 Install
 =======
 
- Officially only linux operating systems are supported, although users have had success installing on windows too.
- 
- The default installation will place headers in /usr/local/include and
-shared library in /usr/local/lib. It also installs a pkg-config script
-into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed. Be aware that there are some larger tag families which may take a long time to build. If you do not want to use these tag families then you can speed up the installation by deleting the files tagCircle49h12.c, tagCircle49h12.h, tagCustom48h12.c, tagCustom48h12.h, tagStandard52h13.c, and tagStandard52h13.h before installing.
+Officially only Linux operating systems are supported, although users have had success installing on Windows too.
 
-If you have CMake installed or it is not difficult to install, then do:
+The default installation will place headers in /usr/local/include and shared library in /usr/local/lib. It also installs a pkg-config script into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed.
 
-    $ cmake .
-    $ sudo make install
-    
+## cmake
+If you have CMake installed, then do:
+```
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target install
+```
+This will build shared (\*.so) libraries by default. If you need static (\*.a) libraries set `BUILD_SHARED_LIBS` to `OFF`:
+```
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF
+cmake --build build --target install
+```
+
+If you have Ninja (`sudo apt install ninja-build`) installed, you can use:
+```
+cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target install
+```
+to generate and compile via the ninja build script. It will be much faster than with cmake's default Makefile generator.
+
+You can omit `--target install` if you only want to use this locally without installing.
+
+## make
 Otherwise, we have a handwritten makefile you can use (be warned it will do slightly different things):
+```
+make -j
+sudo make install
+```
 
-    $ make
-    $ sudo make install
-    
 To install to a different directory than /usr/local:
 
     $ PREFIX=/some/path sudo make install
 
+Debugging
+=========
+
+You can enable [AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html) to debug memory issues for Debug builds by setting the `ASAN` option:
+```
+cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Debug -DASAN=ON
+cmake --build build
+```
+
+Mostly you can then run your executables as usual and inspect the sanitiser output. If you get a message like `ASan runtime does not come first in initial library list; you should either link runtime to your application or manually preload it with LD_PRELOAD.` you have to preload the corresponding `libasan.so.5` like this:
+```
+LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5 ./build/opencv_demo
+```
 
 Flexible Layouts
 ================
@@ -59,37 +86,4 @@ You can generate your own tag families using our other repo, [AprilTag-Generatio
 
 Support
 =======
-Please create an issue on this github for any questions instead of sending a private message. This allows other people with the same question to find your answer.
-
-
-Upgrading from AprilTag 2
-=========================
-For most use-cases this should be a drop in replacement.
-
-* The options refine_decode, refine_pose, and black_border have been removed.
-* If you have generated your own families, you will need to regenerate the c code for those families. The java code however does not need to be regenerated so this should be quick and easy.
-
-
-OpenCV Integration
-==================
-
-Note that this library has no external dependencies. Most applications
-will require, at minimum, a method for acquiring images.
-
-See example/opencv_demo.cc for an example of using AprilTag in C++ with OpenCV.
-This example application can be built by executing the following:
-
-    $ cd examples
-    $ make opencv_demo
-
-Image data in a cv::Mat object can be passed to AprilTag without creating
-a deep copy. Simply create an image_u8_t header for the cv::Mat data buffer:
-
-    cv::Mat img;
-
-    image_u8_t img_header = { .width = img.cols,
-        .height = img.rows,
-        .stride = img.cols,
-        .buf = img.data
-    };
-
+Please create an issue on this GitHub for any questions instead of sending a private message. This allows other people with the same question to find your answer.

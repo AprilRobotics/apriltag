@@ -7,6 +7,7 @@
 #include <signal.h>
 
 #include "apriltag.h"
+#include "tag36h10.h"
 #include "tag36h11.h"
 #include "tag25h8.h"
 #include "tag25h9.h"
@@ -21,6 +22,7 @@
 
 
 #define SUPPORTED_TAG_FAMILIES(_)           \
+    _(tag36h10)                             \
     _(tag36h11)                             \
     _(tag25h8)                              \
     _(tag25h9)                              \
@@ -101,7 +103,7 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
                         "maxhamming",
                         "decimate",
                         "blur",
-                        "refine-edges",
+                        "refine_edges",
                         "debug",
                         NULL };
 
@@ -148,7 +150,16 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     self->td->refine_edges        = refine_edges;
     self->td->debug               = debug;
 
-    success = true;
+    switch(errno){
+        case EINVAL:
+                PyErr_SetString(PyExc_RuntimeError, "Unable to add family to detector. \"maxhamming\" parameter should not exceed 3");
+                break;
+        case ENOMEM:
+                PyErr_Format(PyExc_RuntimeError, "Unable to add family to detector due to insufficient memory to allocate the tag-family decoder. Try reducing \"maxhamming\" from %d or choose an alternative tag family",maxhamming);
+                break;
+        default:
+            success = true;
+    }
 
  done:
     if(!success)
@@ -234,13 +245,18 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
     zarray_t* detections = apriltag_detector_detect(self->td, &im);
     int N = zarray_size(detections);
 
+    if (N == 0 && errno == EAGAIN){
+        PyErr_Format(PyExc_RuntimeError, "Unable to create %d threads for detector", self->td->nthreads);
+        goto done;
+    }
+
     detections_tuple = PyTuple_New(N);
     if(detections_tuple == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "Error creating output tuple of size %d", N);
         goto done;
     }
-
+    
     for (int i=0; i < N; i++)
     {
         xy_c = (PyArrayObject*)PyArray_SimpleNew(1, ((npy_intp[]){2}), NPY_FLOAT64);
@@ -269,7 +285,7 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
         }
 
         PyTuple_SET_ITEM(detections_tuple, i,
-                         Py_BuildValue("{s:i,s:f,s:i,s:O,s:O}",
+                         Py_BuildValue("{s:i,s:f,s:i,s:N,s:N}",
                                        "hamming", det->hamming,
                                        "margin",  det->decision_margin,
                                        "id",      det->id,
@@ -283,7 +299,7 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
     result = detections_tuple;
     detections_tuple = NULL;
 
- done:
+  done:
     Py_XDECREF(xy_c);
     Py_XDECREF(xy_lb_rb_rt_lt);
     Py_XDECREF(image);

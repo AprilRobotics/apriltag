@@ -1,0 +1,153 @@
+name: ROS workspace CI
+
+on: [push, pull_request]
+
+jobs:
+  # build on Ubuntu docker images
+  build_linux:
+    name: Ubuntu (${{ matrix.ros_distribution }}, ${{ matrix.config }})
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        ros_distribution: [melodic, noetic, humble]
+        config: ["default"] # nice name
+        cmake_args: ['[ ]'] # empty list of options
+        include:
+          - docker_image: ubuntu:18.04
+            ros_distribution: melodic
+            ros_version: 1
+
+          - docker_image: ubuntu:20.04
+            ros_distribution: noetic
+            ros_version: 1
+
+          - docker_image: ubuntu:22.04
+            ros_distribution: humble
+            ros_version: 2
+
+          # build static library, this will set BUILD_PYTHON_WRAPPER to OFF
+          - docker_image: ubuntu:22.04
+            ros_distribution: humble
+            ros_version: 2
+            config: "static"
+            cmake_args: '[ "-DBUILD_SHARED_LIBS=OFF" ]'
+
+    container:
+      image: ${{ matrix.docker_image }}
+
+    steps:
+      - name: install core dependencies
+        run: |
+          apt update
+          apt install --no-install-recommends -y git ca-certificates
+
+      - uses: actions/checkout@v3
+        #with:
+        #  submodules: recursive
+
+      - name: Setup ROS environment
+        uses: ros-tooling/setup-ros@v0.4
+
+      - name: ROS 1 CI Action
+        if: ${{ matrix.ros_version == 1 }}
+        uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          package-name: apriltag
+          target-ros1-distro: ${{ matrix.ros_distribution }}
+
+      - name: ROS 2 CI Action
+        if: ${{ matrix.ros_version == 2 }}
+        uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          package-name: apriltag
+          target-ros2-distro: ${{ matrix.ros_distribution }}
+          colcon-defaults: |
+            {
+              "build": {
+                "cmake-args": ${{ matrix.cmake_args }}
+              }
+            }
+
+
+  # build on Windows native
+  build_windows:
+    name: Windows (${{ matrix.ros_distribution }})
+
+    runs-on: windows-2019
+
+    strategy:
+      matrix:
+        ros_distribution: [noetic, humble]
+        include:
+          - ros_distribution: noetic
+            ros_version: 1
+
+          - ros_distribution: humble
+            ros_version: 2
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup ROS environment
+        uses: ros-tooling/setup-ros@v0.4
+
+      - name: ROS 1 CI Action
+        if: ${{ matrix.ros_version == 1 }}
+        uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          package-name: apriltag
+          target-ros1-distro: ${{ matrix.ros_distribution }}
+          colcon-defaults: |
+            {
+              "build": {
+                "cmake-args": [ "-DBUILD_SHARED_LIBS=OFF" ]
+              }
+            }
+
+      - name: ROS 2 CI Action
+        if: ${{ matrix.ros_version == 2 }}
+        uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          package-name: apriltag
+          target-ros2-distro: ${{ matrix.ros_distribution }}
+          colcon-defaults: |
+            {
+              "build": {
+                "cmake-args": [ "-DBUILD_SHARED_LIBS=OFF" ]
+              }
+            }
+
+  # build on macOS native
+  build_macos:
+    name: macOS (${{ matrix.ros_distribution }})
+
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ros_distribution: [humble]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup ROS environment
+        uses: ros-tooling/setup-ros@v0.4
+
+      - name: ROS 2 CI Action
+        uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          package-name: apriltag
+          target-ros2-distro: ${{ matrix.ros_distribution }}
+          colcon-defaults: |
+            {
+              "build": {
+                "cmake-args": [ "-DBUILD_PYTHON_WRAPPER=OFF" ]
+              }
+            }

@@ -1,10 +1,10 @@
-prefix=
+prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}
 includedir=${prefix}/include
 libdir=${exec_prefix}/lib
 
-Name: apriltag
-Description: AprilTag detector library
-Version: 0.10.0
+Name: @PROJECT_NAME@
+Description: AprilTag is a visual fiducial system popular for robotics research.
+Version: @PROJECT_VERSION@
 Cflags: -I${includedir}
 Libs: -L${libdir} -lapriltag
