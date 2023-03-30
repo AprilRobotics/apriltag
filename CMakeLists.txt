@@ -181,7 +181,7 @@ endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BU
 #     install(TARGETS opencv_demo RUNTIME DESTINATION bin)
 # else()
 #     message(STATUS "OpenCV not found: Not building demo")
-endif(OpenCV_FOUND)
+# endif(OpenCV_FOUND)
 
 # install example programs
 # install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
