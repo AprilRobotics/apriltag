@@ -148,9 +148,12 @@ if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD
     add_custom_command(OUTPUT apriltag_pywrap.o
         COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
-    add_custom_command(OUTPUT apriltag${PY_EXT_SUFFIX}
-        COMMAND ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,lib apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}
-        DEPENDS ${PROJECT_NAME} apriltag_pywrap.o)
+
+    add_custom_target(apriltag${PY_EXT_SUFFIX}
+        ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,$ORIGIN apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}
+        DEPENDS ${PROJECT_NAME} apriltag_pywrap.o
+        VERBATIM)
+
     add_custom_target(apriltag_python ALL
         DEPENDS apriltag${PY_EXT_SUFFIX})
 
