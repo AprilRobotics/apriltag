@@ -84,7 +84,6 @@ zhash_t *zhash_create_capacity(size_t keysz, size_t valuesz,
     zh->entrysz = 1 + zh->keysz + zh->valuesz;
 
     zh->entries = calloc(zh->nentries, zh->entrysz);
-    zh->nentries = nentries;
 
     return zh;
 }
