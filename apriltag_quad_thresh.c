@@ -1062,10 +1062,10 @@ static void do_quad_task(void *p)
 
     for (int cidx = task->cidx0; cidx < task->cidx1; cidx++) {
 
-        zarray_t *cluster;
-        zarray_get(clusters, cidx, &cluster);
+        zarray_t **cluster;
+        zarray_get_volatile(clusters, cidx, &cluster);
 
-        if (zarray_size(cluster) < td->qtp.min_cluster_pixels)
+        if (zarray_size(*cluster) < td->qtp.min_cluster_pixels)
             continue;
 
         // a cluster should contain only boundary points around the
@@ -1074,14 +1074,14 @@ static void do_quad_task(void *p)
         // fit quads to.) A typical point along an edge is added three
         // times (because it has 3 neighbors). The maximum perimeter
         // is 2w+2h.
-        if (zarray_size(cluster) > 3*(2*w+2*h)) {
+        if (zarray_size(*cluster) > 3*(2*w+2*h)) {
             continue;
         }
 
         struct quad quad;
         memset(&quad, 0, sizeof(struct quad));
 
-        if (fit_quad(td, task->im, cluster, &quad, task->tag_width, task->normal_border, task->reversed_border)) {
+        if (fit_quad(td, task->im, *cluster, &quad, task->tag_width, task->normal_border, task->reversed_border)) {
             pthread_mutex_lock(&td->mutex);
             zarray_add(quads, &quad);
             pthread_mutex_unlock(&td->mutex);
@@ -1588,14 +1588,14 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
         int n = end - start;
         for (int j = 0; j < n - 1; j++) {
             for (int k = 0; k < n - j - 1; k++) {
-                struct cluster_hash* hash1;
-                struct cluster_hash* hash2;
-                zarray_get(clusters, start + k, &hash1);
-                zarray_get(clusters, start + k + 1, &hash2);
-                if (hash1->id > hash2->id) {
-                    struct cluster_hash tmp = *hash2;
-                    *hash2 = *hash1;
-                    *hash1 = tmp;
+                struct cluster_hash** hash1;
+                struct cluster_hash** hash2;
+                zarray_get_volatile(clusters, start + k, &hash1);
+                zarray_get_volatile(clusters, start + k + 1, &hash2);
+                if ((*hash1)->id > (*hash2)->id) {
+                    struct cluster_hash tmp = **hash2;
+                    **hash2 = **hash1;
+                    **hash1 = tmp;
                 }
             }
         }
@@ -1626,38 +1626,29 @@ zarray_t* merge_clusters(zarray_t* c1, zarray_t* c2) {
     int l2 = zarray_size(c2);
 
     while (i1 < l1 && i2 < l2) {
-        struct cluster_hash* h1;
-        struct cluster_hash* h2;
-        zarray_get(c1, i1, &h1);
-        zarray_get(c2, i2, &h2);
+        struct cluster_hash** h1;
+        struct cluster_hash** h2;
+        zarray_get_volatile(c1, i1, &h1);
+        zarray_get_volatile(c2, i2, &h2);
 
-        if (h1->hash == h2->hash && h1->id == h2->id) {
-            zarray_add_all(h1->data, h2->data);
-            zarray_add(ret, &h1);
+        if ((*h1)->hash == (*h2)->hash && (*h1)->id == (*h2)->id) {
+            zarray_add_range((*h1)->data, (*h2)->data, 0, zarray_size((*h2)->data));
+            zarray_add(ret, h1);
             i1++;
             i2++;
-            zarray_destroy(h2->data);
-            free(h2);
-        } else if (h2->hash < h1->hash || (h2->hash == h1->hash && h2->id < h1->id)) {
-            zarray_add(ret, &h2);
+            zarray_destroy((*h2)->data);
+            free(*h2);
+        } else if ((*h2)->hash < (*h1)->hash || ((*h2)->hash == (*h1)->hash && (*h2)->id < (*h1)->id)) {
+            zarray_add(ret, h2);
             i2++;
         } else {
-            zarray_add(ret, &h1);
+            zarray_add(ret, h1);
             i1++;
         }
     }
 
-    for (; i1 < l1; i1++) {
-        struct cluster_hash* h1;
-        zarray_get(c1, i1, &h1);
-        zarray_add(ret, &h1);
-    }
-
-    for (; i2 < l2; i2++) {
-        struct cluster_hash* h2;
-        zarray_get(c2, i2, &h2);
-        zarray_add(ret, &h2);
-    }
+    zarray_add_range(ret, c1, i1, l1);
+    zarray_add_range(ret, c2, i2, l2);
 
     zarray_destroy(c1);
     zarray_destroy(c2);
@@ -1716,10 +1707,10 @@ zarray_t* gradient_clusters(apriltag_detector_t *td, image_u8_t* threshim, int w
     clusters = zarray_create(sizeof(zarray_t*));
     zarray_ensure_capacity(clusters, zarray_size(clusters_list[0]));
     for (int i = 0; i < zarray_size(clusters_list[0]); i++) {
-        struct cluster_hash* hash;
-        zarray_get(clusters_list[0], i, &hash);
-        zarray_add(clusters, &hash->data);
-        free(hash);
+        struct cluster_hash** hash;
+        zarray_get_volatile(clusters_list[0], i, &hash);
+        zarray_add(clusters, &(*hash)->data);
+        free(*hash);
     }
     zarray_destroy(clusters_list[0]);
     free(clusters_list);
