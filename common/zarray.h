@@ -437,26 +437,27 @@ static inline int zarray_index_of(const zarray_t *za, const void *p)
     return -1;
 }
 
-
-
 /**
- * Add all elements from 'source' into 'dest'. el_size must be the same
- * for both lists
+ * Add elements from start up to and excluding end from 'source' into 'dest'.
+ * el_sz must be the same for both lists
  **/
-static inline void zarray_add_all(zarray_t * dest, const zarray_t * source)
+static inline void zarray_add_range(zarray_t *dest, const zarray_t *source, int start, int end)
 {
     assert(dest->el_sz == source->el_sz);
+    assert(dest != NULL);
+    assert(source != NULL);
+    assert(start >= 0);
+    assert(end <= source->size);
+    if (start == end) {
+        return;
+    }
+    assert(start < end);
 
-    // Don't allocate on stack because el_sz could be larger than ~8 MB
-    // stack size
-    char *tmp = (char*)calloc(1, dest->el_sz);
+    int count = end - start;
+    zarray_ensure_capacity(dest, dest->size + count);
 
-    for (int i = 0; i < zarray_size(source); i++) {
-        zarray_get(source, i, tmp);
-        zarray_add(dest, tmp);
-   }
-
-    free(tmp);
+    memcpy(&dest->data[dest->size*dest->el_sz], &source->data[source->el_sz*start], dest->el_sz*count);
+    dest->size += count;
 }
 
 #ifdef __cplusplus
