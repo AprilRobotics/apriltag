@@ -91,7 +91,7 @@ apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     const char* family          = NULL;
     int         Nthreads        = 1;
     int         maxhamming      = 1;
-    float       decimate        = 1.0;
+    float       decimate        = 2.0;
     float       blur            = 0.0;
     bool        refine_edges    = true;
     bool        debug           = false;
