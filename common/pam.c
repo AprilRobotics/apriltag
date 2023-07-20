@@ -64,7 +64,7 @@ pam_t *pam_create_from_file(const char *inpath)
             continue;
 
         size_t linelen = strlen(line);
-        for (int idx = 0; idx < linelen; idx++) {
+        for (size_t idx = 0; idx < linelen; idx++) {
             if (line[idx] == ' ') {
                 line[idx] = 0;
                 if (tok1) {
