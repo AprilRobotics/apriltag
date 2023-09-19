@@ -96,7 +96,7 @@ static uint8_t mjpeg_dht[] = { // header
     0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,
 
     /////////////////////////////////////////////////////////////
-    // chrominance DC coefficents
+    // chrominance DC coefficients
     // DC table 1
     0x01,
     // code lengths
