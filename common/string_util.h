@@ -86,7 +86,7 @@ int str_diff_idx(const char * a, const char * b);
  * contain the delimiter. The original string will remain unchanged.
  * If str is composed of all delimiters, an empty array will be returned.
  *
- * It is the caller's responsibilty to free the returned zarray, as well as
+ * It is the caller's responsibility to free the returned zarray, as well as
  * the strings contained within it, e.g.:
  *
  *   zarray_t *za = str_split("this is a haystack", " ");

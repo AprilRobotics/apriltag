@@ -148,7 +148,7 @@ static inline void homography_project(const matd_t *H, double x, double y, doubl
 //
 // And that the homography is equal to the projection matrix times the model matrix,
 // recover the model matrix (which is returned). Note that the third column of the model
-// matrix is missing in the expresison below, reflecting the fact that the homography assumes
+// matrix is missing in the expression below, reflecting the fact that the homography assumes
 // all points are at z=0 (i.e., planar) and that the element of z is thus omitted.
 // (3x1 instead of 4x1).
 //

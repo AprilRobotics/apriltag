@@ -253,7 +253,7 @@ matd_t *homography_compute(zarray_t *correspondences, int flags)
 // And that the homography is equal to the projection matrix times the
 // model matrix, recover the model matrix (which is returned). Note
 // that the third column of the model matrix is missing in the
-// expresison below, reflecting the fact that the homography assumes
+// expression below, reflecting the fact that the homography assumes
 // all points are at z=0 (i.e., planar) and that the element of z is
 // thus omitted.  (3x1 instead of 4x1).
 //
