@@ -647,7 +647,7 @@ char *str_replace(const char *haystack, const char *needle, const char *replacem
     size_t haystack_len = strlen(haystack);
     size_t needle_len = strlen(needle);
 
-    int pos = 0;
+    size_t pos = 0;
     while (pos < haystack_len) {
         if (needle_len > 0 && str_starts_with(&haystack[pos], needle)) {
             string_buffer_append_string(sb, replacement);

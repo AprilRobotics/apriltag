@@ -241,7 +241,7 @@ int getopt_parse(getopt_t *gopt, int argc, char *argv[], int showErrors)
 
         if (!strncmp(tok,"-",1) && strncmp(tok,"--",2)) {
             size_t len = strlen(tok);
-            int pos;
+            size_t pos;
             for (pos = 1; pos < len; pos++) {
                 char sopt[2];
                 sopt[0] = tok[pos];
