@@ -104,7 +104,7 @@ jobs:
           colcon-defaults: |
             {
               "build": {
-                "cmake-args": [ "-DBUILD_SHARED_LIBS=OFF" ]
+                "cmake-args": [ "-DBUILD_SHARED_LIBS=OFF", "-DCMAKE_CXX_FLAGS='/DWIN32_MEAN_AND_LEAN'" ]
               }
             }
 
@@ -117,7 +117,7 @@ jobs:
           colcon-defaults: |
             {
               "build": {
-                "cmake-args": [ "-DBUILD_SHARED_LIBS=OFF" ]
+                "cmake-args": [ "-DBUILD_SHARED_LIBS=OFF", "-DCMAKE_CXX_FLAGS='/DWIN32_MEAN_AND_LEAN'" ]
               }
             }
 
