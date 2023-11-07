@@ -16,16 +16,16 @@ jobs:
           - {ROS_DISTRO: melodic}
           - {ROS_DISTRO: noetic}
           # ROS 2
-          - {ROS_DISTRO: galactic}
+          - {ROS_DISTRO: humble}
     env:
       CCACHE_DIR: /github/home/.ccache             # Enable ccache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       # This step will fetch/store the directory used by ccache before/after the ci run
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ${{ env.CCACHE_DIR }}
           key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ matrix.env.ROS_REPO }}
