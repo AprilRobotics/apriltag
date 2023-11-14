@@ -120,6 +120,7 @@ Alternately you can use the AprilTag python bindings created by [duckietown](htt
         // Do stuff with detections here.
     }
     // Cleanup.
+    apriltag_detections_destroy(detections);
     tagStandard41h12_destroy(tf);
     apriltag_detector_destroy(td);
 
