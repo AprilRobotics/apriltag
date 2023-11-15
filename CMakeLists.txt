@@ -101,6 +101,7 @@ write_basic_package_version_file("${version_config}" COMPATIBILITY SameMajorVers
 install(TARGETS ${PROJECT_NAME} EXPORT ${targets_export_name}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         )
 
 install(EXPORT ${targets_export_name}
