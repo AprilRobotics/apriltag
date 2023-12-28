@@ -437,7 +437,7 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
 
     double err01, err12, err23, err30;
     double mse01, mse12, mse23, mse30;
-    double params01[4], params12[4], params23[4], params30[4];
+    double params01[4], params12[4];
 
     // disallow quads where the angle is less than a critical value.
     double max_dot = td->qtp.cos_critical_rad; //25*M_PI/180);
@@ -467,11 +467,11 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
                 for (int m3 = m2+1; m3 < nmaxima; m3++) {
                     int i3 = maxima[m3];
 
-                    fit_line(lfps, sz, i2, i3, params23, &err23, &mse23);
+                    fit_line(lfps, sz, i2, i3, NULL, &err23, &mse23);
                     if (mse23 > td->qtp.max_line_fit_mse)
                         continue;
 
-                    fit_line(lfps, sz, i3, i0, params30, &err30, &mse30);
+                    fit_line(lfps, sz, i3, i0, NULL, &err30, &mse30);
                     if (mse30 > td->qtp.max_line_fit_mse)
                         continue;
 
