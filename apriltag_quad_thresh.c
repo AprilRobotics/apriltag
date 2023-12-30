@@ -904,10 +904,10 @@ int fit_quad(
         int i0 = indices[i];
         int i1 = indices[(i+1)&3];
 
-        double err;
-        fit_line(lfps, sz, i0, i1, lines[i], NULL, &err);
+        double mse;
+        fit_line(lfps, sz, i0, i1, lines[i], NULL, &mse);
 
-        if (err > td->qtp.max_line_fit_mse) {
+        if (mse > td->qtp.max_line_fit_mse) {
             res = 0;
             goto finish;
         }
