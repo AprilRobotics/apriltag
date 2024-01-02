@@ -1061,10 +1061,10 @@ static void do_quad_task(void *p)
         // a cluster should contain only boundary points around the
         // tag. it cannot be bigger than the whole screen. (Reject
         // large connected blobs that will be prohibitively slow to
-        // fit quads to.) A typical point along an edge is added three
-        // times (because it has 3 neighbors). The maximum perimeter
-        // is 2w+2h.
-        if (zarray_size(*cluster) > 3*(2*w+2*h)) {
+        // fit quads to.) A typical point along an edge is added two
+        // times (because it has 2 unique neighbors). The maximum
+        // perimeter is 2w+2h.
+        if (zarray_size(*cluster) > 2*(2*w+2*h)) {
             continue;
         }
 
