@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(apriltag VERSION 3.3.0 LANGUAGES C CXX)
+project(apriltag VERSION 3.3.0 LANGUAGES C)
 
 if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)
@@ -192,6 +192,7 @@ if (BUILD_EXAMPLES)
     set(_OpenCV_REQUIRED_COMPONENTS core imgproc videoio highgui)
     find_package(OpenCV COMPONENTS ${_OpenCV_REQUIRED_COMPONENTS} QUIET CONFIG)
     if(OpenCV_FOUND)
+        enable_language(CXX)
         # NB: contrib required for TickMeter in OpenCV 2.4. This is only required for 16.04 backwards compatibility and can be removed in the future.
         #     If we add it to the find_package initially, the demo won't build for newer OpenCV versions
         if(OpenCV_VERSION VERSION_LESS "3.0.0")
