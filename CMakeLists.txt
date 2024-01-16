@@ -50,7 +50,11 @@ if (MSVC)
     add_compile_definitions("_CRT_SECURE_NO_WARNINGS")
 else()
     find_package(Threads REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads m)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
+endif()
+
+if (UNIX)
+    target_link_libraries(${PROJECT_NAME} PUBLIC m)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})
