@@ -57,7 +57,7 @@ void image_u8x3_destroy(image_u8x3_t *im);
 int image_u8x3_write_pnm(const image_u8x3_t *im, const char *path);
 
 // only width 1 supported
-void image_u8x3_draw_line(image_u8x3_t *im, float x0, float y0, float x1, float y1, uint8_t rgb[3], int width);
+void image_u8x3_draw_line(image_u8x3_t *im, float x0, float y0, float x1, float y1, uint8_t rgb[3]);
 
 #ifdef __cplusplus
 }

@@ -502,7 +502,7 @@ int quad_segment_maxima(apriltag_detector_t *td, zarray_t *cluster, struct line_
 }
 
 // returns 0 if the cluster looks bad.
-int quad_segment_agg(apriltag_detector_t *td, zarray_t *cluster, struct line_fit_pt *lfps, int indices[4])
+int quad_segment_agg(zarray_t *cluster, struct line_fit_pt *lfps, int indices[4])
 {
     int sz = zarray_size(cluster);
 
@@ -893,7 +893,7 @@ int fit_quad(
         if (!quad_segment_maxima(td, cluster, lfps, indices))
             goto finish;
     } else {
-        if (!quad_segment_agg(td, cluster, lfps, indices))
+        if (!quad_segment_agg(cluster, lfps, indices))
             goto finish;
     }
 
@@ -1014,7 +1014,7 @@ int fit_quad(
 
 #define DO_UNIONFIND2(dx, dy) if (im->buf[(y + dy)*s + x + dx] == v) unionfind_connect(uf, y*w + x, (y + dy)*w + x + dx);
 
-static void do_unionfind_first_line(unionfind_t *uf, image_u8_t *im, int h, int w, int s)
+static void do_unionfind_first_line(unionfind_t *uf, image_u8_t *im, int w, int s)
 {
     int y = 0;
     uint8_t v;
@@ -1029,7 +1029,7 @@ static void do_unionfind_first_line(unionfind_t *uf, image_u8_t *im, int h, int 
     }
 }
 
-static void do_unionfind_line2(unionfind_t *uf, image_u8_t *im, int h, int w, int s, int y)
+static void do_unionfind_line2(unionfind_t *uf, image_u8_t *im, int w, int s, int y)
 {
     assert(y > 0);
 
@@ -1075,7 +1075,7 @@ static void do_unionfind_task2(void *p)
     struct unionfind_task *task = (struct unionfind_task*) p;
 
     for (int y = task->y0; y < task->y1; y++) {
-        do_unionfind_line2(task->uf, task->im, task->h, task->w, task->s, y);
+        do_unionfind_line2(task->uf, task->im, task->w, task->s, y);
     }
 }
 
@@ -1532,12 +1532,12 @@ unionfind_t* connected_components(apriltag_detector_t *td, image_u8_t* threshim,
     unionfind_t *uf = unionfind_create(w * h);
 
     if (td->nthreads <= 1) {
-        do_unionfind_first_line(uf, threshim, h, w, ts);
+        do_unionfind_first_line(uf, threshim, w, ts);
         for (int y = 1; y < h; y++) {
-            do_unionfind_line2(uf, threshim, h, w, ts, y);
+            do_unionfind_line2(uf, threshim, w, ts, y);
         }
     } else {
-        do_unionfind_first_line(uf, threshim, h, w, ts);
+        do_unionfind_first_line(uf, threshim, w, ts);
 
         int sz = h;
         int chunksize = 1 + sz / (APRILTAG_TASKS_PER_THREAD_TARGET * td->nthreads);
@@ -1567,7 +1567,7 @@ unionfind_t* connected_components(apriltag_detector_t *td, image_u8_t* threshim,
 
         // XXX stitch together the different chunks.
         for (int i = 1; i < ntasks; i++) {
-            do_unionfind_line2(uf, threshim, h, w, ts, tasks[i].y0 - 1);
+            do_unionfind_line2(uf, threshim, w, ts, tasks[i].y0 - 1);
         }
 
         free(tasks);

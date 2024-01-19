@@ -163,7 +163,7 @@ finish:
 }
 
 // only width 1 supported
-void image_u8x3_draw_line(image_u8x3_t *im, float x0, float y0, float x1, float y1, uint8_t rgb[3], int width)
+void image_u8x3_draw_line(image_u8x3_t *im, float x0, float y0, float x1, float y1, uint8_t rgb[3])
 {
     double dist = sqrtf((y1-y0)*(y1-y0) + (x1-x0)*(x1-x0));
     double delta = 0.5 / dist;
