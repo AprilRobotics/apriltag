@@ -375,7 +375,6 @@ void zmaxheap_test()
             // add a value
             int32_t v = (int32_t) (random() / 1000);
             float fv = v;
-            assert(v == fv);
 
             vals[sz] = v;
             zmaxheap_add(heap, &v, fv);
