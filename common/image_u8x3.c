@@ -147,7 +147,7 @@ int image_u8x3_write_pnm(const image_u8x3_t *im, const char *path)
 
     // Only outputs to RGB
     fprintf(f, "P6\n%d %d\n255\n", im->width, im->height);
-    int linesz = im->width * 3;
+    size_t linesz = im->width * 3;
     for (int y = 0; y < im->height; y++) {
         if (linesz != fwrite(&im->buf[y*im->stride], 1, linesz, f)) {
             res = -1;

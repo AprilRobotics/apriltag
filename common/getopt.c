@@ -176,7 +176,7 @@ int getopt_parse(getopt_t *gopt, int argc, char *argv[], int showErrors)
     }
 
     // now loop over the elements and evaluate the arguments
-    unsigned int i = 0;
+    int i = 0;
 
     char *tok = NULL;
 
@@ -499,7 +499,7 @@ char * getopt_get_usage(getopt_t *gopt)
     int longwidth=12;
     int valuewidth=10;
 
-    for (unsigned int i = 0; i < zarray_size(gopt->options); i++) {
+    for (int i = 0; i < zarray_size(gopt->options); i++) {
         getopt_option_t *goo = NULL;
         zarray_get(gopt->options, i, &goo);
 
@@ -512,7 +512,7 @@ char * getopt_get_usage(getopt_t *gopt)
             valuewidth = max(valuewidth, (int) strlen(goo->svalue));
     }
 
-    for (unsigned int i = 0; i < zarray_size(gopt->options); i++) {
+    for (int i = 0; i < zarray_size(gopt->options); i++) {
         getopt_option_t *goo = NULL;
         zarray_get(gopt->options, i, &goo);
 

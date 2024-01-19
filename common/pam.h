@@ -40,7 +40,7 @@ struct pam
     int depth; // bytes per pixel
     int maxval; // maximum value per channel, e.g. 255 for 8bpp
 
-    int datalen; // in bytes
+    size_t datalen; // in bytes
     uint8_t *data;
 };
 

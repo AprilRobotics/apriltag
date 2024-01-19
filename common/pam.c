@@ -181,7 +181,7 @@ int pam_write_file(pam_t *pam, const char *outpath)
 
     fprintf(f, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH %d\nMAXVAL %d\nTUPLTYPE %s\nENDHDR\n",
             pam->width, pam->height, pam->depth, pam->maxval, tupl);
-    int len = pam->width * pam->height * pam->depth;
+    size_t len = pam->width * pam->height * pam->depth;
     if (len != fwrite(pam->data, 1, len, f)) {
         fclose(f);
         return -2;

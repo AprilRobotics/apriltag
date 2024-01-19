@@ -211,7 +211,7 @@ int image_u8_write_pnm(const image_u8_t *im, const char *path)
     fprintf(f, "P5\n%d %d\n255\n", im->width, im->height);
 
     for (int y = 0; y < im->height; y++) {
-        if (im->width != fwrite(&im->buf[y*im->stride], 1, im->width, f)) {
+        if (im->width != (int32_t)fwrite(&im->buf[y*im->stride], 1, im->width, f)) {
             res = -2;
             goto finish;
         }
