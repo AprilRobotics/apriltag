@@ -872,6 +872,8 @@ double matd_vec_dist_n(const matd_t *a, const matd_t *b, int n)
     int lenb = b->nrows*b->ncols;
 
     assert(n <= lena && n <= lenb);
+    (void)lena;
+    (void)lenb;
 
     double mag = 0.0;
     for (int i = 0; i < n; i++)
@@ -906,6 +908,7 @@ double matd_vec_dot_product(const matd_t *a, const matd_t *b)
     int adim = a->ncols*a->nrows;
     int bdim = b->ncols*b->nrows;
     assert(adim == bdim);
+    (void)bdim;
 
     double acc = 0;
     for (int i = 0; i < adim; i++) {

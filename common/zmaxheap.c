@@ -398,6 +398,7 @@ void zmaxheap_test()
             int res = zmaxheap_remove_max(heap, &outv, &outfv);
             if (sz == 0) {
                 assert(res == 0);
+                (void)res;
             } else {
 //                printf("%d %d %d %f\n", sz, maxv, outv, outfv);
                 assert(outv == outfv);
