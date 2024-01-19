@@ -39,6 +39,15 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Werror)
+    # add_compile_options(-Wpedantic)
+    add_compile_options(-Wno-shift-negative-value)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "AppleClang")
+        add_link_options("-Wl,-z,relro,-z,now,-z,defs")
+    endif()
+endif()
+
 aux_source_directory(common COMMON_SRC)
 set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 
