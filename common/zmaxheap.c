@@ -320,7 +320,7 @@ static void maxheapify(zmaxheap_t *heap, int parent)
 
     if (betterchild != parent) {
         heap->swap(heap, parent, betterchild);
-        return maxheapify(heap, betterchild);
+        maxheapify(heap, betterchild);
     }
 }
 
