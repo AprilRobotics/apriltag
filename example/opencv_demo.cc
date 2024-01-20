@@ -119,7 +119,6 @@ int main(int argc, char *argv[])
     td->debug = getopt_get_bool(getopt, "debug");
     td->refine_edges = getopt_get_bool(getopt, "refine-edges");
 
-    float frame_counter = 0.0f;
     meter.stop();
     cout << "Detector " << famname << " initialized in "
         << std::fixed << std::setprecision(3) << meter.getTimeSec() << " seconds" << endl;
@@ -141,11 +140,7 @@ int main(int argc, char *argv[])
         cvtColor(frame, gray, COLOR_BGR2GRAY);
 
         // Make an image_u8_t header for the Mat data
-        image_u8_t im = { .width = gray.cols,
-            .height = gray.rows,
-            .stride = gray.cols,
-            .buf = gray.data
-        };
+        image_u8_t im = {gray.cols, gray.rows, gray.cols, gray.data};
 
         zarray_t *detections = apriltag_detector_detect(td, &im);
 

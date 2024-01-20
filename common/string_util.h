@@ -202,7 +202,7 @@ bool str_matches_any(const char *haystack, const char **needles, int num_needles
  *
  * Note: startidx must be >= endidx
  */
-char *str_substring(const char *str, size_t startidx, long endidx);
+char *str_substring(const char *str, size_t startidx, size_t endidx);
 
 /**
  * Retrieves the zero-based index of the beginning of the supplied substring

@@ -176,7 +176,7 @@ matd_t *homography_to_pose(const matd_t *H, double fx, double fy, double cx, dou
 // [ 0  0  C  D ]
 // [ 0  0 -1  0 ]
 
-matd_t *homography_to_model_view(const matd_t *H, double F, double G, double A, double B, double C, double D);
+matd_t *homography_to_model_view(const matd_t *H, double F, double G, double A, double B);
 
 #ifdef __cplusplus
 }

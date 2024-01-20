@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.16)
 project(apriltag VERSION 3.3.0 LANGUAGES C CXX)
 
 if(POLICY CMP0077)
@@ -39,6 +39,15 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS  "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Werror)
+    # add_compile_options(-Wpedantic)
+    add_compile_options(-Wno-shift-negative-value)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "AppleClang")
+        add_link_options("-Wl,-z,relro,-z,now,-z,defs")
+    endif()
+endif()
+
 aux_source_directory(common COMMON_SRC)
 set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 
@@ -50,7 +59,11 @@ if (MSVC)
     add_compile_definitions("_CRT_SECURE_NO_WARNINGS")
 else()
     find_package(Threads REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads m)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
+endif()
+
+if (UNIX)
+    target_link_libraries(${PROJECT_NAME} PUBLIC m)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})

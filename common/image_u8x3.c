@@ -147,7 +147,7 @@ int image_u8x3_write_pnm(const image_u8x3_t *im, const char *path)
 
     // Only outputs to RGB
     fprintf(f, "P6\n%d %d\n255\n", im->width, im->height);
-    int linesz = im->width * 3;
+    size_t linesz = im->width * 3;
     for (int y = 0; y < im->height; y++) {
         if (linesz != fwrite(&im->buf[y*im->stride], 1, linesz, f)) {
             res = -1;
@@ -163,7 +163,7 @@ finish:
 }
 
 // only width 1 supported
-void image_u8x3_draw_line(image_u8x3_t *im, float x0, float y0, float x1, float y1, uint8_t rgb[3], int width)
+void image_u8x3_draw_line(image_u8x3_t *im, float x0, float y0, float x1, float y1, uint8_t rgb[3])
 {
     double dist = sqrtf((y1-y0)*(y1-y0) + (x1-x0)*(x1-x0));
     double delta = 0.5 / dist;
