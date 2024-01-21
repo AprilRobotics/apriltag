@@ -32,6 +32,8 @@ endif()
 # Set a default build type if none was specified
 set(default_build_type "Release")
 
+SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
     set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE  STRING "Choose the type of build." FORCE)
@@ -43,9 +45,19 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Werror)
     # add_compile_options(-Wpedantic)
     add_compile_options(-Wno-shift-negative-value)
-    if(NOT CMAKE_C_COMPILER_ID MATCHES "AppleClang")
-        add_link_options("-Wl,-z,relro,-z,now,-z,defs")
-    endif()
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_C_COMPILER_ID MATCHES "AppleClang" AND NOT CMAKE_C_SIMULATE_ID MATCHES "MSVC")
+    add_link_options("-Wl,-z,relro,-z,now,-z,defs")
+endif()
+
+if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND CMAKE_C_SIMULATE_ID MATCHES "MSVC")
+    # error: 'strdup' is deprecated: The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _strdup.
+    # "strdup" is standard since C23
+    add_definitions(-D _CRT_NONSTDC_NO_DEPRECATE)
+    # ignore "'fopen' is deprecated" and "'strncpy' is deprecated" warnings
+    # TODO: replace by fopen_s and strncpy_s in C11
+    add_definitions(-D _CRT_SECURE_NO_WARNINGS)
 endif()
 
 aux_source_directory(common COMMON_SRC)

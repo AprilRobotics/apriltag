@@ -39,7 +39,7 @@ struct zmaxheap_iterator {
 
 zmaxheap_t *zmaxheap_create(size_t el_sz);
 
-void zmaxheap_vmap(zmaxheap_t *heap, void (*f)());
+void zmaxheap_vmap(zmaxheap_t *heap, void (*f)(void *));
 
 void zmaxheap_destroy(zmaxheap_t *heap);
 

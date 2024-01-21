@@ -32,6 +32,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #include "apriltag.h"
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <assert.h>
 #include <stdint.h>
@@ -52,10 +53,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include "apriltag_math.h"
 
 #include "common/postscript_utils.h"
-
-#ifndef M_PI
-# define M_PI 3.141592653589793238462643383279502884196
-#endif
 
 #ifdef _WIN32
 static inline void srandom(unsigned int seed)

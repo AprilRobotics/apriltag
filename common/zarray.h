@@ -355,7 +355,7 @@ static inline void zarray_map(zarray_t *za, void (*f)(void*))
  *
  * void map_function(element_type *element)
  */
-    void zarray_vmap(zarray_t *za, void (*f)());
+    void zarray_vmap(zarray_t *za, void (*f)(void *));
 
 /**
  * Removes all elements from the array and sets its size to zero. Pointers to

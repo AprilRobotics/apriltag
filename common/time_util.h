@@ -40,6 +40,8 @@ typedef long long suseconds_t;
 
 inline int gettimeofday(struct timeval* tp, void* tzp)
 {
+  (void)tzp;
+
   unsigned long t;
   t = time(NULL);
   tp->tv_sec = t / 1000;

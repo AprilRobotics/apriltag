@@ -86,6 +86,11 @@ void getopt_option_destroy(getopt_option_t *goo)
     free(goo);
 }
 
+void getopt_option_destroy_void(void *goo)
+{
+    getopt_option_destroy((getopt_option_t *)goo);
+}
+
 void getopt_destroy(getopt_t *gopt)
 {
     // free the extra arguments and container
@@ -94,7 +99,7 @@ void getopt_destroy(getopt_t *gopt)
 
     // deep free of the getopt_option structs. Also frees key/values, so
     // after this loop, hash tables will no longer work
-    zarray_vmap(gopt->options, getopt_option_destroy);
+    zarray_vmap(gopt->options, getopt_option_destroy_void);
     zarray_destroy(gopt->options);
 
     // free tables
@@ -506,10 +511,10 @@ char * getopt_get_usage(getopt_t *gopt)
         if (goo->spacer)
             continue;
 
-        longwidth = max(longwidth, (int) strlen(goo->lname));
+        longwidth = imax(longwidth, (int) strlen(goo->lname));
 
         if (goo->type == GOO_STRING_TYPE)
-            valuewidth = max(valuewidth, (int) strlen(goo->svalue));
+            valuewidth = imax(valuewidth, (int) strlen(goo->svalue));
     }
 
     for (int i = 0; i < zarray_size(gopt->options); i++) {

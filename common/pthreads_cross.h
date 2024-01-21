@@ -30,6 +30,7 @@ SOFTWARE.
 #include <pthread.h>
 #include <sched.h>
 #endif
+#include <time.h>
 
 #ifdef _WIN32
 

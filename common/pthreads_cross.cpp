@@ -21,7 +21,6 @@ SOFTWARE.
  */
 
 #include "common/pthreads_cross.h"
-#include <time.h>
 
 #ifdef _WIN32
 
@@ -45,7 +44,10 @@ int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routin
     if (thread == NULL || start_routine == NULL)
         return 1;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
     *thread = (HANDLE) CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start_routine, arg, 0, NULL);
+#pragma GCC diagnostic pop
     if (*thread == NULL)
         return 1;
     return 0;
@@ -230,15 +232,10 @@ void ms_to_timespec(struct timespec *ts, unsigned int ms)
 
 unsigned int timespec_to_ms(const struct timespec *abstime)
 {
-    DWORD t;
-
     if (abstime == NULL)
         return INFINITE;
 
-    t = ((abstime->tv_sec - time(NULL)) * 1000) + (abstime->tv_nsec / 1000000);
-    if (t < 0)
-        t = 1;
-    return t;
+    return ((abstime->tv_sec - time(NULL)) * 1000) + (abstime->tv_nsec / 1000000);
 }
 
 unsigned int pcthread_get_num_procs()
