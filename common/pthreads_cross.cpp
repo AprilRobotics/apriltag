@@ -44,7 +44,10 @@ int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routin
     if (thread == NULL || start_routine == NULL)
         return 1;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
     *thread = (HANDLE) CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start_routine, arg, 0, NULL);
+#pragma GCC diagnostic pop
     if (*thread == NULL)
         return 1;
     return 0;
