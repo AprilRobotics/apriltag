@@ -167,7 +167,7 @@ void zmaxheap_add(zmaxheap_t *heap, void *p, float v)
     }
 }
 
-void zmaxheap_vmap(zmaxheap_t *heap, void (*f)())
+void zmaxheap_vmap(zmaxheap_t *heap, void (*f)(void*))
 {
     assert(heap != NULL);
     assert(f != NULL);

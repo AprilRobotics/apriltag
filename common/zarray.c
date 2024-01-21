@@ -41,7 +41,7 @@ int zstrcmp(const void * a_pp, const void * b_pp)
     return strcmp(a,b);
 }
 
-void zarray_vmap(zarray_t *za, void (*f)())
+void zarray_vmap(zarray_t *za, void (*f)(void*))
 {
     assert(za != NULL);
     assert(f != NULL);
