@@ -21,7 +21,6 @@ SOFTWARE.
  */
 
 #include "common/pthreads_cross.h"
-#include <time.h>
 
 #ifdef _WIN32
 
