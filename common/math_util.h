@@ -27,6 +27,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #pragma once
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <float.h>
 #include <stdlib.h>
@@ -36,14 +37,6 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef M_TWOPI
-# define M_TWOPI       6.2831853071795862319959  /* 2*pi */
-#endif
-
-#ifndef M_PI
-# define M_PI 3.141592653589793238462643383279502884196
 #endif
 
 #define to_radians(x) ( (x) * (M_PI / 180.0 ))
@@ -108,7 +101,7 @@ static inline int irand(int bound)
 /** Map vin to [0, 2*PI) **/
 static inline double mod2pi_positive(double vin)
 {
-    return vin - M_TWOPI * floor(vin / M_TWOPI);
+    return vin - M_2_PI * floor(vin / M_2_PI);
 }
 
 /** Map vin to [-PI, PI) **/
@@ -142,7 +135,7 @@ static inline int mod_positive(int vin, int mod) {
 static inline int theta_to_int(double theta, int max)
 {
     theta = mod2pi_ref(M_PI, theta);
-    int v = (int) (theta / M_TWOPI * max);
+    int v = (int) (theta / M_2_PI * max);
 
     if (v == max)
         v = 0;

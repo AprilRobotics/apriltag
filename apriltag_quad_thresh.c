@@ -28,6 +28,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 // limitation: image size must be <32768 in width and height. This is
 // because we use a fixed-point 16 bit integer representation with one
 // fractional bit.
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <assert.h>
 #include <string.h>
@@ -61,10 +62,6 @@ struct uint64_zarray_entry
 
     struct uint64_zarray_entry *next;
 };
-
-#ifndef M_PI
-# define M_PI 3.141592653589793238462643383279502884196
-#endif
 
 struct pt
 {

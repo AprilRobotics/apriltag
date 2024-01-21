@@ -25,12 +25,9 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdint.h>
-
-#ifndef M_PI
-# define M_PI 3.141592653589793238462643383279502884196
-#endif
 
 // 8 bits of fixed-point output
 //
