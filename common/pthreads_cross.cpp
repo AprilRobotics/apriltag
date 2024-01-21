@@ -230,15 +230,10 @@ void ms_to_timespec(struct timespec *ts, unsigned int ms)
 
 unsigned int timespec_to_ms(const struct timespec *abstime)
 {
-    DWORD t;
-
     if (abstime == NULL)
         return INFINITE;
 
-    t = ((abstime->tv_sec - time(NULL)) * 1000) + (abstime->tv_nsec / 1000000);
-    if (t < 0)
-        t = 1;
-    return t;
+    return ((abstime->tv_sec - time(NULL)) * 1000) + (abstime->tv_nsec / 1000000);
 }
 
 unsigned int pcthread_get_num_procs()
