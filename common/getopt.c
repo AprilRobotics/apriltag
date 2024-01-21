@@ -506,10 +506,10 @@ char * getopt_get_usage(getopt_t *gopt)
         if (goo->spacer)
             continue;
 
-        longwidth = max(longwidth, (int) strlen(goo->lname));
+        longwidth = imax(longwidth, (int) strlen(goo->lname));
 
         if (goo->type == GOO_STRING_TYPE)
-            valuewidth = max(valuewidth, (int) strlen(goo->svalue));
+            valuewidth = imax(valuewidth, (int) strlen(goo->svalue));
     }
 
     for (int i = 0; i < zarray_size(gopt->options); i++) {

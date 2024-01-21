@@ -49,9 +49,6 @@ extern "C" {
 #define to_radians(x) ( (x) * (M_PI / 180.0 ))
 #define to_degrees(x) ( (x) * (180.0 / M_PI ))
 
-#define max(A, B) (A < B ? B : A)
-#define min(A, B) (A < B ? A : B)
-
   /* DEPRECATE, threshold meaningless without context.
 static inline int dequals(double a, double b)
 {
