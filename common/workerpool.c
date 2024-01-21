@@ -66,26 +66,19 @@ void *worker_thread(void *p)
 {
     workerpool_t *wp = (workerpool_t*) p;
 
-    int cnt = 0;
-
     while (1) {
         struct task *task;
 
         pthread_mutex_lock(&wp->mutex);
         while (wp->taskspos == zarray_size(wp->tasks)) {
             wp->end_count++;
-//          printf("%"PRId64" thread %d did %d\n", utime_now(), pthread_self(), cnt);
             pthread_cond_broadcast(&wp->endcond);
             pthread_cond_wait(&wp->startcond, &wp->mutex);
-            cnt = 0;
-//            printf("%"PRId64" thread %d awake\n", utime_now(), pthread_self());
         }
 
         zarray_get_volatile(wp->tasks, wp->taskspos, &task);
         wp->taskspos++;
-        cnt++;
         pthread_mutex_unlock(&wp->mutex);
-//        pthread_yield();
         sched_yield();
 
         // we've been asked to exit.
