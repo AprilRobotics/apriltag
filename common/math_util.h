@@ -29,11 +29,9 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include <float.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
-#include <string.h> // memcpy
 
 #ifdef __cplusplus
 extern "C" {
