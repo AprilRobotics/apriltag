@@ -52,6 +52,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND CMAKE_C_SIMULATE_ID MATCHES "MSVC")
     # error: 'strdup' is deprecated: The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _strdup.
     # "strdup" is standard since C23
     add_definitions(-D _CRT_NONSTDC_NO_DEPRECATE)
+    # ignore "'fopen' is deprecated" and "'strncpy' is deprecated" warnings
+    # TODO: replace by fopen_s and strncpy_s in C11
+    add_definitions(-D _CRT_SECURE_NO_WARNINGS)
 endif()
 
 aux_source_directory(common COMMON_SRC)
