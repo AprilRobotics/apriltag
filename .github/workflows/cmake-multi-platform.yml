@@ -15,6 +15,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         build_type: [Release]
         c_compiler: [gcc, clang, cl]
+        shared_libs: ['ON', 'OFF']
         include:
           - os: windows-latest
             c_compiler: cl
@@ -63,6 +64,7 @@ jobs:
         -D CMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -D CMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -D CMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -D BUILD_SHARED_LIBS=${{ matrix.shared_libs }}
         -S ${{ github.workspace }}
 
     - name: Build
