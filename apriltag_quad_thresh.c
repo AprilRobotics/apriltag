@@ -846,42 +846,7 @@ int fit_quad(
     // step for segmenting them into four lines.
     if (1) {
         ptsort((struct pt*) cluster->data, zarray_size(cluster));
-
-        // remove duplicate points. (A byproduct of our segmentation system.)
-        if (1) {
-            int outpos = 1;
-
-            struct pt *last;
-            zarray_get_volatile(cluster, 0, &last);
-
-            for (int i = 1; i < sz; i++) {
-
-                struct pt *p;
-                zarray_get_volatile(cluster, i, &p);
-
-                if (p->x != last->x || p->y != last->y) {
-
-                    if (i != outpos)  {
-                        struct pt *out;
-                        zarray_get_volatile(cluster, outpos, &out);
-                        memcpy(out, p, sizeof(struct pt));
-                    }
-
-                    outpos++;
-                }
-
-                last = p;
-            }
-
-            cluster->size = outpos;
-            sz = outpos;
-        }
-
     }
-
-    if (sz < 24)
-        return 0;
-
 
     struct line_fit_pt *lfps = compute_lfps(sz, cluster, im);
 
@@ -1096,10 +1061,10 @@ static void do_quad_task(void *p)
         // a cluster should contain only boundary points around the
         // tag. it cannot be bigger than the whole screen. (Reject
         // large connected blobs that will be prohibitively slow to
-        // fit quads to.) A typical point along an edge is added three
-        // times (because it has 3 neighbors). The maximum perimeter
-        // is 2w+2h.
-        if (zarray_size(*cluster) > 3*(2*w+2*h)) {
+        // fit quads to.) A typical point along an edge is added two
+        // times (because it has 2 unique neighbors). The maximum
+        // perimeter is 2w+2h.
+        if (zarray_size(*cluster) > 2*(2*w+2*h)) {
             continue;
         }
 
@@ -1582,15 +1547,19 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
     mem_pools[mem_pool_idx] = calloc(mem_chunk_size, sizeof(struct uint64_zarray_entry));
 
     for (int y = y0; y < y1; y++) {
+        bool connected_last = false;
         for (int x = 1; x < w-1; x++) {
 
             uint8_t v0 = threshim->buf[y*ts + x];
-            if (v0 == 127)
+            if (v0 == 127) {
+                connected_last = false;
                 continue;
+            }
 
             // XXX don't query this until we know we need it?
             uint64_t rep0 = unionfind_get_representative(uf, y*w + x);
             if (unionfind_get_set_size(uf, rep0) < 25) {
+                connected_last = false;
                 continue;
             }
 
@@ -1614,6 +1583,7 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
             // A possible optimization would be to combine entries
             // within the same cluster.
 
+            bool connected;
 #define DO_CONN(dx, dy)                                                 \
             if (1) {                                                    \
                 uint8_t v1 = threshim->buf[(y + dy)*ts + x + dx];       \
@@ -1651,6 +1621,7 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
                                                                             \
                         struct pt p = { .x = 2*x + dx, .y = 2*y + dy, .gx = dx*((int) v1-v0), .gy = dy*((int) v1-v0)}; \
                         zarray_add(entry->cluster, &p);                     \
+                        connected = true;                                   \
                     }                                                   \
                 }                                                       \
             }
@@ -1660,8 +1631,16 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
             DO_CONN(0, 1);
 
             // do 8 connectivity
-            DO_CONN(-1, 1);
+            if (!connected_last) {
+                // Checking 1, 1 on the previous x, y, and -1, 1 on the current
+                // x, y result in duplicate points in the final list.  Only
+                // check the potential duplicate if adding this one won't
+                // create a duplicate.
+                DO_CONN(-1, 1);
+            }
+            connected = false;
             DO_CONN(1, 1);
+            connected_last = connected;
         }
     }
 #undef DO_CONN
