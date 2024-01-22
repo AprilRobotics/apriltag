@@ -146,19 +146,12 @@ install(FILES "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc"
 
 
 # Python wrapper
-include(CMakeDependentOption)
-cmake_dependent_option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" ON BUILD_SHARED_LIBS OFF)
+option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" ON)
 
-if(BUILD_PYTHON_WRAPPER)
-    SET(Python_ADDITIONAL_VERSIONS 3)
-    find_package(PythonLibs)
-    execute_process(COMMAND which python3 OUTPUT_QUIET RESULT_VARIABLE Python3_NOT_FOUND)
-    execute_process(COMMAND python3 -c "import numpy" RESULT_VARIABLE Numpy_NOT_FOUND)
-endif(BUILD_PYTHON_WRAPPER)
+find_package(Python3 QUIET COMPONENTS Development NumPy)
 
-if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
-    # TODO deal with both python2/3
-    execute_process(COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
+if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
+    execute_process(COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
     set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
     cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
     separate_arguments(PY_CFLAGS)
@@ -166,9 +159,9 @@ if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD
     separate_arguments(PY_LDFLAGS)
 
     foreach(X detect py_type)
-    add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
-        COMMAND < ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_${X}.docstring sed 's/\"/\\\\\"/g\; s/^/\"/\; s/$$/\\\\n\"/\;' > apriltag_${X}.docstring.h
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
+            COMMAND < ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_${X}.docstring sed 's/\"/\\\\\"/g\; s/^/\"/\; s/$$/\\\\n\"/\;' > apriltag_${X}.docstring.h
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
     endforeach()
 
     add_custom_command(OUTPUT apriltag_pywrap.o
@@ -183,10 +176,15 @@ if (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD
     add_custom_target(apriltag_python ALL
         DEPENDS apriltag${PY_EXT_SUFFIX})
 
-execute_process(COMMAND python3 -m site --user-site OUTPUT_VARIABLE PY_DEST)
-string(STRIP ${PY_DEST} PY_DEST)
-install(FILES ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} DESTINATION ${PY_DEST})
-endif (NOT Python3_NOT_FOUND AND NOT Numpy_NOT_FOUND AND PYTHONLIBS_FOUND AND BUILD_PYTHON_WRAPPER)
+    execute_process(COMMAND ${Python3_EXECUTABLE} -m site --user-site OUTPUT_VARIABLE PY_DEST)
+    string(STRIP ${PY_DEST} PY_DEST)
+    install(FILES ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} DESTINATION ${PY_DEST})
+elseif(BUILD_PYTHON_WRAPPER)
+    message(WARNING
+        "Python bindings requested (BUILD_PYTHON_WRAPPER=ON) but Development and NumPy not found. "
+        "Python bindings will not be built. Set BUILD_PYTHON_WRAPPER=OFF to silent this warnings."
+     )
+endif()
 
 # Examples
 if (BUILD_EXAMPLES)
