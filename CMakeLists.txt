@@ -65,6 +65,7 @@ set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 # Library
 file(GLOB TAG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/tag*.c)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
+set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if (MSVC)
     add_compile_definitions("_CRT_SECURE_NO_WARNINGS")
