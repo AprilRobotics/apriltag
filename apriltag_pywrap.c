@@ -251,7 +251,7 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
         PyErr_Format(PyExc_RuntimeError, "Error creating output tuple of size %d", N);
         goto done;
     }
-    
+
     for (int i=0; i < N; i++)
     {
         xy_c = (PyArrayObject*)PyArray_SimpleNew(1, ((npy_intp[]){2}), NPY_FLOAT64);
@@ -374,4 +374,3 @@ PyMODINIT_FUNC PyInit_apriltag(void)
 }
 
 #endif
-
