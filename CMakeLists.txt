@@ -158,15 +158,18 @@ if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
     list(REMOVE_ITEM PY_CFLAGS -flto)
     separate_arguments(PY_LDFLAGS)
 
-    foreach(X detect py_type)
-        add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/apriltag_${X}.docstring.h
-            COMMAND < ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_${X}.docstring sed 's/\"/\\\\\"/g\; s/^/\"/\; s/$$/\\\\n\"/\;' > apriltag_${X}.docstring.h
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    include(CMake/vtkEncodeString.cmake)
+
+    foreach(X IN ITEMS detect py_type)
+        vtk_encode_string(
+            INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_${X}.docstring
+            NAME apriltag_${X}_docstring
+        )
     endforeach()
 
     add_custom_command(OUTPUT apriltag_pywrap.o
         COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect.docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type.docstring.h)
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect_docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type_docstring.h)
 
     add_custom_target(apriltag${PY_EXT_SUFFIX}
         ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,$ORIGIN apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}

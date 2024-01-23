@@ -305,12 +305,8 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
 }
 
 
-static const char apriltag_detect_docstring[] =
-#include "apriltag_detect.docstring.h"
-    ;
-static const char apriltag_type_docstring[] =
-#include "apriltag_py_type.docstring.h"
-    ;
+#include "apriltag_detect_docstring.h"
+#include "apriltag_py_type_docstring.h"
 
 static PyMethodDef apriltag_methods[] =
     { PYMETHODDEF_ENTRY(apriltag_, detect, METH_VARARGS),
@@ -326,7 +322,7 @@ static PyTypeObject apriltagType =
     .tp_dealloc   = (destructor)apriltag_dealloc,
     .tp_methods   = apriltag_methods,
     .tp_flags     = Py_TPFLAGS_DEFAULT,
-    .tp_doc       = apriltag_type_docstring
+    .tp_doc       = apriltag_py_type_docstring
 };
 
 static PyMethodDef methods[] =
