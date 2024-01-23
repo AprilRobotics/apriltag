@@ -211,27 +211,10 @@ function (vtk_encode_string)
 endfunction ()
 
 if (_vtk_encode_string_run AND CMAKE_SCRIPT_MODE_FILE)
-  set(output_header "${binary_dir}/${output_name}.h")
-  set(output_source "${binary_dir}/${output_name}.cxx")
+  set(output_source "${binary_dir}/${output_name}.h")
 
   set(license_topfile "// SPDX-FileCopyrightText: Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen\n// SPDX-License-Identifier: BSD-3-Clause\n")
-  file(WRITE "${output_header}" ${license_topfile})
   file(WRITE "${output_source}" ${license_topfile})
-
-  file(APPEND "${output_header}"
-    "#ifndef ${output_name}_h\n#define ${output_name}_h\n\n")
-  if (export_header)
-    file(APPEND "${output_header}"
-      "#include \"${export_header}\"\n")
-  endif ()
-  if (abi_mangle_header AND abi_mangle_symbol_begin)
-    file(APPEND "${output_header}"
-      "#include \"${abi_mangle_header}\"\n\n${abi_mangle_symbol_begin}\n\n")
-  endif ()
-  if (export_symbol)
-    file(APPEND "${output_header}"
-      "${export_symbol} ")
-  endif ()
 
   if (IS_ABSOLUTE "${source_file}")
     set(source_file_full "${source_file}")
@@ -250,14 +233,6 @@ if (_vtk_encode_string_run AND CMAKE_SCRIPT_MODE_FILE)
     endif ()
     string(LENGTH "${original_content}" output_size)
     math(EXPR output_size "${output_size} / 2")
-    file(APPEND "${output_header}"
-      "extern const unsigned char ${output_name}[${output_size}];\n\n")
-    if (abi_mangle_symbol_end)
-      file(APPEND "${output_header}"
-        "${abi_mangle_symbol_end}\n")
-    endif ()
-    file(APPEND "${output_header}"
-      "#endif\n")
 
     file(APPEND "${output_source}"
       "#include \"${output_name}.h\"\n\n")
@@ -281,15 +256,6 @@ if (_vtk_encode_string_run AND CMAKE_SCRIPT_MODE_FILE)
         "${abi_mangle_symbol_end}\n")
     endif ()
   else ()
-    file(APPEND "${output_header}"
-      "extern const char *${output_name};\n\n")
-    if (abi_mangle_symbol_end)
-      file(APPEND "${output_header}"
-        "${abi_mangle_symbol_end}\n\n")
-    endif ()
-    file(APPEND "${output_header}"
-      "#endif\n")
-
     # Escape literal backslashes.
     string(REPLACE "\\" "\\\\" escaped_content "${original_content}")
     # Escape literal double quotes.
@@ -297,14 +263,12 @@ if (_vtk_encode_string_run AND CMAKE_SCRIPT_MODE_FILE)
     # Turn newlines into newlines in the C string.
     string(REPLACE "\n" "\\n\"\n\"" escaped_content "${escaped_content}")
 
-    file(APPEND "${output_source}"
-      "#include \"${output_name}.h\"\n\n")
     if (abi_mangle_symbol_begin)
       file(APPEND "${output_source}"
         "${abi_mangle_symbol_begin}\n\n")
     endif ()
     file(APPEND "${output_source}"
-      "const char *${output_name} =\n")
+      "const char ${output_name}[] =\n")
     file(APPEND "${output_source}"
       "\"${escaped_content}\";\n")
     if (abi_mangle_symbol_end)
