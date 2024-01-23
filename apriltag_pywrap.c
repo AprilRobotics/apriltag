@@ -314,7 +314,7 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
 
 static PyMethodDef apriltag_methods[] =
     { PYMETHODDEF_ENTRY(apriltag_, detect, METH_VARARGS),
-      {}
+      {NULL, NULL, 0, NULL}
     };
 
 static PyTypeObject apriltagType =
@@ -330,7 +330,7 @@ static PyTypeObject apriltagType =
 };
 
 static PyMethodDef methods[] =
-    { {}
+    { {NULL, NULL, 0, NULL}
     };
 
 
