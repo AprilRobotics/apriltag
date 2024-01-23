@@ -206,7 +206,9 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
     PyArrayObject* image            = NULL;
     PyObject*      detections_tuple = NULL;
 
+#ifdef _POSIX_C_SOURCE
     SET_SIGINT();
+#endif
     if(!PyArg_ParseTuple( args, "O&",
                           PyArray_Converter, &image ))
         goto done;
@@ -300,7 +302,9 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
     Py_XDECREF(image);
     Py_XDECREF(detections_tuple);
 
+#ifdef _POSIX_C_SOURCE
     RESET_SIGINT();
+#endif
     return result;
 }
 
