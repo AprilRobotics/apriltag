@@ -151,12 +151,6 @@ option(BUILD_PYTHON_WRAPPER "Builds Python wrapper" ON)
 find_package(Python3 QUIET COMPONENTS Development NumPy)
 
 if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
-    execute_process(COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python_build_flags.py OUTPUT_VARIABLE PY_OUT)
-    set(PY_VARS CFLAGS LDFLAGS LINKER EXT_SUFFIX)
-    cmake_parse_arguments(PY "" "${PY_VARS}" "" ${PY_OUT})
-    separate_arguments(PY_CFLAGS)
-    list(REMOVE_ITEM PY_CFLAGS -flto)
-    separate_arguments(PY_LDFLAGS)
 
     include(CMake/vtkEncodeString.cmake)
 
@@ -167,21 +161,14 @@ if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
         )
     endforeach()
 
-    add_custom_command(OUTPUT apriltag_pywrap.o
-        COMMAND ${CMAKE_C_COMPILER} ${PY_CFLAGS} -I${PROJECT_BINARY_DIR} -c -o apriltag_pywrap.o ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect_docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type_docstring.h)
-
-    add_custom_target(apriltag${PY_EXT_SUFFIX}
-        ${PY_LINKER} ${PY_LDFLAGS} -Wl,-rpath,$ORIGIN apriltag_pywrap.o $<TARGET_FILE:apriltag> -o apriltag${PY_EXT_SUFFIX}
-        DEPENDS ${PROJECT_NAME} apriltag_pywrap.o
-        VERBATIM)
-
-    add_custom_target(apriltag_python ALL
-        DEPENDS apriltag${PY_EXT_SUFFIX})
+    # set the SOABI manually since renaming the library via OUTPUT_NAME does not work on MSVC
+    set(apriltag_py_target "apriltag.${Python3_SOABI}")
+    Python3_add_library(${apriltag_py_target} MODULE ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect_docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type_docstring.h)
+    target_link_libraries(${apriltag_py_target} PRIVATE apriltag Python3::Python Python3::NumPy)
+    target_include_directories(${apriltag_py_target} PRIVATE ${PROJECT_BINARY_DIR})
 
     execute_process(COMMAND ${Python3_EXECUTABLE} -m site --user-site OUTPUT_VARIABLE PY_DEST)
-    string(STRIP ${PY_DEST} PY_DEST)
-    install(FILES ${PROJECT_BINARY_DIR}/apriltag${PY_EXT_SUFFIX} DESTINATION ${PY_DEST})
+    install(TARGETS ${apriltag_py_target} LIBRARY DESTINATION ${PY_DEST})
 elseif(BUILD_PYTHON_WRAPPER)
     message(WARNING
         "Python bindings requested (BUILD_PYTHON_WRAPPER=ON) but Development and NumPy not found. "
