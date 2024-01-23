@@ -358,7 +358,11 @@ static struct PyModuleDef module_def =
      "apriltag",
      "AprilTags visual fiducial system detector",
      -1,
-     methods
+     methods,
+    0,
+    0,
+    0,
+    0
     };
 
 PyMODINIT_FUNC PyInit_apriltag(void)
