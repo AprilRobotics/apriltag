@@ -8,8 +8,6 @@ Table of Contents
 =================
 - [Papers](#papers)
 - [Install](#install)
-  - [cmake](#cmake)
-  - [make](#make)
 - [Usage](#usage)
   - [Choosing a Tag Family](#choosing-a-tag-family)
   - [Getting Started with the Detector](#getting-started-with-the-detector)
@@ -44,8 +42,6 @@ Officially only Linux operating systems are supported, although users have had s
 
 The default installation will place headers in /usr/local/include and shared library in /usr/local/lib. It also installs a pkg-config script into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed.
 
-## cmake
-If you have CMake installed, then do:
 ```
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target install
@@ -65,16 +61,6 @@ to generate and compile via the ninja build script. It will be much faster than 
 
 You can omit `--target install` if you only want to use this locally without installing.
 
-## make
-Otherwise, we have a handwritten makefile you can use (be warned it will do slightly different things):
-```
-make -j
-sudo make install
-```
-
-To install to a different directory than /usr/local:
-
-    $ PREFIX=/some/path sudo make install
 
 Usage
 =====
