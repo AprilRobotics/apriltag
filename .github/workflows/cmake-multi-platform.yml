@@ -76,6 +76,14 @@ jobs:
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
+    - name: Install (Windows)
+      if: matrix.os == 'windows-latest'
+      run: Start-Process -Verb RunAs -FilePath cmake "--build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target install"
+
+    - name: Install (sudo)
+      if: matrix.os != 'windows-latest'
+      run: sudo cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target install
+
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ctest --build-config ${{ matrix.build_type }}
