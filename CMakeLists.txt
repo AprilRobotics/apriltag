@@ -161,10 +161,15 @@ if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
             NAME apriltag_${X}_docstring
         )
     endforeach()
+    add_custom_target(apriltag_py_docstrings DEPENDS
+        ${PROJECT_BINARY_DIR}/apriltag_detect_docstring.h
+        ${PROJECT_BINARY_DIR}/apriltag_py_type_docstring.h
+    )
 
     # set the SOABI manually since renaming the library via OUTPUT_NAME does not work on MSVC
     set(apriltag_py_target "apriltag.${Python3_SOABI}")
-    Python3_add_library(${apriltag_py_target} MODULE ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c ${PROJECT_BINARY_DIR}/apriltag_detect_docstring.h ${PROJECT_BINARY_DIR}/apriltag_py_type_docstring.h)
+    Python3_add_library(${apriltag_py_target} MODULE ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c)
+    add_dependencies(${apriltag_py_target} apriltag_py_docstrings)
     target_link_libraries(${apriltag_py_target} PRIVATE apriltag Python3::Python Python3::NumPy)
     target_include_directories(${apriltag_py_target} PRIVATE ${PROJECT_BINARY_DIR})
 
