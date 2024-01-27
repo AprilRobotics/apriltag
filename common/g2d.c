@@ -120,7 +120,7 @@ int g2d_polygon_contains_point_ref(const zarray_t *poly, double q[2])
 
     double acc_theta = 0;
 
-    double last_theta;
+    double last_theta = 0;
 
     for (int i = 0; i <= psz; i++) {
         double p[2];
