@@ -47,7 +47,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wno-shift-negative-value)
 endif()
 
-if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_C_COMPILER_ID MATCHES "AppleClang" AND NOT CMAKE_C_SIMULATE_ID MATCHES "MSVC")
+if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT APPLE AND NOT CMAKE_C_SIMULATE_ID MATCHES "MSVC")
     add_link_options("-Wl,-z,relro,-z,now,-z,defs")
 endif()
 
