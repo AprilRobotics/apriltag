@@ -70,6 +70,7 @@ jobs:
         -D CMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -D CMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -D BUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -D BUILD_TESTING=ON
         -S ${{ github.workspace }}
 
     - name: Build
@@ -85,4 +86,4 @@ jobs:
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --build-config ${{ matrix.build_type }}
+      run: ctest --build-config ${{ matrix.build_type }} --no-tests=error --output-on-failure --verbose --test-dir test/
