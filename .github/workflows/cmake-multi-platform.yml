@@ -84,6 +84,13 @@ jobs:
       if: matrix.os != 'windows-latest'
       run: sudo cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target install
 
+    - name: add DLL to test folder
+      if: matrix.os == 'windows-latest'
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: |
+        cp *apriltag.dll test/
+
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --build-config ${{ matrix.build_type }} --no-tests=error --output-on-failure --verbose --test-dir test/
+      run: |
+        ctest --build-config ${{ matrix.build_type }} --no-tests=error --output-on-failure --verbose --test-dir test/
