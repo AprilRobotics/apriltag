@@ -16,6 +16,7 @@
   <author email="mkrogius@umich.edu">Max Krogius</author>
 
   <buildtool_depend>cmake</buildtool_depend>
+  <build_depend condition="$ROS_PYTHON_VERSION == 3">python3-dev</build_depend>
   <build_depend condition="$ROS_PYTHON_VERSION == 3">python3-numpy</build_depend>
 
   <!-- Specify test dependency on OpenCV such that examples are built on the test server-->

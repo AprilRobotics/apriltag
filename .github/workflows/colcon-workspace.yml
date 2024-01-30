@@ -62,7 +62,7 @@ jobs:
     strategy:
       matrix:
         ros_distribution: [noetic, humble]
-        cmake_shared_libs: ['OFF']
+        cmake_shared_libs: ['ON', 'OFF']
         include:
           - ros_distribution: noetic
             ros_version: 1
@@ -103,7 +103,7 @@ jobs:
     strategy:
       matrix:
         ros_distribution: [humble]
-        cmake_shared_libs: ['OFF']
+        cmake_shared_libs: ['ON', 'OFF']
 
     steps:
       - uses: actions/checkout@v4
