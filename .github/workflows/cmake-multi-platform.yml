@@ -70,6 +70,7 @@ jobs:
         -D CMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -D CMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -D BUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -D BUILD_TESTING=ON
         -S ${{ github.workspace }}
 
     - name: Build
@@ -83,6 +84,13 @@ jobs:
       if: matrix.os != 'windows-latest'
       run: sudo cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --target install
 
+    - name: add DLL to test folder
+      if: matrix.os == 'windows-latest'
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: |
+        cp *apriltag.dll test/
+
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --build-config ${{ matrix.build_type }}
+      run: |
+        ctest --build-config ${{ matrix.build_type }} --no-tests=error --output-on-failure --verbose --test-dir test/

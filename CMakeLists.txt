@@ -80,6 +80,8 @@ endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 3 VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES DEBUG_POSTFIX "d")
+set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 99)
+
 
 include(GNUInstallDirs)
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -210,4 +212,8 @@ if (BUILD_EXAMPLES)
 
     # install example programs
     install(TARGETS apriltag_demo RUNTIME DESTINATION bin)
+endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(test)
 endif()
