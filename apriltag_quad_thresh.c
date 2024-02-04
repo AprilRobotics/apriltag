@@ -266,8 +266,13 @@ void fit_line(struct line_fit_pt *lfps, int sz, int i0, int i1, double *lineparm
         }
 
         double length = sqrtf(M);
-        lineparm[2] = nx/length;
-        lineparm[3] = ny/length;
+        if (fabs(length) < 1e-12) {
+            lineparm[2] = lineparm[3] = 0;
+        }
+        else {
+            lineparm[2] = nx/length;
+            lineparm[3] = ny/length;
+        }
     }
 
     // sum of squared errors =
