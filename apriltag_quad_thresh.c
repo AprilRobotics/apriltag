@@ -899,11 +899,11 @@ int fit_quad(
         double det = A00 * A11 - A10 * A01;
 
         // inverse.
-        double W00 = A11 / det, W01 = -A01 / det;
         if (fabs(det) < 0.001) {
             res = 0;
             goto finish;
         }
+        double W00 = A11 / det, W01 = -A01 / det;
 
         // solve
         double L0 = W00*B0 + W01*B1;
