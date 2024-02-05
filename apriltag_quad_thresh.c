@@ -266,8 +266,13 @@ void fit_line(struct line_fit_pt *lfps, int sz, int i0, int i1, double *lineparm
         }
 
         double length = sqrtf(M);
-        lineparm[2] = nx/length;
-        lineparm[3] = ny/length;
+        if (fabs(length) < 1e-12) {
+            lineparm[2] = lineparm[3] = 0;
+        }
+        else {
+            lineparm[2] = nx/length;
+            lineparm[3] = ny/length;
+        }
     }
 
     // sum of squared errors =
@@ -899,11 +904,11 @@ int fit_quad(
         double det = A00 * A11 - A10 * A01;
 
         // inverse.
-        double W00 = A11 / det, W01 = -A01 / det;
         if (fabs(det) < 0.001) {
             res = 0;
             goto finish;
         }
+        double W00 = A11 / det, W01 = -A01 / det;
 
         // solve
         double L0 = W00*B0 + W01*B1;

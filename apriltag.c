@@ -445,6 +445,8 @@ static matd_t* homography_compute2(double c[4][4]) {
             }
         }
 
+        assert(max_val_idx >= 0);
+
         if (max_val < epsilon) {
             debug_print("WRN: Matrix is singular.\n");
             return NULL;
