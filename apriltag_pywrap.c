@@ -75,6 +75,8 @@ typedef struct {
 static PyObject *
 apriltag_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
+    errno = 0;
+
     bool success = false;
 
     apriltag_py_t* self = (apriltag_py_t*)type->tp_alloc(type, 0);
@@ -200,6 +202,8 @@ static void apriltag_dealloc(apriltag_py_t* self)
 static PyObject* apriltag_detect(apriltag_py_t* self,
                                  PyObject* args)
 {
+    errno = 0;
+
     PyObject*      result           = NULL;
     PyArrayObject* xy_c             = NULL;
     PyArrayObject* xy_lb_rb_rt_lt   = NULL;
