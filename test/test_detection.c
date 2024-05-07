@@ -91,7 +91,7 @@ main(int argc, char *argv[])
 
         char* line = NULL;
         size_t len = 0;
-        const ssize_t nread = getline(&line, &len, fp);
+        const ssize_t nread = apriltag_test_getline(&line, &len, fp);
         if (nread == -1) {
             free(line);
             return EXIT_FAILURE;
