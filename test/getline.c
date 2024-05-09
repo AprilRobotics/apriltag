@@ -6,7 +6,7 @@
 /* The original code is public domain -- Will Hartung 4/9/09 */
 /* Modifications, public domain as well, by Antti Haapala, 11/10/17 - Switched to getc on 5/23/19 */
 
-ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+ssize_t apriltag_test_getline(char **lineptr, size_t *n, FILE *stream) {
     size_t pos;
     int c;
 

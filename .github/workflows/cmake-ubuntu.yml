@@ -1,0 +1,62 @@
+name: CMake (Ubuntu)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        version: ["20.04", "22.04", "24.04"]
+        c_compiler: [gcc, clang]
+        shared_libs: ['ON', 'OFF']
+        # manual selection for the latest, non-default, compilers
+        include:
+        - version: "24.04"
+          c_compiler: gcc-14
+        - version: "24.04"
+          c_compiler: clang-18
+
+    container:
+      image: ubuntu:${{ matrix.version }}
+
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+    - name: install dependencies
+      run: |
+        apt update
+        apt install -y --no-install-recommends cmake ninja-build ${{ matrix.c_compiler }}
+        apt install -y --no-install-recommends python3-dev python3-numpy
+
+    - uses: actions/checkout@v4
+
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=$GITHUB_WORKSPACE/build" >> "$GITHUB_OUTPUT"
+
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -G Ninja
+        -D CMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -D CMAKE_BUILD_TYPE=Release
+        -D BUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -D BUILD_TESTING=ON
+        -S $GITHUB_WORKSPACE
+
+    - name: Build & Install
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --target install
+
+    - name: Test
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}/test
+      run: |
+        ctest --no-tests=error --output-on-failure --verbose

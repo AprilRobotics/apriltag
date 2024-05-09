@@ -2,6 +2,7 @@
 #include <apriltag.h>
 #include <tag36h11.h>
 #include <common/pjpeg.h>
+#include <math.h>
 
 #include "getline.h"
 
@@ -37,12 +38,31 @@ format(const char* fmt, ...)
 }
 
 int
-detection_corner_compare_function(const void *_a, const void *_b)
+detection_compare_function(const apriltag_detection_t *a, const apriltag_detection_t *b)
 {
-    apriltag_detection_t *a = *(apriltag_detection_t**) _a;
-    apriltag_detection_t *b = *(apriltag_detection_t**) _b;
+    if (a->id == b->id) {
+        return 0;
+    }
 
-    return memcmp(a->p, b->p, sizeof(a));
+    for (int e = 0; e<4; e++) {
+        for (int c = 0; c<2; c++) {
+            const double d = a->p[e][c] - b->p[e][c];
+            if (fabs(d) > 1e-1) {
+                return copysign(1, d);
+            }
+        }
+    }
+
+    return 0;
+}
+
+int
+detection_array_element_compare_function(const void *_a, const void *_b)
+{
+    const apriltag_detection_t * const a = *(apriltag_detection_t**) _a;
+    const apriltag_detection_t * const b = *(apriltag_detection_t**) _b;
+
+    return detection_compare_function(a, b);
 }
 
 int
@@ -70,28 +90,29 @@ main(int argc, char *argv[])
     apriltag_family_t *tf = tag36h11_create();
     apriltag_detector_add_family(td, tf);
 
-    const char fmt[] = "%i, %i, (%.4lf %.4lf), (%.4lf %.4lf), (%.4lf %.4lf), (%.4lf %.4lf)";
+    const char fmt_det[] = "%i, (%.4lf %.4lf), (%.4lf %.4lf), (%.4lf %.4lf), (%.4lf %.4lf)";
+    const char fmt_ref_parse[] = "%i, (%lf %lf), (%lf %lf), (%lf %lf), (%lf %lf)";
 
     bool ok = true;
 
     zarray_t *detections = apriltag_detector_detect(td, im);
 
     // sort detections by detected corners for deterministic sorting order
-    zarray_sort(detections, detection_corner_compare_function);
+    zarray_sort(detections, detection_array_element_compare_function);
 
     int i = 0;
     for (; i < zarray_size(detections); i++) {
         apriltag_detection_t *det;
         zarray_get(detections, i, &det);
 
-        char* const det_fmt = format(fmt,
-            i, det->id,
+        char* const det_fmt = format(fmt_det,
+            det->id,
             det->p[0][0], det->p[0][1], det->p[1][0], det->p[1][1],
             det->p[2][0], det->p[2][1], det->p[3][0], det->p[3][1]);
 
         char* line = NULL;
         size_t len = 0;
-        const ssize_t nread = getline(&line, &len, fp);
+        const ssize_t nread = apriltag_test_getline(&line, &len, fp);
         if (nread == -1) {
             free(line);
             return EXIT_FAILURE;
@@ -100,8 +121,21 @@ main(int argc, char *argv[])
         printf("Got:      %s\n", det_fmt);
         printf("Expected: %s\n", line);
 
-        // compare strings without the newline character (\n)
-        if (strncmp(det_fmt, line, nread-1) != 0) {
+        // parse reference detection
+        apriltag_detection_t ref;
+        const int nparsed = sscanf(
+            line, fmt_ref_parse,
+            &ref.id,
+            &ref.p[0][0], &ref.p[0][1], &ref.p[1][0], &ref.p[1][1],
+            &ref.p[2][0], &ref.p[2][1], &ref.p[3][0], &ref.p[3][1]);
+
+        (void) nparsed;
+        assert(nparsed == 9);
+
+        // compare detections
+        const bool equ = detection_compare_function(det, &ref) == 0;
+
+        if (!equ || det->id != ref.id) {
             fprintf(stderr, "Mismatch.\nGot:\n  %s\nExpected:\n  %s\n", det_fmt, line);
             ok = false;
         }

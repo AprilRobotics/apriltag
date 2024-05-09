@@ -361,7 +361,7 @@ void zmaxheap_test()
 {
     int cap = 10000;
     int sz = 0;
-    int32_t *vals = calloc(sizeof(int32_t), cap);
+    int32_t *vals = calloc(cap, sizeof(int32_t));
 
     zmaxheap_t *heap = zmaxheap_create(sizeof(int32_t));
 

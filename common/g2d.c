@@ -321,7 +321,7 @@ int g2d_polygon_contains_point(const zarray_t *poly, double q[2])
     int psz = zarray_size(poly);
     assert(psz > 0);
 
-    int last_quadrant;
+    int last_quadrant = 0;
     int quad_acc = 0;
 
     for (int i = 0; i <= psz; i++) {
