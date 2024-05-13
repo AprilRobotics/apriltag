@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(apriltag VERSION 3.4.1 LANGUAGES C)
+project(apriltag VERSION 3.4.2 LANGUAGES C)
 
 if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW)

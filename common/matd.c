@@ -1148,7 +1148,7 @@ static matd_svd_t matd_svd_tall(matd_t *A, int flags)
     assert(maxiters > 0); // reassure clang
     int iter;
 
-    double maxv; // maximum non-zero value being reduced this iteration
+    double maxv = 0; // maximum non-zero value being reduced this iteration
 
     double tol = 1E-10;
 
