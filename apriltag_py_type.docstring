@@ -54,7 +54,7 @@ The constructor takes a number of arguments:
 
 All the other arguments are optional:
 
-- Nthreads: how many threads the detector should use. Default is 1
+- threads: how many threads the detector should use. Default is 1
 
 - maxhamming: max number of corrected bits. Larger values guzzle RAM. Default is
   1
