@@ -1810,7 +1810,8 @@ zarray_t* fit_quads(apriltag_detector_t *td, int w, int h, zarray_t* clusters, i
         normal_border |= !family->reversed_border;
         reversed_border |= family->reversed_border;
     }
-    min_tag_width /= td->quad_decimate;
+    if (td->quad_decimate > 1)
+        min_tag_width /= td->quad_decimate;
     if (min_tag_width < 3) {
         min_tag_width = 3;
     }
