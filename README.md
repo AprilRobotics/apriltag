@@ -89,7 +89,7 @@ If none of these fit your needs, generate your own custom tag family [here](http
 
     detections = detector.detect(image)
 
-Alternately you can use the AprilTag python bindings created by [duckietown](https://github.com/duckietown/apriltags3-py).
+Alternately you can use the AprilTag python bindings created by [duckietown](https://github.com/duckietown/lib-dt-apriltags).
 
 ### C
 
