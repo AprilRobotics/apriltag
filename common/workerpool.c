@@ -199,10 +199,12 @@ void workerpool_run(workerpool_t *wp)
 int workerpool_get_nprocs()
 {
 #ifdef WIN32
+    #error "bla has WIN32"
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
     return sysinfo.dwNumberOfProcessors;
 #else
+    #error "bla no WIN32"
     return sysconf (_SC_NPROCESSORS_ONLN);
 #endif
 }
