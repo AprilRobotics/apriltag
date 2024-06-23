@@ -198,7 +198,7 @@ void workerpool_run(workerpool_t *wp)
 
 int workerpool_get_nprocs()
 {
-#ifdef WIN32
+#ifdef _WIN32
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
     return sysinfo.dwNumberOfProcessors;
