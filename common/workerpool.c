@@ -117,6 +117,13 @@ workerpool_t *workerpool_create(int nthreads)
                 return NULL;
             }
         }
+
+        // Wait for the worker threads to be ready
+        pthread_mutex_lock(&wp->mutex);
+        while (wp->end_count < wp->nthreads) {
+            pthread_cond_wait(&wp->endcond, &wp->mutex);
+        }
+        pthread_mutex_unlock(&wp->mutex);
     }
 
     return wp;
