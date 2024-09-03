@@ -87,6 +87,8 @@ main(int argc, char *argv[])
     free(path_det_true);
 
     apriltag_detector_t *td = apriltag_detector_create();
+    td->quad_decimate = 1;
+    td->refine_edges = false;
     apriltag_family_t *tf = tag36h11_create();
     apriltag_detector_add_family(td, tf);
 
