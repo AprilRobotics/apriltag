@@ -40,8 +40,8 @@ format(const char* fmt, ...)
 int
 detection_compare_function(const apriltag_detection_t *a, const apriltag_detection_t *b)
 {
-    if (a->id == b->id) {
-        return 0;
+    if (a->id != b->id) {
+        return copysign(1, a->id - b->id);
     }
 
     for (int e = 0; e<4; e++) {
@@ -87,6 +87,8 @@ main(int argc, char *argv[])
     free(path_det_true);
 
     apriltag_detector_t *td = apriltag_detector_create();
+    td->quad_decimate = 1;
+    td->refine_edges = false;
     apriltag_family_t *tf = tag36h11_create();
     apriltag_detector_add_family(td, tf);
 
