@@ -789,10 +789,18 @@ static void refine_edges(apriltag_detector_t *td, image_u8_t *im_orig, struct qu
             // search on another pixel in the first place. Likewise,
             // for very small tags, we don't want the range to be too
             // big.
-            double range = td->quad_decimate + 1;
+
+            int range = td->quad_decimate + 1;
+
+            // To reduce the overhead of bilinear interpolation, we can
+            // reduce the number of steps per unit.
+            int steps_per_unit = 4;
+            double step_length = 1.0 / steps_per_unit;
+            int max_steps = 2 * steps_per_unit * range + 1;
 
             // XXX tunable step size.
-            for (double n = -range; n <= range; n +=  0.25) {
+            for (int step = 0; step < max_steps; ++step) {
+                double n = -range + step_length * step;
                 // Because of the guaranteed winding order of the
                 // points in the quad, we will start inside the white
                 // portion of the quad and work our way outward.
@@ -802,19 +810,36 @@ static void refine_edges(apriltag_detector_t *td, image_u8_t *im_orig, struct qu
                 // gradient more precisely, but are more sensitive to
                 // noise.
                 double grange = 1;
-                int x1 = x0 + (n + grange)*nx;
-                int y1 = y0 + (n + grange)*ny;
-                if (x1 < 0 || x1 >= im_orig->width || y1 < 0 || y1 >= im_orig->height)
+
+                double x1 = x0 + (n + grange)*nx;
+                double y1 = y0 + (n + grange)*ny;
+                double x1i_d, y1i_d, a1, b1;
+                a1 = modf(x1, &x1i_d);
+                b1 = modf(y1, &y1i_d);
+                int x1i = x1i_d, y1i = y1i_d;
+
+                if (x1i < 0 || x1i + 1 >= im_orig->width || y1i < 0 || y1i + 1 >= im_orig->height)
                     continue;
 
-                int x2 = x0 + (n - grange)*nx;
-                int y2 = y0 + (n - grange)*ny;
-                if (x2 < 0 || x2 >= im_orig->width || y2 < 0 || y2 >= im_orig->height)
+                double x2 = x0 + (n - grange)*nx;
+                double y2 = y0 + (n - grange)*ny;
+                double x2i_d, y2i_d, a2, b2;
+                a2 = modf(x2, &x2i_d);
+                b2 = modf(y2, &y2i_d);
+                int x2i = x2i_d, y2i = y2i_d;
+
+                if (x2i < 0 || x2i + 1 >= im_orig->width || y2i < 0 || y2i + 1 >= im_orig->height)
                     continue;
 
-                int g1 = im_orig->buf[y1*im_orig->stride + x1];
-                int g2 = im_orig->buf[y2*im_orig->stride + x2];
-
+                // interpolate
+                double g1 = (1 - a1) * (1 - b1) * im_orig->buf[y1i*im_orig->stride + x1i] +
+                                  a1 * (1 - b1) * im_orig->buf[y1i*im_orig->stride + x1i + 1] +
+                            (1 - a1) *    b1    * im_orig->buf[(y1i + 1)*im_orig->stride + x1i] +
+                                  a1 *    b1    * im_orig->buf[(y1i + 1)*im_orig->stride + x1i + 1];
+                double g2 = (1 - a2) * (1 - b2) * im_orig->buf[y2i*im_orig->stride + x2i] +
+                                  a2 * (1 - b2) * im_orig->buf[y2i*im_orig->stride + x2i + 1] +
+                            (1 - a2) *    b2    * im_orig->buf[(y2i + 1)*im_orig->stride + x2i] +
+                                  a2 *    b2    * im_orig->buf[(y2i + 1)*im_orig->stride + x2i + 1];
                 if (g1 < g2) // reject points whose gradient is "backwards". They can only hurt us.
                     continue;
 
