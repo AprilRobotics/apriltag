@@ -797,6 +797,7 @@ static void refine_edges(apriltag_detector_t *td, image_u8_t *im_orig, struct qu
             int steps_per_unit = 4;
             double step_length = 1.0 / steps_per_unit;
             int max_steps = 2 * steps_per_unit * range + 1;
+            double delta = 0.5;
 
             // XXX tunable step size.
             for (int step = 0; step < max_steps; ++step) {
@@ -811,8 +812,8 @@ static void refine_edges(apriltag_detector_t *td, image_u8_t *im_orig, struct qu
                 // noise.
                 double grange = 1;
 
-                double x1 = x0 + (n + grange)*nx;
-                double y1 = y0 + (n + grange)*ny;
+                double x1 = x0 + (n + grange)*nx - delta;
+                double y1 = y0 + (n + grange)*ny - delta;
                 double x1i_d, y1i_d, a1, b1;
                 a1 = modf(x1, &x1i_d);
                 b1 = modf(y1, &y1i_d);
@@ -821,8 +822,8 @@ static void refine_edges(apriltag_detector_t *td, image_u8_t *im_orig, struct qu
                 if (x1i < 0 || x1i + 1 >= im_orig->width || y1i < 0 || y1i + 1 >= im_orig->height)
                     continue;
 
-                double x2 = x0 + (n - grange)*nx;
-                double y2 = y0 + (n - grange)*ny;
+                double x2 = x0 + (n - grange)*nx - delta;
+                double y2 = y0 + (n - grange)*ny - delta;
                 double x2i_d, y2i_d, a2, b2;
                 a2 = modf(x2, &x2i_d);
                 b2 = modf(y2, &y2i_d);
@@ -1115,13 +1116,8 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
             zarray_get_volatile(quads, i, &q);
 
             for (int j = 0; j < 4; j++) {
-                if (td->quad_decimate == 1.5) {
-                    q->p[j][0] *= td->quad_decimate;
-                    q->p[j][1] *= td->quad_decimate;
-                } else {
-                    q->p[j][0] = (q->p[j][0] - 0.5)*td->quad_decimate + 0.5;
-                    q->p[j][1] = (q->p[j][1] - 0.5)*td->quad_decimate + 0.5;
-                }
+                q->p[j][0] *= td->quad_decimate;
+                q->p[j][1] *= td->quad_decimate;
             }
         }
     }
