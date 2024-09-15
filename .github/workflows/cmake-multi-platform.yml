@@ -94,3 +94,8 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: |
         ctest --build-config ${{ matrix.build_type }} --no-tests=error --output-on-failure --verbose --test-dir test/
+
+    - name: Test Python Module Import
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: |
+        python3 -c "import apriltag; apriltag.apriltag(family='tag36h11')"
