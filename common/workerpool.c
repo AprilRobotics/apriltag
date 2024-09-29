@@ -96,6 +96,9 @@ void *worker_thread(void *p)
 workerpool_t *workerpool_create(int nthreads)
 {
     assert(nthreads > 0);
+#ifdef NOTHREADS
+    nthreads = 1;
+#endif
 
     workerpool_t *wp = calloc(1, sizeof(workerpool_t));
     wp->nthreads = nthreads;
