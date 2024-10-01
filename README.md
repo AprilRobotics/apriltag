@@ -93,7 +93,11 @@ Alternately you can use the AprilTag python bindings created by [duckietown](htt
 
 ### C
 
-    image_u8_t* im = image_u8_create_from_pnm("test.png");
+    image_u8_t* im = image_u8_create_from_pnm("test.pnm");
+    if (im == NULL) {
+        fprintf(stderr, "Failed to load pnm image.\n");
+        exit(1);
+    }
     apriltag_detector_t *td = apriltag_detector_create();
     apriltag_family_t *tf = tagStandard41h12_create();
     apriltag_detector_add_family(td, tf);
