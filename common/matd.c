@@ -402,7 +402,7 @@ double matd_det_general(const matd_t *a)
     // The determinant of a can be calculated as
     //     epsilon*det(L)*det(U),
     // where epsilon is just the sign of the corresponding permutation
-    // (which is +1 for an even number of permutations and is −1
+    // (which is +1 for an even number of permutations and is -1
     // for an uneven number of permutations).
     double det = mlu->pivsign * detL * detU;
 
