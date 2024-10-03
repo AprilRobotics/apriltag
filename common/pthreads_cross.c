@@ -246,9 +246,8 @@ unsigned int pcthread_get_num_procs()
     return sysinfo.dwNumberOfProcessors;
 }
 
-#else
+#elif !defined(_POSIX_THREADS) /* Not _WIN32. */
 
-#ifdef NOTHREADS
 int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routine)(void *), void *arg) { return 0; }
 int pthread_join(pthread_t thread, void **value_ptr) { return 0; }
 int pthread_detach(pthread_t thread) { return 0; }
@@ -267,12 +266,13 @@ int pthread_cond_broadcast(pthread_cond_t *cond) { return 0; }
 
 int sched_yield(void) { return 0; }
 unsigned int pcthread_get_num_procs() { return 1; }
-#else
+
+#else /* Not _WIN32 and _POSIX_THREADS is defined. */
+
 #include <unistd.h>
 unsigned int pcthread_get_num_procs()
 {
     return (unsigned int)sysconf(_SC_NPROCESSORS_ONLN);
 }
-#endif
 
 #endif

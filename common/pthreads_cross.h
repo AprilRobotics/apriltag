@@ -23,14 +23,13 @@ SOFTWARE.
 #ifndef __CPTHREAD_H__
 #define __CPTHREAD_H__
 
-#ifndef NOTHREADS
 #ifdef _WIN32
 #include <stdbool.h>
 #include <windows.h>
 #else
+#include <unistd.h>
 #include <pthread.h>
 #include <sched.h>
-#endif
 #endif
 
 #include <time.h>
@@ -68,9 +67,28 @@ int sched_yield(void);
 #ifdef __cplusplus
 }
 #endif
+
+#elif !defined(_POSIX_THREADS) /* _WIN32 not defined */
+/*
+ * If _WIN32 and _POSIX_THREADS are not defined then we dont support threads of
+ * any other kind. So in this case we define 'noop' pthread_* functions and
+ * types to resolve the symbols and in workerpool.c we make sure these noop
+ * functions arent expected to do thread related operations.
+ */
+
+#if __POSIX_VISIBLE < 199506
+typedef int pthread_mutex_t;
+typedef int pthread_mutexattr_t;
+typedef int pthread_attr_t;
+typedef int pthread_condattr_t;
+typedef int pthread_rwlockattr_t;
+typedef int pthread_t;
+typedef int pthread_cond_t;
 #endif
 
-#ifdef NOTHREADS
+#ifdef __cplusplus
+extern "C" {
+#endif
 int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routine)(void *), void *arg);
 int pthread_join(pthread_t thread, void **value_ptr);
 int pthread_detach(pthread_t thread);
@@ -88,7 +106,11 @@ int pthread_cond_signal(pthread_cond_t *cond);
 int pthread_cond_broadcast(pthread_cond_t *cond);
 
 int sched_yield(void);
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* !defined(_POSIX_THREADS) */
 
 #ifdef __cplusplus
 extern "C" {
