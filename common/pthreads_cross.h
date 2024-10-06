@@ -27,9 +27,11 @@ SOFTWARE.
 #include <stdbool.h>
 #include <windows.h>
 #else
+#include <unistd.h>
 #include <pthread.h>
 #include <sched.h>
 #endif
+
 #include <time.h>
 
 #ifdef _WIN32
@@ -65,8 +67,50 @@ int sched_yield(void);
 #ifdef __cplusplus
 }
 #endif
+
+#elif !defined(_POSIX_THREADS) /* _WIN32 not defined */
+/*
+ * If _WIN32 and _POSIX_THREADS are not defined then we dont support threads of
+ * any other kind. So in this case we define 'noop' pthread_* functions and
+ * types to resolve the symbols and in workerpool.c we make sure these noop
+ * functions arent expected to do thread related operations.
+ */
+
+#if __POSIX_VISIBLE < 199506
+typedef int pthread_mutex_t;
+typedef int pthread_mutexattr_t;
+typedef int pthread_attr_t;
+typedef int pthread_condattr_t;
+typedef int pthread_rwlockattr_t;
+typedef int pthread_t;
+typedef int pthread_cond_t;
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+int pthread_create(pthread_t *thread, pthread_attr_t *attr, void *(*start_routine)(void *), void *arg);
+int pthread_join(pthread_t thread, void **value_ptr);
+int pthread_detach(pthread_t thread);
+
+int pthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr);
+int pthread_mutex_destroy(pthread_mutex_t *mutex);
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
+
+int pthread_cond_init(pthread_cond_t *cond, pthread_condattr_t *attr);
+int pthread_cond_destroy(pthread_cond_t *cond);
+int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
+int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex, const struct timespec *abstime);
+int pthread_cond_signal(pthread_cond_t *cond);
+int pthread_cond_broadcast(pthread_cond_t *cond);
+
+int sched_yield(void);
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* !defined(_POSIX_THREADS) */
 
 #ifdef __cplusplus
 extern "C" {
