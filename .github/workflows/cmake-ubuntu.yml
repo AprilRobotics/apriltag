@@ -57,6 +57,6 @@ jobs:
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --target install
 
     - name: Test
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}/test
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: |
         ctest --no-tests=error --output-on-failure --verbose
