@@ -1,5 +1,3 @@
-enable_testing()
-
 add_library(getline OBJECT getline.c)
 
 add_executable(test_detection test_detection.c)
