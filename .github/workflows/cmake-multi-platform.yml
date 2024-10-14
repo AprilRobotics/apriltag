@@ -93,7 +93,7 @@ jobs:
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: |
-        ctest --build-config ${{ matrix.build_type }} --no-tests=error --output-on-failure --verbose --test-dir test/
+        ctest --build-config ${{ matrix.build_type }} --no-tests=error --output-on-failure --verbose
 
     - name: Test Python Module Import
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
