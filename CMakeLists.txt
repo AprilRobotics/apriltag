@@ -43,7 +43,14 @@ endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Werror)
-    # add_compile_options(-Wpedantic)
+    add_compile_options(-Wpedantic)
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        add_compile_options(
+            -Wno-gnu-zero-variadic-macro-arguments
+            -Wno-strict-prototypes
+            -Wno-static-in-inline
+        )
+    endif()
     add_compile_options(-Wno-shift-negative-value)
 endif()
 
