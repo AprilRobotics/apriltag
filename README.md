@@ -192,7 +192,7 @@ Note: The tag size should not be measured from the outside of the tag. The tag s
  ![The tag size is the width of the edge between the white and black borders.](tag_size_48h12.png)
 
 ### Coordinate System
-The coordinate system has the origin at the camera center. The z-axis points from the camera center out the camera lens. The x-axis is to the right in the image taken by the camera, and y is down. The tag's coordinate frame is centered at the center of the tag, with x-axis to the right, y-axis down, and z-axis into the tag.
+The coordinate system has the origin at the camera center. The z-axis points from the camera center out the camera lens. The x-axis is to the right in the image taken by the camera, and y is down. The tag's coordinate frame is centered at the center of the tag. From the viewer's perspective, the x-axis is to the right, y-axis down, and z-axis is into the tag.
 
 Debugging
 =========
