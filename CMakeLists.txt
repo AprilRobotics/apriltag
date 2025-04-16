@@ -183,7 +183,9 @@ if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
     set(apriltag_py_target "apriltag.${Python3_SOABI}")
     Python3_add_library(${apriltag_py_target} MODULE ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c)
     add_dependencies(${apriltag_py_target} apriltag_py_docstrings)
-    target_link_libraries(${apriltag_py_target} PRIVATE apriltag Python3::Python Python3::NumPy)
+    # avoid linking against Python3::Python to prevent segmentation faults in Conda environments
+    # https://github.com/AprilRobotics/apriltag/issues/352
+    target_link_libraries(${apriltag_py_target} PRIVATE apriltag Python3::NumPy)
     target_include_directories(${apriltag_py_target} PRIVATE ${PROJECT_BINARY_DIR})
 
     set(PY_DEST ${CMAKE_INSTALL_PREFIX}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/)
