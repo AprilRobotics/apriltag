@@ -243,7 +243,11 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
                      .stride = strides[0],
                      .buf    = PyArray_DATA(image)};
 
-    zarray_t* detections = apriltag_detector_detect(self->td, &im);
+    zarray_t *detections;  // Declare detections variable outside of the GIL block
+    Py_BEGIN_ALLOW_THREADS  // Acquire the GIL before running detection
+        detections = apriltag_detector_detect(self->td, &im);
+    Py_END_ALLOW_THREADS  // Release the GIL after detection completes
+
     int N = zarray_size(detections);
 
     if (N == 0 && errno == EAGAIN){
