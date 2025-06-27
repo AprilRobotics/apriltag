@@ -31,10 +31,16 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <stdint.h>
 #include <time.h>
 
-#ifdef _WIN32
+#if defined(_WIN32)
+#if !defined(HAVE_SYS_TIME_H)
 #include <Winsock2.h>
+#endif
+
+#include <windows.h>
+#define sleep(x) Sleep((x)*1000)
 typedef long long suseconds_t;
 #endif
+
 
 #ifdef _MSC_VER
 

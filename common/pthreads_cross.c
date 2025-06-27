@@ -22,7 +22,9 @@ SOFTWARE.
 
 #include "common/pthreads_cross.h"
 
-#ifdef _WIN32
+
+
+#if defined(_WIN32) && !defined(HAVE_PTHREAD)
 
 typedef struct {
     SRWLOCK lock;
@@ -238,6 +240,12 @@ unsigned int timespec_to_ms(const struct timespec *abstime)
     return ((abstime->tv_sec - time(NULL)) * 1000) + (abstime->tv_nsec / 1000000);
 }
 
+#endif
+
+
+#if defined(_WIN32)
+#include <windows.h>
+
 unsigned int pcthread_get_num_procs()
 {
     SYSTEM_INFO sysinfo;
@@ -245,7 +253,6 @@ unsigned int pcthread_get_num_procs()
     GetSystemInfo(&sysinfo);
     return sysinfo.dwNumberOfProcessors;
 }
-
 #else
 
 #include <unistd.h>

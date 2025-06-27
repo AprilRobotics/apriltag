@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef __CPTHREAD_H__
 #define __CPTHREAD_H__
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(HAVE_PTHREAD)
 #include <stdbool.h>
 #include <windows.h>
 #else
@@ -32,7 +32,7 @@ SOFTWARE.
 #endif
 #include <time.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(HAVE_PTHREAD)
 
 typedef CRITICAL_SECTION pthread_mutex_t;
 typedef void pthread_mutexattr_t;

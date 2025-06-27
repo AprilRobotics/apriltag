@@ -8,6 +8,24 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_EXAMPLES "Build example executables" ON)
 option(ASAN "Use AddressSanitizer for debug builds to detect memory issues" OFF)
 
+
+include(CheckIncludeFile)
+check_include_file(pthread.h HAVE_PTHREAD)
+if(HAVE_PTHREAD)
+    add_definitions(-DHAVE_PTHREAD)
+    message(STATUS "pthread.h found, using POSIX thread support")
+endif()
+# gettimeofday
+check_include_file(sys/time.h HAVE_SYS_TIME_H)
+if(HAVE_SYS_TIME_H)
+    add_definitions(-DHAVE_SYS_TIME_H)
+    message(STATUS "sys/time.h found, using gettimeofday()")
+else()
+    message(WARNING "sys/time.h not found, gettimeofday() will not be available")
+endif()
+
+
+
 if (ASAN)
     set(ASAN_FLAGS "\
         -fsanitize=address \
