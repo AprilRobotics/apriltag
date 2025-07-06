@@ -40,14 +40,14 @@ jobs:
 
       - name: ROS 1 CI Action
         if: ${{ matrix.ros_version == 1 }}
-        uses: ros-tooling/action-ros-ci@v0.3
+        uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: apriltag
           target-ros1-distro: ${{ matrix.ros_distribution }}
 
       - name: ROS 2 CI Action
         if: ${{ matrix.ros_version == 2 }}
-        uses: ros-tooling/action-ros-ci@v0.3
+        uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: apriltag
           target-ros2-distro: ${{ matrix.ros_distribution }}
@@ -81,14 +81,14 @@ jobs:
 
       - name: ROS 1 CI Action
         if: ${{ matrix.ros_version == 1 }}
-        uses: ros-tooling/action-ros-ci@v0.3
+        uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: apriltag
           target-ros1-distro: ${{ matrix.ros_distribution }}
 
       - name: ROS 2 CI Action
         if: ${{ matrix.ros_version == 2 }}
-        uses: ros-tooling/action-ros-ci@v0.3
+        uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: apriltag
           target-ros2-distro: ${{ matrix.ros_distribution }}
@@ -116,7 +116,7 @@ jobs:
         uses: ros-tooling/setup-ros@v0.7
 
       - name: ROS 2 CI Action
-        uses: ros-tooling/action-ros-ci@v0.3
+        uses: ros-tooling/action-ros-ci@v0.4
         with:
           package-name: apriltag
           target-ros2-distro: ${{ matrix.ros_distribution }}
