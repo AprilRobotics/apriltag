@@ -53,46 +53,6 @@ jobs:
           target-ros2-distro: ${{ matrix.ros_distribution }}
 
 
-  # build on Windows native
-  build_windows:
-    name: "Windows (${{ matrix.ros_distribution }})"
-
-    runs-on: windows-latest
-
-    strategy:
-      matrix:
-        include:
-          - ros_distribution: noetic
-            ros_version: 1
-
-          - ros_distribution: humble
-            ros_version: 2
-
-          - ros_distribution: jazzy
-            ros_version: 2
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup ROS environment
-        uses: ros-tooling/setup-ros@v0.7
-
-      - name: ROS 1 CI Action
-        if: ${{ matrix.ros_version == 1 }}
-        uses: ros-tooling/action-ros-ci@v0.4
-        with:
-          package-name: apriltag
-          target-ros1-distro: ${{ matrix.ros_distribution }}
-
-      - name: ROS 2 CI Action
-        if: ${{ matrix.ros_version == 2 }}
-        uses: ros-tooling/action-ros-ci@v0.4
-        with:
-          package-name: apriltag
-          target-ros2-distro: ${{ matrix.ros_distribution }}
-
   # build on macOS native
   build_macos:
     name: "macOS (${{ matrix.ros_distribution }})"
