@@ -41,6 +41,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <errno.h>
 
 #include "common/image_u8.h"
+#include "common/image_u8_parallel.h"
 #include "common/image_u8x3.h"
 #include "common/zarray.h"
 #include "common/matd.h"
@@ -1076,11 +1077,11 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
 
             if (td->quad_sigma > 0) {
                 // Apply a blur
-                image_u8_gaussian_blur(quad_im, sigma, ksz);
+                image_u8_gaussian_blur_parallel(td->wp, quad_im, sigma, ksz);
             } else {
                 // SHARPEN the image by subtracting the low frequency components.
                 image_u8_t *orig = image_u8_copy(quad_im);
-                image_u8_gaussian_blur(quad_im, sigma, ksz);
+                image_u8_gaussian_blur_parallel(td->wp, quad_im, sigma, ksz);
 
                 for (int y = 0; y < orig->height; y++) {
                     for (int x = 0; x < orig->width; x++) {
