@@ -35,6 +35,7 @@ extern "C" {
 
 #include "common/matd.h"
 #include "common/image_u8.h"
+#include "common/image_u8_parallel.h"
 #include "common/zarray.h"
 #include "common/workerpool.h"
 #include "common/timeprofile.h"

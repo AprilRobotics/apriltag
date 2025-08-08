@@ -86,7 +86,8 @@ void _image_u8_convolve_2D_thread_2(void *p) {
 void image_u8_convolve_2D_parallel(workerpool_t *wp, image_u8_t *im, const uint8_t *k, int ksz) {
     if(im->width * im->height < 65536) {
         // for small images, directly use single threaded convolution
-        return image_u8_convolve_2D(im, k, ksz);
+        image_u8_convolve_2D(im, k, ksz);
+        return;
     }
     int nthreads = workerpool_get_nthreads(wp);
 
@@ -157,10 +158,6 @@ void image_u8_gaussian_blur_parallel(workerpool_t *wp, image_u8_t *im, double si
     for (int i = 0; i < ksz; i++)
         k[i] = dk[i]*255;
 
-    if (0) {
-        for (int i = 0; i < ksz; i++)
-            printf("%d %15f %5d\n", i, dk[i], k[i]);
-    }
     free(dk);
 
     image_u8_convolve_2D_parallel(wp, im, k, ksz);
