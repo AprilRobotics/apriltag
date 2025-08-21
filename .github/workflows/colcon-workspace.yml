@@ -36,11 +36,6 @@ jobs:
       image: ${{ matrix.docker_image }}
 
     steps:
-      - name: install core dependencies
-        run: |
-          apt update
-          apt install --no-install-recommends -y git ca-certificates
-
       - uses: actions/checkout@v5
 
       - name: Setup ROS environment
