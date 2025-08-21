@@ -2,6 +2,9 @@
 
 #include <stdbool.h>
 #include <Python.h>
+#ifndef Py_PYTHREAD_H
+#include <pythread.h>
+#endif
 #include <structmember.h>
 #include <numpy/arrayobject.h>
 #include <signal.h>
