@@ -713,6 +713,19 @@ static inline void ptsort(struct pt *pts, int sz)
 
 #undef MAYBE_SWAP
 
+    if (sz <= 32) {
+        for (int i = 0; i < sz; i++) {
+            struct pt key = pts[i];
+            int j = i - 1;
+            while (j >= 0 && pt_compare_angle(&pts[j], &key) > 0) {
+                pts[j + 1] = pts[j];
+                j--;
+            }
+            pts[j + 1] = key;
+        }
+        return;
+    }
+
     // a merge sort with temp storage.
 
     struct pt *tmp = malloc(sizeof(struct pt) * sz);
