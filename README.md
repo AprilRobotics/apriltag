@@ -74,7 +74,9 @@ Some heuristics for when to choose other tag families:
 3. If you want to make a recursive tag use tagCustom48h12.
 4. If you want compatibility with the ArUcO detector use tag36h11
 
-If none of these fit your needs, generate your own custom tag family [here](https://github.com/AprilRobotics/apriltag-generation).
+Note that the larger tag families will require more memory. (For example, tagStandard52h13 requires a 6 Gb lookup table for error correction.) They have more bits which means small and distant tags will sometimes be missed. 
+
+If none of the existing familes fit your needs, generate your own custom tag family [here](https://github.com/AprilRobotics/apriltag-generation).
 
 ## Getting Started with the Detector
 ### Python
