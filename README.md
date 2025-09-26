@@ -136,8 +136,7 @@ Note that this library has no external dependencies. Most applications
 will require, at minimum, a method for acquiring images.
 
 See example/opencv_demo.cc for an example of using AprilTag in C++ with OpenCV.
-After building the project locally (i.e. omitting `--target install` from the 
-cmake command) you can run the example application with:
+After building the repository you can run the example opencv application with:
 
     $ ./build/opencv_demo
 
