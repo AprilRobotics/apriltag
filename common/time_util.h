@@ -32,7 +32,11 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <time.h>
 
 #ifdef _WIN32
+#if defined __has_include && __has_include ("winsock2.h")
+#include <winsock2.h>
+#else
 #include <Winsock2.h>
+#endif
 typedef long long suseconds_t;
 #endif
 

@@ -1,0 +1,102 @@
+name: Cross compilation
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  # Use mingw to cross compile apriltag and its tests on linux
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        shared_libs: ['ON','OFF']
+
+    steps:
+    # Install required packages to build for windows
+    - name: install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y --no-install-recommends cmake ninja-build gcc-mingw-w64-x86-64
+
+    # Get the sources
+    - uses: actions/checkout@v4
+
+    # Save the "build/" folder path
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=$GITHUB_WORKSPACE/build" >> "$GITHUB_OUTPUT"
+
+    # Configure cmake
+    # CMAKE_SYSTEM_NAME=Windows is needed else it will produce libapriltag.so instead of .dll
+    - name: Configure CMake
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -G Ninja
+        -D CMAKE_SYSTEM_NAME=Windows 
+        -D CMAKE_C_COMPILER=/usr/bin/x86_64-w64-mingw32-gcc
+        -D CMAKE_BUILD_TYPE=Release
+        -D BUILD_SHARED_LIBS=${{ matrix.shared_libs }}
+        -D BUILD_TESTING=ON
+        -S $GITHUB_WORKSPACE
+
+    # Build apriltag
+    - name: Build
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }}
+
+    # In case of shared lib, copy the .dll file in the test directory
+    - name: add DLL to test folder
+      if: matrix.shared_libs == 'ON'
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: |
+        cp *apriltag.dll test/
+
+    # Upload the "build/" directory as artifact
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cross-compilation-build-sharedlib-${{ matrix.shared_libs }}
+        path: ${{ steps.strings.outputs.build-output-dir }}
+
+  # On windows, retrieve the cross compiled build and run the tests
+  test:
+    needs: build
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        shared_libs: ['ON','OFF']
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    # Save the "build/" folder path
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=$GITHUB_WORKSPACE/build" >> "$GITHUB_OUTPUT"
+
+    # Download the "build/" directory
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: cross-compilation-build-sharedlib-${{ matrix.shared_libs }}
+        path: ${{ steps.strings.outputs.build-output-dir }}
+
+    # Change the tests pathes so they match the windows ones instead of the linux ones
+    - name: Change test pathes
+      run: |
+        (Get-Content ${{ steps.strings.outputs.build-output-dir }}/test/CTestTestfile.cmake) -replace '/home/runner/work/apriltag/apriltag', $PWD.Path.Replace('\', '/') | Set-Content ${{ steps.strings.outputs.build-output-dir }}/test/CTestTestfile.cmake
+
+    # Run the tests
+    - name: Test
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: |
+        ctest --no-tests=error --output-on-failure --verbose
