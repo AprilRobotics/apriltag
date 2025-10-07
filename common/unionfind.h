@@ -82,26 +82,20 @@ static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id
 // version above.
 static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id)
 {
-    uint32_t root = uf->parent[id];
     // unititialized node, so set to self
-    if (root == 0xffffffff) {
+    if (uf->parent[id] == 0xffffffff) {
         uf->parent[id] = id;
         return id;
     }
 
-    // chase down the root
-    while (uf->parent[root] != root) {
-        root = uf->parent[root];
+    // Path halving: make every node point to its grandparent (single pass)
+    // This is simpler and faster than full path compression while still effective
+    while (uf->parent[id] != id) {
+        uf->parent[id] = uf->parent[uf->parent[id]];  // Point to grandparent
+        id = uf->parent[id];  // Move to grandparent
     }
 
-    // go back and collapse the tree.
-    while (uf->parent[id] != root) {
-        uint32_t tmp = uf->parent[id];
-        uf->parent[id] = root;
-        id = tmp;
-    }
-
-    return root;
+    return id;
 }
 
 static inline uint32_t unionfind_get_set_size(unionfind_t *uf, uint32_t id)
