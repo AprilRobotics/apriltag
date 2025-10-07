@@ -620,42 +620,45 @@ int quad_segment_agg(zarray_t *cluster, struct line_fit_pt *lfps, int indices[4]
  */
 struct line_fit_pt* compute_lfps(int sz, zarray_t* cluster, image_u8_t* im) {
     struct line_fit_pt *lfps = calloc(sz, sizeof(struct line_fit_pt));
+    double sum_Mx = 0, sum_My = 0, sum_Mxx = 0, sum_Myy = 0, sum_Mxy = 0, sum_W = 0;
 
     for (int i = 0; i < sz; i++) {
         struct pt *p;
         zarray_get_volatile(cluster, i, &p);
 
-        if (i > 0) {
-            memcpy(&lfps[i], &lfps[i-1], sizeof(struct line_fit_pt));
+        // we now undo our fixed-point arithmetic.
+        double delta = 0.5; // adjust for pixel center bias
+        double x = p->x * .5 + delta;
+        double y = p->y * .5 + delta;
+        int ix = x, iy = y;
+        double W = 1;
+
+        if (ix > 0 && ix+1 < im->width && iy > 0 && iy+1 < im->height) {
+            int grad_x = im->buf[iy * im->stride + ix + 1] -
+                im->buf[iy * im->stride + ix - 1];
+
+            int grad_y = im->buf[(iy+1) * im->stride + ix] -
+                im->buf[(iy-1) * im->stride + ix];
+
+            // XXX Tunable. How to shape the gradient magnitude?
+            W = sqrt(grad_x*grad_x + grad_y*grad_y) + 1;
         }
 
-        {
-            // we now undo our fixed-point arithmetic.
-            double delta = 0.5; // adjust for pixel center bias
-            double x = p->x * .5 + delta;
-            double y = p->y * .5 + delta;
-            int ix = x, iy = y;
-            double W = 1;
-
-            if (ix > 0 && ix+1 < im->width && iy > 0 && iy+1 < im->height) {
-                int grad_x = im->buf[iy * im->stride + ix + 1] -
-                    im->buf[iy * im->stride + ix - 1];
-
-                int grad_y = im->buf[(iy+1) * im->stride + ix] -
-                    im->buf[(iy-1) * im->stride + ix];
-
-                // XXX Tunable. How to shape the gradient magnitude?
-                W = sqrt(grad_x*grad_x + grad_y*grad_y) + 1;
-            }
-
-            double fx = x, fy = y;
-            lfps[i].Mx  += W * fx;
-            lfps[i].My  += W * fy;
-            lfps[i].Mxx += W * fx * fx;
-            lfps[i].Mxy += W * fx * fy;
-            lfps[i].Myy += W * fy * fy;
-            lfps[i].W   += W;
-        }
+        double fx = x, fy = y;
+        sum_Mx  += W * fx;
+        sum_My  += W * fy;
+        sum_Mxx += W * fx * fx;
+        sum_Mxy += W * fx * fy;
+        sum_Myy += W * fy * fy;
+        sum_W   += W;
+        
+        // Store cumulative sums
+        lfps[i].Mx = sum_Mx;
+        lfps[i].My = sum_My;
+        lfps[i].Mxx = sum_Mxx;
+        lfps[i].Mxy = sum_Mxy;
+        lfps[i].Myy = sum_Myy;
+        lfps[i].W = sum_W;
     }
     return lfps;
 }
