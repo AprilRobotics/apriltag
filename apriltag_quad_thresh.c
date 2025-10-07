@@ -714,8 +714,16 @@ static inline void ptsort(struct pt *pts, int sz)
 #undef MAYBE_SWAP
 
     // a merge sort with temp storage.
-
-    struct pt *tmp = malloc(sizeof(struct pt) * sz);
+    // Use stack allocation for small arrays to avoid malloc overhead
+    #define STACK_BUFFER_SIZE 256
+    struct pt stack_buffer[STACK_BUFFER_SIZE];
+    struct pt *tmp;
+    const bool use_heap = sz > STACK_BUFFER_SIZE;
+    if (use_heap) {
+        tmp = malloc(sizeof(struct pt) * sz);
+    } else {
+        tmp = stack_buffer;
+    }
 
     memcpy(tmp, pts, sizeof(struct pt) * sz);
 
@@ -749,7 +757,9 @@ static inline void ptsort(struct pt *pts, int sz)
     if (bpos < bsz)
         memcpy(&pts[outpos], &bs[bpos], (bsz-bpos)*sizeof(struct pt));
 
-    free(tmp);
+    if (use_heap) {
+        free(tmp);
+    }
 
 #undef MERGE
 }
