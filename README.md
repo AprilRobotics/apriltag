@@ -38,7 +38,10 @@ AprilTag is the subject of the following papers.
 Install
 =======
 
-Officially only Linux operating systems are supported, although users have had success installing on Windows too.
+Officially only Linux operating systems are supported. In many Linux distributions apriltag is available in the system package manager, and installing the packages from your distribution is recommended.
+
+## Building from source
+Users have reported success building from source on Linux AND on Windows.
 
 The default installation will place headers in /usr/local/include and shared library in /usr/local/lib. It also installs a pkg-config script into /usr/local/lib/pkgconfig and will install a python wrapper if python3 is installed.
 
