@@ -194,7 +194,25 @@ if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
     target_include_directories(${apriltag_py_target} PRIVATE ${PROJECT_BINARY_DIR})
 
     set(PY_DEST ${CMAKE_INSTALL_PREFIX}/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages/)
+
+    # Generate Python stub file (.pyi) for type hints
+    # The stub generator extracts information from source code automatically
+    set(STUB_FILE ${PROJECT_BINARY_DIR}/apriltag.pyi)
+    add_custom_command(
+        OUTPUT ${STUB_FILE}
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/generate_stubs.py
+                ${STUB_FILE} ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/generate_stubs.py
+                ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_pywrap.c
+                apriltag_py_docstrings
+        COMMENT "Auto-generating Python stub file from source code"
+        VERBATIM
+    )
+    add_custom_target(apriltag_py_stub ALL DEPENDS ${STUB_FILE})
+    add_dependencies(${apriltag_py_target} apriltag_py_stub)
+
     install(TARGETS ${apriltag_py_target} LIBRARY DESTINATION ${PY_DEST})
+    install(FILES ${STUB_FILE} DESTINATION ${PY_DEST})
 elseif(BUILD_PYTHON_WRAPPER)
     message(WARNING
         "Python bindings requested (BUILD_PYTHON_WRAPPER=ON) but Development and NumPy not found. "
