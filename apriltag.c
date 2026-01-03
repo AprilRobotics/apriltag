@@ -207,10 +207,10 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
         capacity += family->ncodes * nbits;
 
     if (maxhamming >= 2)
-        capacity += family->ncodes * nbits * (nbits-1);
+        capacity += family->ncodes * (nbits * (nbits-1)) / 2;
 
     if (maxhamming >= 3)
-        capacity += family->ncodes * nbits * (nbits-1) * (nbits-2);
+        capacity += family->ncodes * nbits * ((nbits-1) * (nbits-2)) / 6;
 
     qd->nentries = capacity * 3;
 
