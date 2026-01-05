@@ -41,7 +41,7 @@ struct image_u8_convolve_2D_task {
     int idx_ed;
 };
 
-void _image_u8_convolve_2D_thread_1(void *p) {
+static void _image_u8_convolve_2D_thread_1(void *p) {
     struct image_u8_convolve_2D_task *params = (struct image_u8_convolve_2D_task*) p;
     image_u8_t *im = params->im;
     const uint8_t *k = params->k;
@@ -59,7 +59,7 @@ void _image_u8_convolve_2D_thread_1(void *p) {
     free(x);
 }
 
-void _image_u8_convolve_2D_thread_2(void *p) {
+static void _image_u8_convolve_2D_thread_2(void *p) {
     struct image_u8_convolve_2D_task *params = (struct image_u8_convolve_2D_task*) p;
     image_u8_t *im = params->im;
     const uint8_t *k = params->k;
