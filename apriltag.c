@@ -117,18 +117,28 @@ static double graymodel_interpolate(struct graymodel *gm, double x, double y)
     return gm->C[0]*x + gm->C[1]*y + gm->C[2];
 }
 
-struct quick_decode_entry
+// Uses pragma to ensure this occupies exactly 3 bytes (no padding).
+#pragma pack(push, 1)
+struct quick_decode_val
 {
-    uint64_t rcode;   // the queried code
-    uint16_t id;      // the tag ID (a small integer)
-    uint8_t hamming;  // how many errors corrected?
-    uint8_t rotation; // number of rotations [0, 3]
+    uint16_t id;
+    uint8_t hamming;
 };
+#pragma pack(pop)
 
 struct quick_decode
 {
     int nentries;
-    struct quick_decode_entry *entries;
+    uint64_t *keys;
+    struct quick_decode_val *values; 
+};
+
+struct quick_decode_entry
+{
+    uint64_t rcode;
+    uint16_t id;
+    uint8_t hamming;
+    uint8_t rotation;
 };
 
 /**
@@ -173,13 +183,13 @@ static void quick_decode_add(struct quick_decode *qd, uint64_t code, int id, int
 {
     uint32_t bucket = code % qd->nentries;
 
-    while (qd->entries[bucket].rcode != UINT64_MAX) {
+    while (qd->keys[bucket] != UINT64_MAX) {
         bucket = (bucket + 1) % qd->nentries;
     }
 
-    qd->entries[bucket].rcode = code;
-    qd->entries[bucket].id = id;
-    qd->entries[bucket].hamming = hamming;
+    qd->keys[bucket] = code;
+    qd->values[bucket].id = (uint16_t)id;
+    qd->values[bucket].hamming = (uint8_t)hamming;
 }
 
 static void quick_decode_uninit(apriltag_family_t *fam)
@@ -188,7 +198,8 @@ static void quick_decode_uninit(apriltag_family_t *fam)
         return;
 
     struct quick_decode *qd = (struct quick_decode*) fam->impl;
-    free(qd->entries);
+    free(qd->keys);
+    free(qd->values);
     free(qd);
     fam->impl = NULL;
 }
@@ -198,9 +209,9 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     assert(family->impl == NULL);
     assert(family->ncodes < 65536);
 
-    struct quick_decode *qd = calloc(1, sizeof(struct quick_decode));
+    struct quick_decode *qd = (struct quick_decode*)calloc(1, sizeof(struct quick_decode));
+    
     int capacity = family->ncodes;
-
     int nbits = family->nbits;
 
     if (maxhamming >= 1)
@@ -214,81 +225,49 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 
     qd->nentries = capacity * 3;
 
-//    debug_print("capacity %d, size: %.0f kB\n",
-//           capacity, qd->nentries * sizeof(struct quick_decode_entry) / 1024.0);
+    qd->keys = (uint64_t*)malloc(qd->nentries * sizeof(uint64_t));
+    qd->values = (struct quick_decode_val*)malloc(qd->nentries * sizeof(struct quick_decode_val));
 
-    qd->entries = calloc(qd->nentries, sizeof(struct quick_decode_entry));
-    if (qd->entries == NULL) {
-        debug_print("Failed to allocate hamming decode table\n");
-        // errno already set to ENOMEM (Error No MEMory) by calloc() failure
+    if (qd->keys == NULL || qd->values == NULL) {
+        // debug_print("Failed to allocate hamming decode table\n");
+        if (qd->keys) free(qd->keys);
+        if (qd->values) free(qd->values);
+        free(qd);
         return;
     }
 
-    for (int i = 0; i < qd->nentries; i++)
-        qd->entries[i].rcode = UINT64_MAX;
+    for (int i = 0; i < qd->nentries; i++) {
+        qd->keys[i] = UINT64_MAX;
+    }
 
     errno = 0;
 
     for (uint32_t i = 0; i < family->ncodes; i++) {
         uint64_t code = family->codes[i];
 
-        // add exact code (hamming = 0)
+        // Hamming 0
         quick_decode_add(qd, code, i, 0);
 
         if (maxhamming >= 1) {
-            // add hamming 1
             for (int j = 0; j < nbits; j++)
                 quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j), i, 1);
         }
 
         if (maxhamming >= 2) {
-            // add hamming 2
             for (int j = 0; j < nbits; j++)
                 for (int k = 0; k < j; k++)
                     quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j) ^ (APRILTAG_U64_ONE << k), i, 2);
         }
 
         if (maxhamming >= 3) {
-            // add hamming 3
-            for (int j = 0; j < nbits; j++)
+             for (int j = 0; j < nbits; j++)
                 for (int k = 0; k < j; k++)
                     for (int m = 0; m < k; m++)
                         quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j) ^ (APRILTAG_U64_ONE << k) ^ (APRILTAG_U64_ONE << m), i, 3);
         }
-
-        if (maxhamming > 3) {
-            debug_print("\"maxhamming\" beyond 3 not supported\n");
-            // set errno to Error INvalid VALue
-            errno = EINVAL;
-            return;
-        }
     }
 
     family->impl = qd;
-
-    #if 0
-        int longest_run = 0;
-        int run = 0;
-        int run_sum = 0;
-        int run_count = 0;
-
-        // This accounting code doesn't check the last possible run that
-        // occurs at the wrap-around. That's pretty insignificant.
-        for (int i = 0; i < qd->nentries; i++) {
-            if (qd->entries[i].rcode == UINT64_MAX) {
-                if (run > 0) {
-                    run_sum += run;
-                    run_count ++;
-                }
-                run = 0;
-            } else {
-                run ++;
-                longest_run = imax(longest_run, run);
-            }
-        }
-
-        printf("quick decode: longest run: %d, average run %.3f\n", longest_run, 1.0 * run_sum / run_count);
-    #endif
 }
 
 // returns an entry with hamming set to 255 if no decode was found.
@@ -297,18 +276,22 @@ static void quick_decode_codeword(apriltag_family_t *tf, uint64_t rcode,
 {
     struct quick_decode *qd = (struct quick_decode*) tf->impl;
 
-    // qd might be null if detector_add_family_bits() failed
+    // qd might be null if init failed
     for (int ridx = 0; qd != NULL && ridx < 4; ridx++) {
+        
+        uint32_t bucket = rcode % qd->nentries;
 
-        for (int bucket = rcode % qd->nentries;
-             qd->entries[bucket].rcode != UINT64_MAX;
-             bucket = (bucket + 1) % qd->nentries) {
-
-            if (qd->entries[bucket].rcode == rcode) {
-                *entry = qd->entries[bucket];
+        while (qd->keys[bucket] != UINT64_MAX) {
+            
+            if (qd->keys[bucket] == rcode) {
+                entry->rcode = rcode;
+                entry->id = qd->values[bucket].id;
+                entry->hamming = qd->values[bucket].hamming;
                 entry->rotation = ridx;
                 return;
             }
+
+            bucket = (bucket + 1) % qd->nentries;
         }
 
         rcode = rotate90(rcode, tf->nbits);
