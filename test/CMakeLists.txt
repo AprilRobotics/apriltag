@@ -3,6 +3,10 @@ add_library(getline OBJECT getline.c)
 add_executable(test_detection test_detection.c)
 target_link_libraries(test_detection ${PROJECT_NAME} getline)
 
+# Add the pose estimation test executable
+add_executable(test_tag_pose_estimation test_tag_pose_estimation.c)
+target_link_libraries(test_tag_pose_estimation ${PROJECT_NAME} getline)
+
 # test images with true detection
 set(TEST_IMAGE_NAMES
     "33369213973_9d9bb4cc96_c"
@@ -16,3 +20,13 @@ foreach(IMG IN LISTS TEST_IMAGE_NAMES)
              WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endforeach()
+
+# Add pose estimation tests for each image
+foreach(IMG IN LISTS TEST_IMAGE_NAMES)
+    add_test(NAME test_tag_pose_estimation_${IMG}
+             COMMAND $<TARGET_FILE:test_tag_pose_estimation> 
+             data/${IMG}.jpg data/${IMG}.txt
+             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endforeach()
+
