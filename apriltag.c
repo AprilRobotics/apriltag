@@ -117,19 +117,13 @@ static double graymodel_interpolate(struct graymodel *gm, double x, double y)
     return gm->C[0]*x + gm->C[1]*y + gm->C[2];
 }
 
-struct quick_decode_entry
+static inline int popcount64(uint64_t x)
 {
-    uint64_t rcode;   // the queried code
-    uint16_t id;      // the tag ID (a small integer)
-    uint8_t hamming;  // how many errors corrected?
-    uint8_t rotation; // number of rotations [0, 3]
-};
-
-struct quick_decode
-{
-    int nentries;
-    struct quick_decode_entry *entries;
-};
+    x -= (x >> 1) & 0x5555555555555555ULL;
+    x = (x & 0x3333333333333333ULL) + ((x >> 2) & 0x3333333333333333ULL);
+    x = (x + (x >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
+    return (x * 0x0101010101010101ULL) >> 56;
+}
 
 /**
  * Assuming we are drawing the image one quadrant at a time, what would the rotated image look like?
@@ -169,18 +163,26 @@ static struct quad *quad_copy(struct quad *quad)
     return q;
 }
 
-static void quick_decode_add(struct quick_decode *qd, uint64_t code, int id, int hamming)
+struct quick_decode_result
 {
-    uint32_t bucket = code % qd->nentries;
+    uint64_t rcode;   // the queried code
+    uint16_t id;      // the tag ID (a small integer)
+    uint8_t hamming;  // how many errors corrected?
+    uint8_t rotation; // number of rotations [0, 3]
+};
 
-    while (qd->entries[bucket].rcode != UINT64_MAX) {
-        bucket = (bucket + 1) % qd->nentries;
-    }
-
-    qd->entries[bucket].rcode = code;
-    qd->entries[bucket].id = id;
-    qd->entries[bucket].hamming = hamming;
-}
+struct quick_decode
+{
+    int nbits;
+    int chunk_size;
+    int capacity;
+    int chunk_mask;
+    int shifts[4];
+    uint16_t* chunk_offsets[4];
+    uint16_t* chunk_ids[4];
+    int maxhamming;
+    int ncodes;
+};
 
 static void quick_decode_uninit(apriltag_family_t *fam)
 {
@@ -188,7 +190,10 @@ static void quick_decode_uninit(apriltag_family_t *fam)
         return;
 
     struct quick_decode *qd = (struct quick_decode*) fam->impl;
-    free(qd->entries);
+    for (int i = 0; i < 4; i++) {
+        free(qd->chunk_offsets[i]);
+        free(qd->chunk_ids[i]);
+    }
     free(qd);
     fam->impl = NULL;
 }
@@ -198,126 +203,107 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     assert(family->impl == NULL);
     assert(family->ncodes < 65536);
 
-    struct quick_decode *qd = calloc(1, sizeof(struct quick_decode));
-    int capacity = family->ncodes;
-
-    int nbits = family->nbits;
-
-    if (maxhamming >= 1)
-        capacity += family->ncodes * nbits;
-
-    if (maxhamming >= 2)
-        capacity += family->ncodes * (nbits * (nbits-1)) / 2;
-
-    if (maxhamming >= 3)
-        capacity += family->ncodes * nbits * ((nbits-1) * (nbits-2)) / 6;
-
-    qd->nentries = capacity * 3;
-
-//    debug_print("capacity %d, size: %.0f kB\n",
-//           capacity, qd->nentries * sizeof(struct quick_decode_entry) / 1024.0);
-
-    qd->entries = calloc(qd->nentries, sizeof(struct quick_decode_entry));
-    if (qd->entries == NULL) {
-        debug_print("Failed to allocate hamming decode table\n");
-        // errno already set to ENOMEM (Error No MEMory) by calloc() failure
+    if (maxhamming > 3) {
+        debug_print("\"maxhamming\" beyond 3 not supported\n");
+        errno = EINVAL;
         return;
     }
 
-    for (int i = 0; i < qd->nentries; i++)
-        qd->entries[i].rcode = UINT64_MAX;
+    struct quick_decode *qd = calloc(1, sizeof(struct quick_decode));
+    qd->maxhamming = maxhamming;
+    qd->ncodes = family->ncodes;
+    qd->nbits = family->nbits;
 
-    errno = 0;
+    qd->chunk_size = (qd->nbits + 3) / 4;
+    qd->capacity = 1 << qd->chunk_size;
+    qd->chunk_mask = qd->capacity - 1;
 
-    for (uint32_t i = 0; i < family->ncodes; i++) {
+    qd->shifts[0] = 0;
+    qd->shifts[1] = qd->chunk_size;
+    qd->shifts[2] = qd->chunk_size * 2;
+    qd->shifts[3] = qd->chunk_size * 3;
+
+    for (int i = 0; i < 4; i++) {
+        qd->chunk_offsets[i] = calloc(qd->capacity + 1, sizeof(uint16_t));
+        qd->chunk_ids[i] = calloc(qd->ncodes, sizeof(uint16_t));
+    }
+
+    // Count frequencies
+    for (int i = 0; i < qd->ncodes; i++) {
         uint64_t code = family->codes[i];
-
-        // add exact code (hamming = 0)
-        quick_decode_add(qd, code, i, 0);
-
-        if (maxhamming >= 1) {
-            // add hamming 1
-            for (int j = 0; j < nbits; j++)
-                quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j), i, 1);
-        }
-
-        if (maxhamming >= 2) {
-            // add hamming 2
-            for (int j = 0; j < nbits; j++)
-                for (int k = 0; k < j; k++)
-                    quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j) ^ (APRILTAG_U64_ONE << k), i, 2);
-        }
-
-        if (maxhamming >= 3) {
-            // add hamming 3
-            for (int j = 0; j < nbits; j++)
-                for (int k = 0; k < j; k++)
-                    for (int m = 0; m < k; m++)
-                        quick_decode_add(qd, code ^ (APRILTAG_U64_ONE << j) ^ (APRILTAG_U64_ONE << k) ^ (APRILTAG_U64_ONE << m), i, 3);
-        }
-
-        if (maxhamming > 3) {
-            debug_print("\"maxhamming\" beyond 3 not supported\n");
-            // set errno to Error INvalid VALue
-            errno = EINVAL;
-            return;
+        for (int j = 0; j < 4; j++) {
+            int val = (code >> qd->shifts[j]) & qd->chunk_mask;
+            qd->chunk_offsets[j][val + 1]++;
         }
     }
 
-    family->impl = qd;
-
-    #if 0
-        int longest_run = 0;
-        int run = 0;
-        int run_sum = 0;
-        int run_count = 0;
-
-        // This accounting code doesn't check the last possible run that
-        // occurs at the wrap-around. That's pretty insignificant.
-        for (int i = 0; i < qd->nentries; i++) {
-            if (qd->entries[i].rcode == UINT64_MAX) {
-                if (run > 0) {
-                    run_sum += run;
-                    run_count ++;
-                }
-                run = 0;
-            } else {
-                run ++;
-                longest_run = imax(longest_run, run);
-            }
+    // Prefix sum
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < qd->capacity; j++) {
+            qd->chunk_offsets[i][j + 1] += qd->chunk_offsets[i][j];
         }
+    }
 
-        printf("quick decode: longest run: %d, average run %.3f\n", longest_run, 1.0 * run_sum / run_count);
-    #endif
+    // Populate ids
+    uint16_t *cursors[4];
+    for (int i = 0; i < 4; i++) {
+        cursors[i] = malloc((qd->capacity + 1) * sizeof(uint16_t));
+        memcpy(cursors[i], qd->chunk_offsets[i], (qd->capacity + 1) * sizeof(uint16_t));
+    }
+
+    for (int i = 0; i < qd->ncodes; i++) {
+        uint64_t code = family->codes[i];
+        for (int j = 0; j < 4; j++) {
+            int val = (code >> qd->shifts[j]) & qd->chunk_mask;
+            int write_pos = cursors[j][val];
+            qd->chunk_ids[j][write_pos] = i;
+            cursors[j][val]++;
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        free(cursors[i]);
+    }
+
+    family->impl = qd;
 }
 
-// returns an entry with hamming set to 255 if no decode was found.
+// returns a result with hamming set to 255 if no decode was found.
 static void quick_decode_codeword(apriltag_family_t *tf, uint64_t rcode,
-                                  struct quick_decode_entry *entry)
+                                  struct quick_decode_result *res)
 {
     struct quick_decode *qd = (struct quick_decode*) tf->impl;
 
     // qd might be null if detector_add_family_bits() failed
     for (int ridx = 0; qd != NULL && ridx < 4; ridx++) {
 
-        for (int bucket = rcode % qd->nentries;
-             qd->entries[bucket].rcode != UINT64_MAX;
-             bucket = (bucket + 1) % qd->nentries) {
+        for (int i = 0; i < 4; i++) {
+            int val = (rcode >> qd->shifts[i]) & qd->chunk_mask;
+            int start = qd->chunk_offsets[i][val];
+            int end = qd->chunk_offsets[i][val + 1];
 
-            if (qd->entries[bucket].rcode == rcode) {
-                *entry = qd->entries[bucket];
-                entry->rotation = ridx;
-                return;
+            for (int j = start; j < end; j++) {
+                uint16_t id = qd->chunk_ids[i][j];
+                uint64_t correct_code = tf->codes[id];
+                int hamming = popcount64(correct_code ^ rcode);
+
+                if (hamming <= qd->maxhamming) {
+                    res->rcode = rcode;
+                    res->id = id;
+                    res->hamming = hamming;
+                    res->rotation = ridx;
+                    return;
+                }
             }
         }
 
         rcode = rotate90(rcode, tf->nbits);
     }
 
-    entry->rcode = 0;
-    entry->id = 65535;
-    entry->hamming = 255;
-    entry->rotation = 0;
+    res->rcode = 0;
+    res->id = 65535;
+    res->hamming = 255;
+    res->rotation = 0;
 }
 
 static inline int detection_compare_function(const void *_a, const void *_b)
@@ -416,7 +402,7 @@ struct evaluate_quad_ret
     matd_t  *H, *Hinv;
 
     int decode_status;
-    struct quick_decode_entry e;
+    struct quick_decode_result res;
 };
 
 static matd_t* homography_compute2(double c[4][4]) {
@@ -567,7 +553,7 @@ static void sharpen(apriltag_detector_t* td, double* values, int size) {
 }
 
 // returns the decision margin. Return < 0 if the detection should be rejected.
-static float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, image_u8_t *im, struct quad *quad, struct quick_decode_entry *entry, image_u8_t *im_samples)
+static float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, image_u8_t *im, struct quad *quad, struct quick_decode_result *res, image_u8_t *im_samples)
 {
     // decode the tag binary contents by sampling the pixel
     // closest to the center of each bit cell.
@@ -736,7 +722,7 @@ static float quad_decode(apriltag_detector_t* td, apriltag_family_t *family, ima
         }
     }
 
-    quick_decode_codeword(family, rcode, entry);
+    quick_decode_codeword(family, rcode, res);
     free(values);
     return fmin(white_score / white_score_count, black_score / black_score_count);
 }
@@ -949,19 +935,19 @@ static void quad_decode_task(void *_u)
             // optimization process over with the original quad.
             struct quad *quad = quad_copy(quad_original);
 
-            struct quick_decode_entry entry;
+            struct quick_decode_result res;
 
-            float decision_margin = quad_decode(td, family, im, quad, &entry, task->im_samples);
+            float decision_margin = quad_decode(td, family, im, quad, &res, task->im_samples);
 
-            if (decision_margin >= 0 && entry.hamming < 255) {
+            if (decision_margin >= 0 && res.hamming < 255) {
                 apriltag_detection_t *det = calloc(1, sizeof(apriltag_detection_t));
 
                 det->family = family;
-                det->id = entry.id;
-                det->hamming = entry.hamming;
+                det->id = res.id;
+                det->hamming = res.hamming;
                 det->decision_margin = decision_margin;
 
-                double theta = entry.rotation * M_PI / 2.0;
+                double theta = res.rotation * M_PI / 2.0;
                 double c = cos(theta), s = sin(theta);
 
                 // Fix the rotation of our homography to properly orient the tag
