@@ -10,6 +10,7 @@
 #include <signal.h>
 
 #include "apriltag.h"
+#include "apriltag_pose.h"
 #include "tag36h10.h"
 #include "tag36h11.h"
 #include "tag25h9.h"
@@ -227,6 +228,7 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
     PyObject*      result           = NULL;
     PyArrayObject* xy_c             = NULL;
     PyArrayObject* xy_lb_rb_rt_lt   = NULL;
+    PyArrayObject* homography       = NULL;
     PyArrayObject* image            = NULL;
     PyObject*      detections_tuple = NULL;
 
@@ -311,13 +313,32 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
             *(double*)PyArray_GETPTR2(xy_lb_rb_rt_lt, j, 1) = det->p[j][1];
         }
 
+        // Add homography matrix (3x3)
+        homography = (PyArrayObject*)PyArray_SimpleNew(2, ((npy_intp[]){3,3}), NPY_FLOAT64);
+        if(homography == NULL)
+        {
+            Py_DECREF(xy_c);
+            Py_DECREF(xy_lb_rb_rt_lt);
+            PyErr_SetString(PyExc_RuntimeError, "Could not allocate homography array");
+            goto done;
+        }
+
+        for(int j=0; j<3; j++)
+        {
+            for(int k=0; k<3; k++)
+            {
+                *(double*)PyArray_GETPTR2(homography, j, k) = MATD_EL(det->H, j, k);
+            }
+        }
+
         PyTuple_SET_ITEM(detections_tuple, i,
-                         Py_BuildValue("{s:i,s:f,s:i,s:N,s:N}",
+                         Py_BuildValue("{s:i,s:f,s:i,s:N,s:N,s:N}",
                                        "hamming", det->hamming,
                                        "margin",  det->decision_margin,
                                        "id",      det->id,
                                        "center",  xy_c,
-                                       "lb-rb-rt-lt", xy_lb_rb_rt_lt));
+                                       "lb-rb-rt-lt", xy_lb_rb_rt_lt,
+                                       "homography", homography));
         xy_c           = NULL;
         xy_lb_rb_rt_lt = NULL;
     }
@@ -338,12 +359,148 @@ static PyObject* apriltag_detect(apriltag_py_t* self,
     return result;
 }
 
+static PyObject* apriltag_estimate_tag_pose(apriltag_py_t* self,
+                                             PyObject* args)
+{
+    PyObject* result = NULL;
+    PyObject* detection_dict = NULL;
+    PyArrayObject* R_array = NULL;
+    PyArrayObject* t_array = NULL;
+    matd_t* H_matrix = NULL;
+    double tagsize, fx, fy, cx, cy;
+
+    if(!PyArg_ParseTuple(args, "Oddddd",
+                         &detection_dict,
+                         &tagsize,
+                         &fx, &fy, &cx, &cy))
+        return NULL;
+
+    if(!PyDict_Check(detection_dict))
+    {
+        PyErr_SetString(PyExc_TypeError, "First argument must be a detection dictionary");
+        return NULL;
+    }
+
+    // Extract detection information from the dictionary
+    PyObject* py_id = PyDict_GetItemString(detection_dict, "id");
+    PyObject* py_hamming = PyDict_GetItemString(detection_dict, "hamming");
+    PyObject* py_margin = PyDict_GetItemString(detection_dict, "margin");
+    PyObject* py_center = PyDict_GetItemString(detection_dict, "center");
+    PyObject* py_corners = PyDict_GetItemString(detection_dict, "lb-rb-rt-lt");
+    PyObject* py_homography = PyDict_GetItemString(detection_dict, "homography");
+
+    if(!py_id || !py_hamming || !py_margin || !py_center || !py_corners || !py_homography)
+    {
+        PyErr_SetString(PyExc_ValueError,
+            "Detection dictionary is missing required fields. "
+            "Make sure you're using a detection from the updated detect() method that includes 'homography'.");
+        return NULL;
+    }
+
+    // Create a temporary detection structure
+    apriltag_detection_t det;
+    det.family = self->tf;
+    det.id = PyLong_AsLong(py_id);
+    det.hamming = PyLong_AsLong(py_hamming);
+    det.decision_margin = PyFloat_AsDouble(py_margin);
+
+    // Extract center
+    PyArrayObject* center_array = (PyArrayObject*)py_center;
+    det.c[0] = *(double*)PyArray_GETPTR1(center_array, 0);
+    det.c[1] = *(double*)PyArray_GETPTR1(center_array, 1);
+
+    // Extract corners
+    PyArrayObject* corners_array = (PyArrayObject*)py_corners;
+    for(int i = 0; i < 4; i++)
+    {
+        det.p[i][0] = *(double*)PyArray_GETPTR2(corners_array, i, 0);
+        det.p[i][1] = *(double*)PyArray_GETPTR2(corners_array, i, 1);
+    }
+
+    // Extract and copy homography matrix
+    PyArrayObject* homography_array = (PyArrayObject*)py_homography;
+    H_matrix = matd_create(3, 3);
+    if(!H_matrix)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Could not allocate homography matrix");
+        return NULL;
+    }
+
+    for(int i = 0; i < 3; i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            MATD_EL(H_matrix, i, j) = *(double*)PyArray_GETPTR2(homography_array, i, j);
+        }
+    }
+    det.H = H_matrix;
+
+    // Setup detection info
+    apriltag_detection_info_t info;
+    info.det = &det;
+    info.tagsize = tagsize;
+    info.fx = fx;
+    info.fy = fy;
+    info.cx = cx;
+    info.cy = cy;
+
+    // Estimate pose
+    apriltag_pose_t pose;
+    double error = estimate_tag_pose(&info, &pose);
+
+    // Create numpy arrays for R and t
+    R_array = (PyArrayObject*)PyArray_SimpleNew(2, ((npy_intp[]){3, 3}), NPY_FLOAT64);
+    t_array = (PyArrayObject*)PyArray_SimpleNew(2, ((npy_intp[]){3, 1}), NPY_FLOAT64);
+
+    if(!R_array || !t_array)
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Could not allocate output arrays");
+        goto cleanup;
+    }
+
+    // Copy rotation matrix
+    for(int i = 0; i < 3; i++)
+    {
+        for(int j = 0; j < 3; j++)
+        {
+            *(double*)PyArray_GETPTR2(R_array, i, j) = MATD_EL(pose.R, i, j);
+        }
+    }
+
+    // Copy translation vector
+    for(int i = 0; i < 3; i++)
+    {
+        *(double*)PyArray_GETPTR2(t_array, i, 0) = MATD_EL(pose.t, i, 0);
+    }
+
+    result = Py_BuildValue("{s:N,s:N,s:d}",
+                          "R", R_array,
+                          "t", t_array,
+                          "error", error);
+    R_array = NULL;
+    t_array = NULL;
+
+cleanup:
+    if(H_matrix)
+        matd_destroy(H_matrix);
+    if(pose.R)
+        matd_destroy(pose.R);
+    if(pose.t)
+        matd_destroy(pose.t);
+    Py_XDECREF(R_array);
+    Py_XDECREF(t_array);
+
+    return result;
+}
+
 
 #include "apriltag_detect_docstring.h"
 #include "apriltag_py_type_docstring.h"
+#include "apriltag_estimate_tag_pose_docstring.h"
 
 static PyMethodDef apriltag_methods[] =
     { PYMETHODDEF_ENTRY(apriltag_, detect, METH_VARARGS),
+      PYMETHODDEF_ENTRY(apriltag_, estimate_tag_pose, METH_VARARGS),
       {NULL, NULL, 0, NULL}
     };
 

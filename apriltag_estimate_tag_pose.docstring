@@ -1,0 +1,70 @@
+estimate_tag_pose(detection, tagsize, fx, fy, cx, cy) -> dict
+
+SYNOPSIS
+
+    import cv2
+    import numpy as np
+    from apriltag import apriltag
+
+    imagepath = '/tmp/tst.jpg'
+    image     = cv2.imread(imagepath, cv2.IMREAD_GRAYSCALE)
+    detector = apriltag("tag36h11")
+
+    detections = detector.detect(image)
+    if detections:
+        # Estimate pose for the first detected tag
+        # tagsize is the physical size of the tag in meters
+        # fx, fy are focal lengths in pixels
+        # cx, cy are principal point coordinates in pixels
+        pose = detector.estimate_tag_pose(detections[0], 
+                                         tagsize=0.16,     # 16cm tag
+                                         fx=600, fy=600, # focal lengths
+                                         cx=320, cy=240) # principal point
+        print("Rotation matrix R:\n", pose['R'])
+        print("Translation vector t:", pose['t'])
+        print("Reprojection error:", pose['error'])
+
+DESCRIPTION
+
+The estimate_tag_pose() method estimates the 6-DOF pose (position and orientation)
+of a detected AprilTag in 3D space. This method requires the detection result from
+the detect() method, the physical size of the tag, and camera intrinsic parameters.
+
+The pose estimation uses the homography matrix from the detection result to
+compute the transformation from the tag's coordinate system to the camera's
+coordinate system.
+
+ARGUMENTS
+
+- detection: A dictionary containing detection information returned by the
+  detect() method. This dictionary must include the 'homography' key with the
+  3x3 homography matrix.
+
+- tagsize: The physical side length of the AprilTag in meters. This is the real-
+  world size of the tag, which is necessary for computing the scale of the pose.
+
+- fx: Focal length in the x direction in pixels. This is a camera intrinsic
+  parameter that describes how the camera projects 3D points to 2D image space.
+
+- fy: Focal length in the y direction in pixels. This is a camera intrinsic
+  parameter that describes how the camera projects 3D points to 2D image space.
+
+- cx: Principal point x coordinate in pixels. This is the x coordinate of the
+  optical center of the camera in the image.
+
+- cy: Principal point y coordinate in pixels. This is the y coordinate of the
+  optical center of the camera in the image.
+
+RETURNED VALUE
+
+Returns a dictionary containing:
+
+- 'R': 3x3 rotation matrix as a numpy array that represents the orientation
+  of the tag in the camera coordinate system.
+
+- 't': 3x1 translation vector as a numpy array (in meters) that represents the
+  position of the tag in the camera coordinate system.
+
+- 'error': The object-space error after the iteration process, representing 
+  the sum of squared reprojection errors between observed and  estimated points 
+  in object space. A lower value indicates a better pose estimate.

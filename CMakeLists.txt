@@ -173,7 +173,7 @@ if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
 
     include(CMake/vtkEncodeString.cmake)
 
-    foreach(X IN ITEMS detect py_type)
+    foreach(X IN ITEMS detect py_type estimate_tag_pose)
         vtk_encode_string(
             INPUT ${CMAKE_CURRENT_SOURCE_DIR}/apriltag_${X}.docstring
             NAME apriltag_${X}_docstring
@@ -182,6 +182,7 @@ if(BUILD_PYTHON_WRAPPER AND Python3_Development_FOUND AND Python3_NumPy_FOUND)
     add_custom_target(apriltag_py_docstrings DEPENDS
         ${PROJECT_BINARY_DIR}/apriltag_detect_docstring.h
         ${PROJECT_BINARY_DIR}/apriltag_py_type_docstring.h
+        ${PROJECT_BINARY_DIR}/apriltag_estimate_tag_pose_docstring.h
     )
 
     # set the SOABI manually since renaming the library via OUTPUT_NAME does not work on MSVC
