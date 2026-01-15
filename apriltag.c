@@ -210,6 +210,12 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     }
 
     struct quick_decode *qd = calloc(1, sizeof(struct quick_decode));
+    if (!qd) {
+        errno = ENOMEM;
+        return;
+    }
+    family->impl = qd;
+
     qd->maxhamming = maxhamming;
     qd->ncodes = family->ncodes;
     qd->nbits = family->nbits;
@@ -225,7 +231,15 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 
     for (int i = 0; i < 4; i++) {
         qd->chunk_offsets[i] = calloc(qd->capacity + 1, sizeof(uint16_t));
+        if (!qd->chunk_offsets[i]) {
+            errno = ENOMEM;
+            goto fail;
+        }
         qd->chunk_ids[i] = calloc(qd->ncodes, sizeof(uint16_t));
+        if (!qd->chunk_ids[i]) {
+            errno = ENOMEM;
+            goto fail;
+        }
     }
 
     // Count frequencies
@@ -245,9 +259,15 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     }
 
     // Populate ids
-    uint16_t *cursors[4];
+    uint16_t *cursors[4] = { NULL, NULL, NULL, NULL };
     for (int i = 0; i < 4; i++) {
         cursors[i] = malloc((qd->capacity + 1) * sizeof(uint16_t));
+        if (cursors[i] == NULL) {
+            errno = ENOMEM;
+            for (int j = 0; j < 4; j++)
+                free(cursors[j]);
+            goto fail;
+        }
         memcpy(cursors[i], qd->chunk_offsets[i], (qd->capacity + 1) * sizeof(uint16_t));
     }
 
@@ -265,7 +285,10 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
         free(cursors[i]);
     }
 
-    family->impl = qd;
+    return;
+
+fail:
+    quick_decode_uninit(family);
 }
 
 // returns a result with hamming set to 255 if no decode was found.
