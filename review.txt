@@ -1,0 +1,5 @@
+I think ENOMEM should already be set by calloc, so this is unnecessary. Please add a debug_print here to tell the user that memory allocation failed.
+
+This also applies to later instances of setting errno
+
+Can you make a const variable for NUM_CHUNKS instead of just putting 4

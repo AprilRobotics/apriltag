@@ -30,3 +30,21 @@ foreach(IMG IN LISTS TEST_IMAGE_NAMES)
     )
 endforeach()
 
+# Quick decode test
+file(GLOB COMMON_SRC "${CMAKE_SOURCE_DIR}/common/*.c")
+file(GLOB TAG_FILES "${CMAKE_SOURCE_DIR}/tag*.c")
+
+add_executable(test_quick_decode test_quick_decode.c "${CMAKE_SOURCE_DIR}/apriltag_quad_thresh.c" ${COMMON_SRC} ${TAG_FILES})
+target_include_directories(test_quick_decode PRIVATE "${CMAKE_SOURCE_DIR}")
+
+if (UNIX)
+    target_link_libraries(test_quick_decode m)
+endif()
+
+if(NOT MSVC)
+    find_package(Threads REQUIRED)
+    target_link_libraries(test_quick_decode Threads::Threads)
+endif()
+
+add_test(NAME test_quick_decode COMMAND test_quick_decode)
+

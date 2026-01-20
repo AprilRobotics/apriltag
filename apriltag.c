@@ -171,15 +171,23 @@ struct quick_decode_result
     uint8_t rotation; // number of rotations [0, 3]
 };
 
+#define NUM_CHUNKS 4
+
 struct quick_decode
 {
     int nbits;
     int chunk_size;
     int capacity;
     int chunk_mask;
-    int shifts[4];
-    uint16_t* chunk_offsets[4];
-    uint16_t* chunk_ids[4];
+    int shifts[NUM_CHUNKS];
+
+    // chunk_offsets is a map from chunk value to a range of locations in chunk_ids.
+    // Together with chunk_ids, this allows a lookup of all codes matching a chunk value.
+    uint16_t* chunk_offsets[NUM_CHUNKS];
+
+    // chunk_ids is an array of indices into the codes table
+    uint16_t* chunk_ids[NUM_CHUNKS];
+
     int maxhamming;
     int ncodes;
 };
@@ -190,7 +198,7 @@ static void quick_decode_uninit(apriltag_family_t *fam)
         return;
 
     struct quick_decode *qd = (struct quick_decode*) fam->impl;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < NUM_CHUNKS; i++) {
         free(qd->chunk_offsets[i]);
         free(qd->chunk_ids[i]);
     }
@@ -211,7 +219,7 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 
     struct quick_decode *qd = calloc(1, sizeof(struct quick_decode));
     if (!qd) {
-        errno = ENOMEM;
+        debug_print("Memory allocation failed\n");
         return;
     }
     family->impl = qd;
@@ -220,24 +228,23 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     qd->ncodes = family->ncodes;
     qd->nbits = family->nbits;
 
-    qd->chunk_size = (qd->nbits + 3) / 4;
+    qd->chunk_size = (qd->nbits + (NUM_CHUNKS - 1)) / NUM_CHUNKS;
     qd->capacity = 1 << qd->chunk_size;
     qd->chunk_mask = qd->capacity - 1;
 
-    qd->shifts[0] = 0;
-    qd->shifts[1] = qd->chunk_size;
-    qd->shifts[2] = qd->chunk_size * 2;
-    qd->shifts[3] = qd->chunk_size * 3;
+    for (int i = 0; i < NUM_CHUNKS; i++) {
+        qd->shifts[i] = i * qd->chunk_size;
+    }
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < NUM_CHUNKS; i++) {
         qd->chunk_offsets[i] = calloc(qd->capacity + 1, sizeof(uint16_t));
         if (!qd->chunk_offsets[i]) {
-            errno = ENOMEM;
+            debug_print("Memory allocation failed\n");
             goto fail;
         }
         qd->chunk_ids[i] = calloc(qd->ncodes, sizeof(uint16_t));
         if (!qd->chunk_ids[i]) {
-            errno = ENOMEM;
+            debug_print("Memory allocation failed\n");
             goto fail;
         }
     }
@@ -245,26 +252,27 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
     // Count frequencies
     for (int i = 0; i < qd->ncodes; i++) {
         uint64_t code = family->codes[i];
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < NUM_CHUNKS; j++) {
             int val = (code >> qd->shifts[j]) & qd->chunk_mask;
             qd->chunk_offsets[j][val + 1]++;
         }
     }
 
     // Prefix sum
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < NUM_CHUNKS; i++) {
         for (int j = 0; j < qd->capacity; j++) {
             qd->chunk_offsets[i][j + 1] += qd->chunk_offsets[i][j];
         }
     }
 
     // Populate ids
-    uint16_t *cursors[4] = { NULL, NULL, NULL, NULL };
-    for (int i = 0; i < 4; i++) {
+    uint16_t *cursors[NUM_CHUNKS];
+    memset(cursors, 0, sizeof(cursors));
+    for (int i = 0; i < NUM_CHUNKS; i++) {
         cursors[i] = malloc((qd->capacity + 1) * sizeof(uint16_t));
         if (cursors[i] == NULL) {
-            errno = ENOMEM;
-            for (int j = 0; j < 4; j++)
+            debug_print("Memory allocation failed\n");
+            for (int j = 0; j < NUM_CHUNKS; j++)
                 free(cursors[j]);
             goto fail;
         }
@@ -273,7 +281,7 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
 
     for (int i = 0; i < qd->ncodes; i++) {
         uint64_t code = family->codes[i];
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < NUM_CHUNKS; j++) {
             int val = (code >> qd->shifts[j]) & qd->chunk_mask;
             int write_pos = cursors[j][val];
             qd->chunk_ids[j][write_pos] = i;
@@ -281,7 +289,7 @@ static void quick_decode_init(apriltag_family_t *family, int maxhamming)
         }
     }
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < NUM_CHUNKS; i++) {
         free(cursors[i]);
     }
 
@@ -300,7 +308,7 @@ static void quick_decode_codeword(apriltag_family_t *tf, uint64_t rcode,
     // qd might be null if detector_add_family_bits() failed
     for (int ridx = 0; qd != NULL && ridx < 4; ridx++) {
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < NUM_CHUNKS; i++) {
             int val = (rcode >> qd->shifts[i]) & qd->chunk_mask;
             int start = qd->chunk_offsets[i][val];
             int end = qd->chunk_offsets[i][val + 1];
