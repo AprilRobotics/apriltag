@@ -41,14 +41,14 @@ void test_family(apriltag_family_t *fam) {
 
     int nbits = fam->nbits;
     
-    for (int i = 0; i < fam->ncodes; i++) {
+    for (uint32_t i = 0; i < fam->ncodes; i++) {
         uint64_t code = fam->codes[i];
         
         // Test 0 errors
         struct quick_decode_result res;
         quick_decode_codeword(fam, code, &res);
         if (res.id != i || res.hamming != 0) {
-            printf("Failed 0 errors: code %d, got id %d hamming %d\n", i, res.id, res.hamming);
+            printf("Failed 0 errors: code %u, got id %d hamming %d\n", i, res.id, res.hamming);
             exit(1);
         }
         
@@ -59,7 +59,7 @@ void test_family(apriltag_family_t *fam) {
             uint64_t c1 = code ^ (1ULL << b1);
             quick_decode_codeword(fam, c1, &res);
              if (res.id != i || res.hamming != 1) {
-                printf("Failed 1 error: code %d bit %d, got id %d hamming %d\n", i, b1, res.id, res.hamming);
+                printf("Failed 1 error: code %u bit %d, got id %d hamming %d\n", i, b1, res.id, res.hamming);
                 exit(1);
             }
             
@@ -70,7 +70,7 @@ void test_family(apriltag_family_t *fam) {
                 uint64_t c2 = c1 ^ (1ULL << b2);
                 quick_decode_codeword(fam, c2, &res);
                 if (res.id != i || res.hamming != 2) {
-                    printf("Failed 2 errors: code %d bits %d,%d, got id %d hamming %d\n", i, b1, b2, res.id, res.hamming);
+                    printf("Failed 2 errors: code %u bits %d,%d, got id %d hamming %d\n", i, b1, b2, res.id, res.hamming);
                     exit(1);
                 }
 
@@ -81,7 +81,7 @@ void test_family(apriltag_family_t *fam) {
                     uint64_t c3 = c2 ^ (1ULL << b3);
                     quick_decode_codeword(fam, c3, &res);
                     if (res.id != i || res.hamming != 3) {
-                        printf("Failed 3 errors: code %d bits %d,%d,%d, got id %d hamming %d\n", i, b1, b2, b3, res.id, res.hamming);
+                        printf("Failed 3 errors: code %u bits %d,%d,%d, got id %d hamming %d\n", i, b1, b2, b3, res.id, res.hamming);
                         exit(1);
                     }
                 }
