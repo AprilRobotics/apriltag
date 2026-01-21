@@ -778,10 +778,6 @@ int fit_quad(
         bool reversed_border) {
     int res = 0;
 
-    int sz = zarray_size(cluster);
-    if (sz < 24) // Synchronize with later check.
-        return 0;
-
     /////////////////////////////////////////////////////////////
     // Step 1. Sort points so they wrap around the center of the
     // quad. We will constrain our quad fit to simply partition this
@@ -866,6 +862,7 @@ int fit_quad(
         ptsort((struct pt*) cluster->data, zarray_size(cluster));
     }
 
+    int sz = zarray_size(cluster);
     struct line_fit_pt *lfps = compute_lfps(sz, cluster, im);
 
     int indices[4];
