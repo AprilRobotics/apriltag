@@ -46,8 +46,9 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra)
-    add_compile_options(-Wpedantic)
+    #add_compile_options(-Wall -Wextra)
+    #add_compile_options(-Wpedantic)
+    add_compile_options(-fsanitize=undefined)
     if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         add_compile_options(
             -Wno-gnu-zero-variadic-macro-arguments
@@ -55,11 +56,11 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
             -Wno-static-in-inline
         )
     endif()
-    add_compile_options(-Wno-shift-negative-value)
+    #add_compile_options(-Wno-shift-negative-value)
     if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.24.0")
-      set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+      #set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
     else()
-      add_compile_options(-Werror)
+      #add_compile_options(-Werror)
     endif()
 endif()
 
@@ -81,6 +82,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT APPLE AND NOT CMAKE_C_SIMULATE_ID MATCHES "MSVC")
     target_link_options(${PROJECT_NAME} PRIVATE "-Wl,-z,relro,-z,now,-z,defs")
+    target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=undefined -lubsan)
 endif()
 
 if (MSVC)
@@ -202,12 +204,15 @@ elseif(BUILD_PYTHON_WRAPPER)
         "Python bindings will not be built. Set BUILD_PYTHON_WRAPPER=OFF to silent this warnings."
      )
 endif()
-
+add_executable(harness harness.c)
+target_link_libraries(harness ${PROJECT_NAME})
+target_link_options(harness PUBLIC "-fsanitize=undefined")
 # Examples
 if (BUILD_EXAMPLES)
     # apriltag_demo
     add_executable(apriltag_demo example/apriltag_demo.c)
     target_link_libraries(apriltag_demo ${PROJECT_NAME})
+    target_link_options(apriltag_demo PUBLIC "-fsanitize=undefined")
 
     # opencv_demo
     set(_OpenCV_REQUIRED_COMPONENTS core imgproc videoio highgui)
