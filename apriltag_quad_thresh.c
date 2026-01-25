@@ -976,7 +976,12 @@ int fit_quad(
             double dy1 = quad->p[i1][1] - quad->p[i0][1];
             double dx2 = quad->p[i2][0] - quad->p[i1][0];
             double dy2 = quad->p[i2][1] - quad->p[i1][1];
-            double cos_dtheta = (dx1*dx2 + dy1*dy2)/sqrt((dx1*dx1 + dy1*dy1)*(dx2*dx2 + dy2*dy2));
+            double denominator = sqrt((dx1*dx1 + dy1*dy1)*(dx2*dx2 + dy2*dy2));
+            if (denominator == 0) {
+                res = 0;
+                goto finish;
+            }
+            double cos_dtheta = (dx1*dx2 + dy1*dy2) / denominator;
 
             if ((cos_dtheta > td->qtp.cos_critical_rad || cos_dtheta < -td->qtp.cos_critical_rad) || dx1*dy2 < dy1*dx2) {
                 res = 0;
