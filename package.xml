@@ -9,7 +9,7 @@
   <maintainer email="opensource@wolfgangmerkt.com">Wolfgang Merkt</maintainer>
   <maintainer email="Rauch.Christian@gmx.de">Christian Rauch</maintainer>
 
-  <license>BSD</license>
+  <license>BSD-2-Clause</license>
   <url>https://april.eecs.umich.edu/software/apriltag.html</url>
 
   <author email="ebolson@umich.edu">Edwin Olson</author>
