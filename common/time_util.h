@@ -40,19 +40,7 @@ either expressed or implied, of the Regents of The University of Michigan.
 typedef long long suseconds_t;
 #endif
 
-#ifdef _MSC_VER
-
-inline int gettimeofday(struct timeval* tp, void* tzp)
-{
-  (void)tzp;
-
-  unsigned long t;
-  t = time(NULL);
-  tp->tv_sec = t / 1000;
-  tp->tv_usec = t % 1000;
-  return 0;
-}
-#else
+#ifndef _MSC_VER
 #include <sys/time.h>
 #include <unistd.h>
 #endif

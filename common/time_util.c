@@ -29,6 +29,25 @@ either expressed or implied, of the Regents of The University of Michigan.
 #include <math.h>
 #include "time_util.h"
 
+#ifdef _MSC_VER
+
+static INIT_ONCE profiler_initd = INIT_ONCE_STATIC_INIT; // static-initialization struct
+static volatile LONGLONG profiler_perf_frequency;
+
+static BOOL __stdcall profiler_init(PINIT_ONCE init_once, PVOID parameter, LPVOID *context)
+{
+    (void) init_once;
+    (void) parameter;
+    (void) context;
+
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    profiler_perf_frequency = freq.QuadPart;
+    return true;
+}
+
+#endif
+
 struct timeutil_rest
 {
     int64_t acc_time;
@@ -48,9 +67,23 @@ void timeutil_rest_destroy(timeutil_rest_t *rest)
 
 int64_t utime_now() // blacklist-ignore
 {
+    #ifdef _MSC_VER
+    
+    // initialize profiler (will only run once and block for all threads)
+    InitOnceExecuteOnce(&profiler_initd, profiler_init, NULL, NULL);
+
+    LARGE_INTEGER counter;
+
+    QueryPerformanceCounter(&counter);
+
+    // convert to microseconds
+    return (int64_t) (counter.QuadPart * 1000000LL) / profiler_perf_frequency;
+
+    #else
     struct timeval tv;
     gettimeofday (&tv, NULL); // blacklist-ignore
     return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
+    #endif
 }
 
 int64_t utime_get_seconds(int64_t v)
