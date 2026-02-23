@@ -1052,6 +1052,12 @@ zarray_t *apriltag_detector_detect(apriltag_detector_t *td, image_u8_t *im_orig)
         return s;
     }
 
+    if (im_orig->width < 8 || im_orig->height < 8) {
+        zarray_t *s = zarray_create(sizeof(apriltag_detection_t*));
+        debug_print("Image too small (%d x %d)\n", im_orig->width, im_orig->height);
+        return s;
+    }
+
     if (td->wp == NULL || td->nthreads != workerpool_get_nthreads(td->wp)) {
         workerpool_destroy(td->wp);
         td->wp = workerpool_create(td->nthreads);
