@@ -72,7 +72,8 @@ Some heuristics for when to choose other tag families:
 1. If you need more tags, use tagStandard52h13
 2. If you need to maximize the use of space on a small circular object, use tagCircle49h12 (or tagCircle21h7).
 3. If you want to make a recursive tag use tagCustom48h12.
-4. If you want compatibility with the ArUcO detector use tag36h11
+4. If you need ArUco support, use the native ArUco families (e.g., `tagAruco4x4_50`, `tagAruco5x5_100`, `tagAruco6x6_250`, `tagAruco7x7_1000`, etc.). These are now fully integrated and optimized.
+4. If you want compatibility with the legacy ArUco detector use tag36h11
 
 If none of these fit your needs, generate your own custom tag family [here](https://github.com/AprilRobotics/apriltag-generation).
 
@@ -192,6 +193,28 @@ Note: The tag size should not be measured from the outside of the tag. The tag s
 
 ### Coordinate System
 The coordinate system has the origin at the camera center. The z-axis points from the camera center out the camera lens. The x-axis is to the right in the image taken by the camera, and y is down. The tag's coordinate frame is centered at the center of the tag. From the viewer's perspective, the x-axis is to the right, y-axis down, and z-axis is into the tag.
+
+### Handling Pose Ambiguity
+Planar targets often result in two possible pose solutions with similar errors (the "ambiguity" problem). To retrieve the alternative solution, you can use:
+
+```c
+apriltag_pose_t pose1, pose2;
+double err1 = estimate_tag_pose(&info, &pose1);
+double err2;
+
+// v and p are the object and image points used during the iteration
+get_second_solution(v, p, &pose1, &pose2, nIters, &err2);
+```
+
+This is particularly useful when temporal filtering or additional constraints are used to disambiguate the tag's orientation.
+
+Utility Functions
+=================
+AprilTag 3 now includes helper functions for deep-copying structures, which is essential for multi-threaded applications or when you need to store detections beyond the detector's lifecycle.
+
+* `apriltag_detector_copy(td)`: Creates a clone of the detector configuration.
+* `apriltag_detections_copy(detections)`: Returns a new `zarray_t` with deep copies of all `apriltag_detection_t` objects.
+* `apriltag_detection_copy(src, dst)`: Performs a deep copy of a single detection into an existing structure.
 
 Debugging
 =========
