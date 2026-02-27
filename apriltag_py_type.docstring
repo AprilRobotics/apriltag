@@ -51,6 +51,24 @@ The constructor takes a number of arguments:
   - "tagStandard41h12"
   - "tagStandard52h13"
   - "tagCustom48h12"
+  - "tagAruco4x4_50"
+  - "tagAruco4x4_100"
+  - "tagAruco4x4_250"
+  - "tagAruco4x4_1000"
+  - "tagAruco5x5_50"
+  - "tagAruco5x5_100"
+  - "tagAruco5x5_250"
+  - "tagAruco5x5_1000"
+  - "tagAruco6x6_50"
+  - "tagAruco6x6_100"
+  - "tagAruco6x6_250"
+  - "tagAruco6x6_1000"
+  - "tagAruco7x7_50"
+  - "tagAruco7x7_100"
+  - "tagAruco7x7_250"
+  - "tagAruco7x7_1000"
+  - "tagArucoMIP36h12"
+
 
 All the other arguments are optional:
 
