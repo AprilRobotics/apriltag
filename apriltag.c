@@ -1469,6 +1469,69 @@ void apriltag_detections_destroy(zarray_t *detections)
     zarray_destroy(detections);
 }
 
+void apriltag_detection_copy(apriltag_detection_t* src, apriltag_detection_t* dst)
+{
+    assert(src != NULL);
+    assert(dst != NULL);
+
+    if (dst->H) {
+        matd_destroy(dst->H);
+    }
+    dst->H = matd_copy(src->H);
+
+    dst->c[0] = src->c[0];
+    dst->c[1] = src->c[1];
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 2; j++) {
+            dst->p[i][j] = src->p[i][j];
+        }
+    }
+
+    dst->id = src->id;
+    dst->family = src->family;
+    dst->hamming = src->hamming;
+    dst->decision_margin = src->decision_margin;
+}
+
+zarray_t* apriltag_detections_copy(zarray_t* detections)
+{
+    zarray_t* detections_copy = zarray_create(sizeof(apriltag_detection_t*));
+    for (int i = 0; i < zarray_size(detections); i++) {
+        apriltag_detection_t* det;
+        zarray_get(detections, i, &det);
+
+        apriltag_detection_t* det_copy = (apriltag_detection_t*)calloc(1, sizeof(apriltag_detection_t));
+        apriltag_detection_copy(det, det_copy);
+        zarray_add(detections_copy, &det_copy);
+    }
+
+    return detections_copy;
+}
+
+apriltag_detector_t *apriltag_detector_copy(apriltag_detector_t *td)
+{
+    apriltag_detector_t *td_copy = apriltag_detector_create();
+
+    td_copy->nthreads = td->nthreads;
+    td_copy->quad_decimate = td->quad_decimate;
+    td_copy->quad_sigma = td->quad_sigma;
+
+    td_copy->qtp.max_nmaxima = td->qtp.max_nmaxima ;
+    td_copy->qtp.min_cluster_pixels = td->qtp.min_cluster_pixels;
+
+    td_copy->qtp.max_line_fit_mse = td->qtp.max_line_fit_mse;
+    td_copy->qtp.cos_critical_rad = td->qtp.cos_critical_rad;
+    td_copy->qtp.deglitch = td->qtp.deglitch;
+    td_copy->qtp.min_white_black_diff = td->qtp.min_white_black_diff;
+
+    td_copy->refine_edges = td->refine_edges;
+    td_copy->decode_sharpening = td->decode_sharpening;
+    td_copy->debug = td->debug;
+
+    return td_copy;
+}
+
 image_u8_t *apriltag_to_image(apriltag_family_t *fam, uint32_t idx)
 {
     assert(fam != NULL);
