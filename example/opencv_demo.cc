@@ -40,6 +40,23 @@ extern "C" {
 #include "tagCustom48h12.h"
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
+#include "tagAruco4x4_50.h"
+#include "tagAruco4x4_100.h"
+#include "tagAruco4x4_250.h"
+#include "tagAruco4x4_1000.h"
+#include "tagAruco5x5_50.h"
+#include "tagAruco5x5_100.h"
+#include "tagAruco5x5_250.h"
+#include "tagAruco5x5_1000.h"
+#include "tagAruco6x6_50.h"
+#include "tagAruco6x6_100.h"
+#include "tagAruco6x6_250.h"
+#include "tagAruco6x6_1000.h"
+#include "tagAruco7x7_50.h"
+#include "tagAruco7x7_100.h"
+#include "tagAruco7x7_250.h"
+#include "tagAruco7x7_1000.h"
+#include "tagArucoMIP36h12.h"
 #include "common/getopt.h"
 }
 
@@ -99,6 +116,40 @@ int main(int argc, char *argv[])
         tf = tagStandard52h13_create();
     } else if (!strcmp(famname, "tagCustom48h12")) {
         tf = tagCustom48h12_create();
+    } else if (!strcmp(famname, "tagAruco4x4_50")) {
+        tf = tagAruco4x4_50_create();
+    } else if (!strcmp(famname, "tagAruco4x4_100")) {
+        tf = tagAruco4x4_100_create();
+    } else if (!strcmp(famname, "tagAruco4x4_250")) {
+        tf = tagAruco4x4_250_create();
+    } else if (!strcmp(famname, "tagAruco4x4_1000")) {
+        tf = tagAruco4x4_1000_create();
+    } else if (!strcmp(famname, "tagAruco5x5_50")) {
+        tf = tagAruco5x5_50_create();
+    } else if (!strcmp(famname, "tagAruco5x5_100")) {
+        tf = tagAruco5x5_100_create();
+    } else if (!strcmp(famname, "tagAruco5x5_250")) {
+        tf = tagAruco5x5_250_create();
+    } else if (!strcmp(famname, "tagAruco5x5_1000")) {
+        tf = tagAruco5x5_1000_create();
+    } else if (!strcmp(famname, "tagAruco6x6_50")) {
+        tf = tagAruco6x6_50_create();
+    } else if (!strcmp(famname, "tagAruco6x6_100")) {
+        tf = tagAruco6x6_100_create();
+    } else if (!strcmp(famname, "tagAruco6x6_250")) {
+        tf = tagAruco6x6_250_create();
+    } else if (!strcmp(famname, "tagAruco6x6_1000")) {
+        tf = tagAruco6x6_1000_create();
+    } else if (!strcmp(famname, "tagAruco7x7_50")) {
+        tf = tagAruco7x7_50_create();
+    } else if (!strcmp(famname, "tagAruco7x7_100")) {
+        tf = tagAruco7x7_100_create();
+    } else if (!strcmp(famname, "tagAruco7x7_250")) {
+        tf = tagAruco7x7_250_create();
+    } else if (!strcmp(famname, "tagAruco7x7_1000")) {
+        tf = tagAruco7x7_1000_create();
+    } else if (!strcmp(famname, "tagArucoMIP36h12")) {
+        tf = tagArucoMIP36h12_create();
     } else {
         printf("Unrecognized tag family name. Use e.g. \"tag36h11\".\n");
         exit(-1);
@@ -203,8 +254,41 @@ int main(int argc, char *argv[])
         tagStandard52h13_destroy(tf);
     } else if (!strcmp(famname, "tagCustom48h12")) {
         tagCustom48h12_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco4x4_50")) {
+        tagAruco4x4_50_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco4x4_100")) {
+        tagAruco4x4_100_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco4x4_250")) {
+        tagAruco4x4_250_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco4x4_1000")) {
+        tagAruco4x4_1000_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco5x5_50")) {
+        tagAruco5x5_50_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco5x5_100")) {
+        tagAruco5x5_100_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco5x5_250")) {
+        tagAruco5x5_250_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco5x5_1000")) {
+        tagAruco5x5_1000_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco6x6_50")) {
+        tagAruco6x6_50_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco6x6_100")) {
+        tagAruco6x6_100_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco6x6_250")) {
+        tagAruco6x6_250_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco6x6_1000")) {
+        tagAruco6x6_1000_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco7x7_50")) {
+        tagAruco7x7_50_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco7x7_100")) {
+        tagAruco7x7_100_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco7x7_250")) {
+        tagAruco7x7_250_destroy(tf);
+    } else if (!strcmp(famname, "tagAruco7x7_1000")) {
+        tagAruco7x7_1000_destroy(tf);
+    } else if (!strcmp(famname, "tagArucoMIP36h12")) {
+        tagArucoMIP36h12_destroy(tf);
     }
-
 
     getopt_destroy(getopt);
 

@@ -12,6 +12,23 @@
 #include "tagCustom48h12.h"
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
+#include "tagAruco4x4_50.h"
+#include "tagAruco4x4_100.h"
+#include "tagAruco4x4_250.h"
+#include "tagAruco4x4_1000.h"
+#include "tagAruco5x5_50.h"
+#include "tagAruco5x5_100.h"
+#include "tagAruco5x5_250.h"
+#include "tagAruco5x5_1000.h"
+#include "tagAruco6x6_50.h"
+#include "tagAruco6x6_100.h"
+#include "tagAruco6x6_250.h"
+#include "tagAruco6x6_1000.h"
+#include "tagAruco7x7_50.h"
+#include "tagAruco7x7_100.h"
+#include "tagAruco7x7_250.h"
+#include "tagAruco7x7_1000.h"
+#include "tagArucoMIP36h12.h"
 
 #include "../apriltag.c"
 
@@ -104,6 +121,23 @@ int main() {
         tagCustom48h12_create(),
         tagStandard41h12_create(),
         tagStandard52h13_create(),
+        tagAruco4x4_50_create(),
+        tagAruco4x4_100_create(),
+        tagAruco4x4_250_create(),
+        tagAruco4x4_1000_create(),
+        tagAruco5x5_50_create(),
+        tagAruco5x5_100_create(),
+        tagAruco5x5_250_create(),
+        tagAruco5x5_1000_create(),
+        tagAruco6x6_50_create(),
+        tagAruco6x6_100_create(),
+        tagAruco6x6_250_create(),
+        tagAruco6x6_1000_create(),
+        tagAruco7x7_50_create(),
+        tagAruco7x7_100_create(),
+        tagAruco7x7_250_create(),
+        tagAruco7x7_1000_create(),
+        tagArucoMIP36h12_create(),
         NULL
     };
 
@@ -120,6 +154,23 @@ int main() {
     tagCustom48h12_destroy(fams[6]);
     tagStandard41h12_destroy(fams[7]);
     tagStandard52h13_destroy(fams[8]);
+    tagAruco4x4_50_destroy(fams[9]);
+    tagAruco4x4_100_destroy(fams[10]);
+    tagAruco4x4_250_destroy(fams[11]);
+    tagAruco4x4_1000_destroy(fams[12]);
+    tagAruco5x5_50_destroy(fams[13]);
+    tagAruco5x5_100_destroy(fams[14]);
+    tagAruco5x5_250_destroy(fams[15]);
+    tagAruco5x5_1000_destroy(fams[16]);
+    tagAruco6x6_50_destroy(fams[17]);
+    tagAruco6x6_100_destroy(fams[18]);
+    tagAruco6x6_250_destroy(fams[19]);
+    tagAruco6x6_1000_destroy(fams[20]);
+    tagAruco7x7_50_destroy(fams[21]);
+    tagAruco7x7_100_destroy(fams[22]);
+    tagAruco7x7_250_destroy(fams[23]);
+    tagAruco7x7_1000_destroy(fams[24]);
+    tagArucoMIP36h12_destroy(fams[25]);
 
     printf("All quick_decode tests passed!\n");
     return 0;
