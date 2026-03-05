@@ -193,6 +193,14 @@ Note: The tag size should not be measured from the outside of the tag. The tag s
 ### Coordinate System
 The coordinate system has the origin at the camera center. The z-axis points from the camera center out the camera lens. The x-axis is to the right in the image taken by the camera, and y is down. The tag's coordinate frame is centered at the center of the tag. From the viewer's perspective, the x-axis is to the right, y-axis down, and z-axis is into the tag.
 
+Utility Functions
+=================
+AprilTag 3 now includes helper functions for deep-copying structures, which is essential for multi-threaded applications or when you need to store detections beyond the detector's lifecycle.
+
+* `apriltag_detector_copy(td)`: Creates a clone of the detector configuration.
+* `apriltag_detections_copy(detections)`: Returns a new `zarray_t` with deep copies of all `apriltag_detection_t` objects.
+* `apriltag_detection_copy(src, dst)`: Performs a deep copy of a single detection into an existing structure.
+
 Debugging
 =========
 
