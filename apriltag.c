@@ -1496,3 +1496,58 @@ image_u8_t *apriltag_to_image(apriltag_family_t *fam, uint32_t idx)
     }
     return im;
 }
+
+void apriltag_detection_copy(apriltag_detection_t* src, apriltag_detection_t* dst)
+{
+    assert(src != NULL);
+    assert(dst != NULL);
+
+    if (dst->H) {
+        matd_destroy(dst->H);
+    }
+    dst->H = matd_copy(src->H);
+
+    dst->c[0] = src->c[0];
+    dst->c[1] = src->c[1];
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 2; j++) {
+            dst->p[i][j] = src->p[i][j];
+        }
+    }
+
+    dst->id = src->id;
+    dst->family = src->family;
+    dst->hamming = src->hamming;
+    dst->decision_margin = src->decision_margin;
+}
+
+zarray_t* apriltag_detections_copy(zarray_t* detections)
+{
+    zarray_t* detections_copy = zarray_create(sizeof(apriltag_detection_t*));
+    for (int i = 0; i < zarray_size(detections); i++) {
+        apriltag_detection_t* det;
+        zarray_get(detections, i, &det);
+
+        apriltag_detection_t* det_copy = (apriltag_detection_t*)calloc(1, sizeof(apriltag_detection_t));
+        apriltag_detection_copy(det, det_copy);
+        zarray_add(detections_copy, &det_copy);
+    }
+
+    return detections_copy;
+}
+
+apriltag_detector_t *apriltag_detector_copy(apriltag_detector_t *src)
+{
+    apriltag_detector_t *dst = (apriltag_detector_t *)malloc(sizeof(apriltag_detector_t));
+    // Shallow copy of all scalar fields
+    *dst = *src;
+
+    // Reinitialize pointer fields to independent default values to avoid shared ownership and double-free issues
+    dst->tag_families = zarray_create(sizeof(apriltag_family_t *));
+    dst->tp = timeprofile_create();
+    dst->wp = workerpool_create(src->nthreads);
+
+    return dst;
+}
+
