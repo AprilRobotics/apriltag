@@ -193,6 +193,21 @@ Note: The tag size should not be measured from the outside of the tag. The tag s
 ### Coordinate System
 The coordinate system has the origin at the camera center. The z-axis points from the camera center out the camera lens. The x-axis is to the right in the image taken by the camera, and y is down. The tag's coordinate frame is centered at the center of the tag. From the viewer's perspective, the x-axis is to the right, y-axis down, and z-axis is into the tag.
 
+### Handling Pose Ambiguity
+Planar targets often result in two possible pose solutions with similar errors (the "ambiguity" problem). To retrieve the alternative solution, you can use:
+
+```c
+apriltag_pose_t pose1, pose2;
+double err1 = estimate_tag_pose(&info, &pose1);
+double err2;
+int nIters = 50;
+
+// v and p are the object and image points used during the iteration
+get_second_solution(v, p, &pose1, &pose2, nIters, &err2);
+```
+
+This is particularly useful when temporal filtering or additional constraints are used to disambiguate the tag's orientation.
+
 Utility Functions
 =================
 AprilTag 3 now includes helper functions for deep-copying structures, which is essential for multi-threaded applications or when you need to store detections beyond the detector's lifecycle.

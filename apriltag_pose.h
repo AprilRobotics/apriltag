@@ -74,6 +74,40 @@ void estimate_tag_pose_orthogonal_iteration(
  */
 double estimate_tag_pose(apriltag_detection_info_t* info, apriltag_pose_t* pose);
 
+/**
+ * Computes the second pose solution from a known first solution.
+ *
+ * Pose estimation from a planar target (such as an AprilTag) suffers from an
+ * inherent ambiguity: two geometrically distinct poses can produce the same
+ * image projection. This function attempts to recover this second candidate
+ * solution using fix_pose_ambiguities(), then refines it via orthogonal iteration.
+ *
+ * If no second solution exists (unambiguous pose), solution2->R is left as NULL
+ * and err2 is set to HUGE_VAL.
+ *
+ * @param[in]  v         Array of 4 normalized image points (3x1 column vectors),
+ *                       expressed in normalized camera coordinates:
+ *                       [(u - cx)/fx, (v - cy)/fy, 1]'.
+ * @param[in]  p         Array of 4 object points in the tag frame (3x1 column vectors).
+ * @param[in]  solution1 First pose solution (R and t already estimated and refined).
+ *                       Used as a starting point to search for the second solution.
+ * @param[out] solution2 Second candidate pose solution. If a second solution is found,
+ *                       solution2->R and solution2->t are allocated by this function
+ *                       and must be freed by the caller via matd_destroy().
+ *                       Otherwise, solution2->R is NULL and solution2->t is undefined.
+ * @param[in]  nIters    Number of iterations for refinement via orthogonal_iteration().
+ * @param[out] err2      Object-space error associated with solution2 after refinement.
+ *                       Set to HUGE_VAL if no second solution was found.
+ *
+ * @note The caller is responsible for freeing solution2->R and solution2->t
+ *       (only if solution2->R != NULL) via matd_destroy().
+ *
+ * @see fix_pose_ambiguities()
+ * @see orthogonal_iteration()
+ * @see estimate_tag_pose_orthogonal_iteration()
+ */
+void get_second_solution(matd_t* v[4], matd_t* p[4], apriltag_pose_t* solution1, apriltag_pose_t* solution2, int nIters, double* err2);
+
 #ifdef __cplusplus
 }
 #endif
