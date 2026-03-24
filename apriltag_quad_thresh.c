@@ -1635,6 +1635,7 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
                                                                             \
                             entry->id = clusterid;                          \
                             entry->cluster = zarray_create(sizeof(struct pt)); \
+                            zarray_ensure_capacity(entry->cluster, 64);     \
                             entry->next = clustermap[clustermap_bucket];    \
                             clustermap[clustermap_bucket] = entry;          \
                         }                                                   \
