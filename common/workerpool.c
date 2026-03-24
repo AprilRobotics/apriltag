@@ -167,13 +167,7 @@ void workerpool_add_task(workerpool_t *wp, void (*f)(void *p), void *p)
     t.f = f;
     t.p = p;
 
-    if (wp->nthreads > 1) {
-        pthread_mutex_lock(&wp->mutex);
-        zarray_add(wp->tasks, &t);
-        pthread_mutex_unlock(&wp->mutex);
-    } else {
-        zarray_add(wp->tasks, &t);
-    }
+    zarray_add(wp->tasks, &t);
 }
 
 void workerpool_run_single(workerpool_t *wp)
