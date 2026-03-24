@@ -108,31 +108,22 @@ struct cluster_task
 };
 
 struct minmax_task {
-    int ty;
+    int ty0, ty1;
 
     image_u8_t *im;
     uint8_t *im_max;
     uint8_t *im_min;
 };
 
-struct blur_task {
-    int ty;
-
-    image_u8_t *im;
-    uint8_t *im_max;
-    uint8_t *im_min;
-    uint8_t *im_max_tmp;
-    uint8_t *im_min_tmp;
-};
-
-struct threshold_task {
-    int ty;
+struct blur_threshold_task {
+    int ty0, ty1;
 
     apriltag_detector_t *td;
     image_u8_t *im;
     image_u8_t *threshim;
     uint8_t *im_max;
     uint8_t *im_min;
+    int tw, th;
 };
 
 struct remove_vertex
@@ -1104,10 +1095,10 @@ void do_minmax_task(void *p)
     const int tilesz = 4;
     struct minmax_task* task = (struct minmax_task*) p;
     int s = task->im->stride;
-    int ty = task->ty;
     int tw = task->im->width / tilesz;
     image_u8_t *im = task->im;
 
+    for (int ty = task->ty0; ty < task->ty1; ty++)
     for (int tx = 0; tx < tw; tx++) {
         uint8_t max = 0, min = 255;
 
@@ -1128,46 +1119,13 @@ void do_minmax_task(void *p)
     }
 }
 
-void do_blur_task(void *p)
+ 
+void do_blur_threshold_task(void *p)
 {
     const int tilesz = 4;
-    struct blur_task* task = (struct blur_task*) p;
-    int ty = task->ty;
-    int tw = task->im->width / tilesz;
-    int th = task->im->height / tilesz;
-    uint8_t *im_max = task->im_max;
-    uint8_t *im_min = task->im_min;
-
-    for (int tx = 0; tx < tw; tx++) {
-        uint8_t max = 0, min = 255;
-
-        for (int dy = -1; dy <= 1; dy++) {
-            if (ty+dy < 0 || ty+dy >= th)
-                continue;
-            for (int dx = -1; dx <= 1; dx++) {
-                if (tx+dx < 0 || tx+dx >= tw)
-                    continue;
-
-                uint8_t m = im_max[(ty+dy)*tw+tx+dx];
-                if (m > max)
-                    max = m;
-                m = im_min[(ty+dy)*tw+tx+dx];
-                if (m < min)
-                    min = m;
-            }
-        }
-
-        task->im_max_tmp[ty*tw + tx] = max;
-        task->im_min_tmp[ty*tw + tx] = min;
-    }
-}
-
-void do_threshold_task(void *p)
-{
-    const int tilesz = 4;
-    struct threshold_task* task = (struct threshold_task*) p;
-    int ty = task->ty;
-    int tw = task->im->width / tilesz;
+    struct blur_threshold_task* task = (struct blur_threshold_task*) p;
+    int tw = task->tw;
+    int th = task->th;
     int s = task->im->stride;
     uint8_t *im_max = task->im_max;
     uint8_t *im_min = task->im_min;
@@ -1175,18 +1133,28 @@ void do_threshold_task(void *p)
     image_u8_t *threshim = task->threshim;
     int min_white_black_diff = task->td->qtp.min_white_black_diff;
 
+    for (int ty = task->ty0; ty < task->ty1; ty++)
     for (int tx = 0; tx < tw; tx++) {
-        int min = im_min[ty*tw + tx];
-        int max = im_max[ty*tw + tx];
+        uint8_t max = 0, min = 255;
+        for (int dy = -1; dy <= 1; dy++) {
+            if (ty+dy < 0 || ty+dy >= th)
+                continue;
+            for (int dx = -1; dx <= 1; dx++) {
+                if (tx+dx < 0 || tx+dx >= tw)
+                    continue;
+                uint8_t m = im_max[(ty+dy)*tw+tx+dx];
+                if (m > max) max = m;
+                m = im_min[(ty+dy)*tw+tx+dx];
+                if (m < min) min = m;
+            }
+        }
 
         // low contrast region? (no edges)
         if (max - min < min_white_black_diff) {
             for (int dy = 0; dy < tilesz; dy++) {
                 int y = ty*tilesz + dy;
-
                 for (int dx = 0; dx < tilesz; dx++) {
                     int x = tx*tilesz + dx;
-
                     threshim->buf[y*s+x] = 127;
                 }
             }
@@ -1198,23 +1166,17 @@ void do_threshold_task(void *p)
         // argument for biasing towards dark; specular highlights
         // can be substantially brighter than white tag parts
         uint8_t thresh = min + (max - min) / 2;
-
         for (int dy = 0; dy < tilesz; dy++) {
             int y = ty*tilesz + dy;
-
             for (int dx = 0; dx < tilesz; dx++) {
                 int x = tx*tilesz + dx;
-
                 uint8_t v = im->buf[y*s+x];
-                if (v > thresh)
-                    threshim->buf[y*s+x] = 255;
-                else
-                    threshim->buf[y*s+x] = 0;
+                threshim->buf[y*s+x] = (v > thresh) ? 255 : 0;
             }
         }
     }
 }
- 
+
 image_u8_t *threshold(apriltag_detector_t *td, image_u8_t *im)
 {
     int w = im->width, h = im->height, s = im->stride;
@@ -1257,15 +1219,20 @@ image_u8_t *threshold(apriltag_detector_t *td, image_u8_t *im)
     uint8_t *im_max = calloc(tw*th, sizeof(uint8_t));
     uint8_t *im_min = calloc(tw*th, sizeof(uint8_t));
 
-    struct minmax_task *minmax_tasks = malloc(sizeof(struct minmax_task)*th);
-    // first, collect min/max statistics for each tile
-    for (int ty = 0; ty < th; ty++) {
-        minmax_tasks[ty].im = im;
-        minmax_tasks[ty].im_max = im_max;
-        minmax_tasks[ty].im_min = im_min;
-        minmax_tasks[ty].ty = ty;
+    int ntasks_target = APRILTAG_TASKS_PER_THREAD_TARGET * td->nthreads;
+    int tile_chunk = (th + ntasks_target - 1) / ntasks_target;
 
-        workerpool_add_task(td->wp, do_minmax_task, &minmax_tasks[ty]);
+    // first, collect min/max statistics for each tile
+    struct minmax_task *minmax_tasks = malloc(sizeof(struct minmax_task)*ntasks_target);
+    int mm_ntasks = 0;
+    for (int ty = 0; ty < th; ty += tile_chunk) {
+        minmax_tasks[mm_ntasks].im = im;
+        minmax_tasks[mm_ntasks].im_max = im_max;
+        minmax_tasks[mm_ntasks].im_min = im_min;
+        minmax_tasks[mm_ntasks].ty0 = ty;
+        minmax_tasks[mm_ntasks].ty1 = (ty + tile_chunk < th) ? ty + tile_chunk : th;
+        workerpool_add_task(td->wp, do_minmax_task, &minmax_tasks[mm_ntasks]);
+        mm_ntasks++;
     }
     workerpool_run(td->wp);
     free(minmax_tasks);
@@ -1273,42 +1240,25 @@ image_u8_t *threshold(apriltag_detector_t *td, image_u8_t *im)
     // second, apply 3x3 max/min convolution to "blur" these values
     // over larger areas. This reduces artifacts due to abrupt changes
     // in the threshold value.
-    if (1) {
-        uint8_t *im_max_tmp = calloc(tw*th, sizeof(uint8_t));
-        uint8_t *im_min_tmp = calloc(tw*th, sizeof(uint8_t));
-
-        struct blur_task *blur_tasks = malloc(sizeof(struct blur_task)*th);
-        for (int ty = 0; ty < th; ty++) {
-            blur_tasks[ty].im = im;
-            blur_tasks[ty].im_max = im_max;
-            blur_tasks[ty].im_min = im_min;
-            blur_tasks[ty].im_max_tmp = im_max_tmp;
-            blur_tasks[ty].im_min_tmp = im_min_tmp;
-            blur_tasks[ty].ty = ty;
-
-            workerpool_add_task(td->wp, do_blur_task, &blur_tasks[ty]);
+    {
+        struct blur_threshold_task *bt_tasks = malloc(sizeof(struct blur_threshold_task)*ntasks_target);
+        int bt_ntasks = 0;
+        for (int ty = 0; ty < th; ty += tile_chunk) {
+            bt_tasks[bt_ntasks].im = im;
+            bt_tasks[bt_ntasks].threshim = threshim;
+            bt_tasks[bt_ntasks].im_max = im_max;
+            bt_tasks[bt_ntasks].im_min = im_min;
+            bt_tasks[bt_ntasks].ty0 = ty;
+            bt_tasks[bt_ntasks].ty1 = (ty + tile_chunk < th) ? ty + tile_chunk : th;
+            bt_tasks[bt_ntasks].td = td;
+            bt_tasks[bt_ntasks].tw = tw;
+            bt_tasks[bt_ntasks].th = th;
+            workerpool_add_task(td->wp, do_blur_threshold_task, &bt_tasks[bt_ntasks]);
+            bt_ntasks++;
         }
         workerpool_run(td->wp);
-        free(blur_tasks);
-        free(im_max);
-        free(im_min);
-        im_max = im_max_tmp;
-        im_min = im_min_tmp;
+        free(bt_tasks);
     }
-
-    struct threshold_task *threshold_tasks = malloc(sizeof(struct threshold_task)*th);
-    for (int ty = 0; ty < th; ty++) {
-        threshold_tasks[ty].im = im;
-        threshold_tasks[ty].threshim = threshim;
-        threshold_tasks[ty].im_max = im_max;
-        threshold_tasks[ty].im_min = im_min;
-        threshold_tasks[ty].ty = ty;
-        threshold_tasks[ty].td = td;
-
-        workerpool_add_task(td->wp, do_threshold_task, &threshold_tasks[ty]);
-    }
-    workerpool_run(td->wp);
-    free(threshold_tasks);
 
     // we skipped over the non-full-sized tiles above. Fix those now.
     if (1) {

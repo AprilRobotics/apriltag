@@ -40,7 +40,7 @@ extern "C" {
 #include "common/timeprofile.h"
 #include "common/pthreads_cross.h"
 
-#define APRILTAG_TASKS_PER_THREAD_TARGET 10
+#define APRILTAG_TASKS_PER_THREAD_TARGET 4
 
 struct quad
 {
