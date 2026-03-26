@@ -1511,7 +1511,17 @@ image_u8_t *threshold_bayer(apriltag_detector_t *td, image_u8_t *im)
 }
 
 unionfind_t* connected_components(apriltag_detector_t *td, image_u8_t* threshim, int w, int h, int ts) {
-    unionfind_t *uf = unionfind_create(w * h);
+    uint32_t maxid = w * h;
+    if (td->cached_uf) {
+        if (td->cached_uf->maxid >= maxid) {
+            unionfind_reset(td->cached_uf);
+        } else {
+            unionfind_resize(td->cached_uf, maxid);
+        }
+    } else {
+        td->cached_uf = unionfind_create(maxid);
+    }
+    unionfind_t *uf = td->cached_uf;
 
     if (td->nthreads <= 1) {
         do_unionfind_first_line(uf, threshim, w, ts);
@@ -2003,8 +2013,6 @@ zarray_t *apriltag_quad_thresh(apriltag_detector_t *td, image_u8_t *im)
     }
 
     timeprofile_stamp(td->tp, "fit quads to clusters");
-
-    unionfind_destroy(uf);
 
     for (int i = 0; i < zarray_size(clusters); i++) {
         zarray_t *cluster;

@@ -67,15 +67,28 @@ static inline void uf_store_parent(unionfind_t *uf, uint32_t id, uint32_t val)
 #endif
 }
 
+static inline void unionfind_reset(unionfind_t *uf)
+{
+    // Sets parent to 0xffffffff; size is lazily initialized in
+    // unionfind_get_representative when a node is first touched.
+    memset(uf->data, 0xff, (uf->maxid+1) * sizeof(struct unionfind_node));
+}
+
 static inline unionfind_t *unionfind_create(uint32_t maxid)
 {
     unionfind_t *uf = (unionfind_t*) calloc(1, sizeof(unionfind_t));
     uf->maxid = maxid;
     uf->data = (struct unionfind_node *) malloc((maxid+1) * sizeof(struct unionfind_node));
-    for (uint32_t i = 0; i <= maxid; i++) {
-        uf->data[i].parent = 0xffffffff;
-        uf->data[i].size = 0;
-    }
+    unionfind_reset(uf);
+    return uf;
+}
+
+static inline unionfind_t *unionfind_resize(unionfind_t *uf, uint32_t maxid)
+{
+    uf->maxid = maxid;
+    free(uf->data);
+    uf->data = (struct unionfind_node *) malloc((maxid+1) * sizeof(struct unionfind_node));
+    unionfind_reset(uf);
     return uf;
 }
 
@@ -109,6 +122,7 @@ static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id
     // unititialized node, so set to self
     if (uf_load_parent(uf, id) == 0xffffffff) {
         uf_store_parent(uf, id, id);
+        uf->data[id].size = 0;
         return id;
     }
 
