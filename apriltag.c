@@ -411,6 +411,8 @@ void apriltag_detector_destroy(apriltag_detector_t *td)
     apriltag_detector_clear_families(td);
 
     zarray_destroy(td->tag_families);
+    if (td->cached_uf)
+        unionfind_destroy(td->cached_uf);
     free(td);
 }
 

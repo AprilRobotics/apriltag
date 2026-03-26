@@ -39,6 +39,7 @@ extern "C" {
 #include "common/workerpool.h"
 #include "common/timeprofile.h"
 #include "common/pthreads_cross.h"
+#include "common/unionfind.h"
 
 #define APRILTAG_TASKS_PER_THREAD_TARGET 10
 
@@ -188,6 +189,9 @@ struct apriltag_detector
 
     // Used for thread safety.
     pthread_mutex_t mutex;
+
+    // Cached unionfind structure (reused across detect calls)
+    unionfind_t *cached_uf;
 };
 
 // Represents the detection of a tag. These are returned to the user
