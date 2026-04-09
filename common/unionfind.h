@@ -44,14 +44,28 @@ struct unionfind
     uint32_t *size;
 };
 
+static inline void unionfind_reset(unionfind_t *uf)
+{
+    memset(uf->parent, 0xff, (uf->maxid+1) * sizeof(uint32_t));
+    // uf->size is lazily initialized in unionfind_get_representative
+}
+
 static inline unionfind_t *unionfind_create(uint32_t maxid)
 {
     unionfind_t *uf = (unionfind_t*) calloc(1, sizeof(unionfind_t));
     uf->maxid = maxid;
     uf->parent = (uint32_t *) malloc((maxid+1) * sizeof(uint32_t) * 2);
-    memset(uf->parent, 0xff, (maxid+1) * sizeof(uint32_t));
     uf->size = uf->parent + (maxid+1);
-    memset(uf->size, 0, (maxid+1) * sizeof(uint32_t));
+    unionfind_reset(uf);
+    return uf;
+}
+
+static inline unionfind_t *unionfind_resize(unionfind_t *uf, uint32_t maxid)
+{
+    uf->maxid = maxid;
+    uf->parent = (uint32_t *) realloc(uf->parent, (maxid+1) * sizeof(uint32_t) * 2);
+    uf->size = uf->parent + (maxid+1);
+    unionfind_reset(uf);
     return uf;
 }
 
@@ -85,6 +99,7 @@ static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id
     // unititialized node, so set to self
     if (uf->parent[id] == 0xffffffff) {
         uf->parent[id] = id;
+        uf->size[id] = 0;
         return id;
     }
 

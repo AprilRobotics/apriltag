@@ -48,3 +48,11 @@ endif()
 
 add_test(NAME test_quick_decode COMMAND test_quick_decode)
 
+add_executable(test_multiple_sizes test_multiple_sizes.c)
+target_link_libraries(test_multiple_sizes ${PROJECT_NAME})
+
+add_test(NAME test_multiple_sizes
+         COMMAND $<TARGET_FILE:test_multiple_sizes> data/33369213973_9d9bb4cc96_c.jpg
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
