@@ -75,7 +75,7 @@ aux_source_directory(common COMMON_SRC)
 set(APRILTAG_SRCS apriltag.c apriltag_pose.c apriltag_quad_thresh.c)
 
 # Library
-file(GLOB TAG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/tag*.c)
+file(GLOB TAG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/tag*.c ${CMAKE_CURRENT_SOURCE_DIR}/aruco/tag*.c)
 add_library(${PROJECT_NAME} ${APRILTAG_SRCS} ${COMMON_SRC} ${TAG_FILES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
@@ -107,7 +107,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 
 # install header file hierarchy
-file(GLOB HEADER_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.h common/*.h)
+file(GLOB HEADER_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.h common/*.h aruco/*.h)
 list(REMOVE_ITEM HEADER_FILES apriltag_detect.docstring.h apriltag_py_type.docstring.h)
 
 foreach(HEADER ${HEADER_FILES})
