@@ -49,6 +49,24 @@ struct unionfind
     struct unionfind_node *data;
 };
 
+static inline uint32_t uf_load_parent(unionfind_t *uf, uint32_t id)
+{
+#if defined(__GNUC__) || defined(__clang__)
+    return __atomic_load_n(&uf->data[id].parent, __ATOMIC_RELAXED);
+#else
+    return uf->data[id].parent;
+#endif
+}
+
+static inline void uf_store_parent(unionfind_t *uf, uint32_t id, uint32_t val)
+{
+#if defined(__GNUC__) || defined(__clang__)
+    __atomic_store_n(&uf->data[id].parent, val, __ATOMIC_RELAXED);
+#else
+    uf->data[id].parent = val;
+#endif
+}
+
 static inline unionfind_t *unionfind_create(uint32_t maxid)
 {
     unionfind_t *uf = (unionfind_t*) calloc(1, sizeof(unionfind_t));
@@ -89,15 +107,15 @@ static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id
 static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id)
 {
     // unititialized node, so set to self
-    if (uf->data[id].parent == 0xffffffff) {
-        uf->data[id].parent = id;
+    if (uf_load_parent(uf, id) == 0xffffffff) {
+        uf_store_parent(uf, id, id);
         return id;
     }
 
     // Path halving: make every node point to its grandparent (single pass)
-    while (uf->data[id].parent != id) {
-        uf->data[id].parent = uf->data[uf->data[id].parent].parent;
-        id = uf->data[id].parent;
+    while (uf_load_parent(uf, id) != id) {
+        uf_store_parent(uf, id, uf_load_parent(uf, uf_load_parent(uf, id)));
+        id = uf_load_parent(uf, id);
     }
 
     return id;
