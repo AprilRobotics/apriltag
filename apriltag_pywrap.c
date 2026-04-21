@@ -20,6 +20,23 @@
 #include "tagCustom48h12.h"
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
+#include "aruco/tagAruco4x4_50.h"
+#include "aruco/tagAruco4x4_100.h"
+#include "aruco/tagAruco4x4_250.h"
+#include "aruco/tagAruco4x4_1000.h"
+#include "aruco/tagAruco5x5_50.h"
+#include "aruco/tagAruco5x5_100.h"
+#include "aruco/tagAruco5x5_250.h"
+#include "aruco/tagAruco5x5_1000.h"
+#include "aruco/tagAruco6x6_50.h"
+#include "aruco/tagAruco6x6_100.h"
+#include "aruco/tagAruco6x6_250.h"
+#include "aruco/tagAruco6x6_1000.h"
+#include "aruco/tagAruco7x7_50.h"
+#include "aruco/tagAruco7x7_100.h"
+#include "aruco/tagAruco7x7_250.h"
+#include "aruco/tagAruco7x7_1000.h"
+#include "aruco/tagArucoMIP36h12.h"
 
 
 #define SUPPORTED_TAG_FAMILIES(_)           \
@@ -31,7 +48,24 @@
     _(tagCircle49h12)                       \
     _(tagStandard41h12)                     \
     _(tagStandard52h13)                     \
-    _(tagCustom48h12)
+    _(tagCustom48h12)                       \
+    _(tagAruco4x4_50)                       \
+    _(tagAruco4x4_100)                      \
+    _(tagAruco4x4_250)                      \
+    _(tagAruco4x4_1000)                     \
+    _(tagAruco5x5_50)                       \
+    _(tagAruco5x5_100)                      \
+    _(tagAruco5x5_250)                      \
+    _(tagAruco5x5_1000)                     \
+    _(tagAruco6x6_50)                       \
+    _(tagAruco6x6_100)                      \
+    _(tagAruco6x6_250)                      \
+    _(tagAruco6x6_1000)                     \
+    _(tagAruco7x7_50)                       \
+    _(tagAruco7x7_100)                      \
+    _(tagAruco7x7_250)                      \
+    _(tagAruco7x7_1000)                     \
+    _(tagArucoMIP36h12)
 
 #define TAG_CREATE_FAMILY(name) \
     else if (0 == strcmp(family, #name)) self->tf = name ## _create();

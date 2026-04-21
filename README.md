@@ -72,7 +72,7 @@ Some heuristics for when to choose other tag families:
 1. If you need more tags, use tagStandard52h13
 2. If you need to maximize the use of space on a small circular object, use tagCircle49h12 (or tagCircle21h7).
 3. If you want to make a recursive tag use tagCustom48h12.
-4. If you want compatibility with the ArUcO detector use tag36h11
+4. If you need ArUco support, use the native ArUco families (e.g., `tagAruco4x4_50`, `tagAruco5x5_100`, `tagAruco6x6_250`, `tagAruco7x7_1000`, etc.). These are now fully integrated.
 
 If none of these fit your needs, generate your own custom tag family [here](https://github.com/AprilRobotics/apriltag-generation).
 

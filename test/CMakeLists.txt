@@ -24,7 +24,7 @@ endforeach()
 # Add pose estimation tests for each image
 foreach(IMG IN LISTS TEST_IMAGE_NAMES)
     add_test(NAME test_tag_pose_estimation_${IMG}
-             COMMAND $<TARGET_FILE:test_tag_pose_estimation> 
+             COMMAND $<TARGET_FILE:test_tag_pose_estimation>
              data/${IMG}.jpg data/${IMG}.txt
              WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
@@ -33,8 +33,9 @@ endforeach()
 # Quick decode test
 file(GLOB COMMON_SRC "${CMAKE_SOURCE_DIR}/common/*.c")
 file(GLOB TAG_FILES "${CMAKE_SOURCE_DIR}/tag*.c")
+file(GLOB ARUCO_FILES "${CMAKE_SOURCE_DIR}/aruco/tag*.c")
 
-add_executable(test_quick_decode test_quick_decode.c "${CMAKE_SOURCE_DIR}/apriltag_quad_thresh.c" ${COMMON_SRC} ${TAG_FILES})
+add_executable(test_quick_decode test_quick_decode.c "${CMAKE_SOURCE_DIR}/apriltag_quad_thresh.c" ${COMMON_SRC} ${TAG_FILES} ${ARUCO_FILES})
 target_include_directories(test_quick_decode PRIVATE "${CMAKE_SOURCE_DIR}")
 
 if (UNIX)
