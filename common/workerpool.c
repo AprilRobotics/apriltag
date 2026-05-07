@@ -81,7 +81,6 @@ void *worker_thread(void *p)
         zarray_get_volatile(wp->tasks, wp->taskspos, &task);
         wp->taskspos++;
         pthread_mutex_unlock(&wp->mutex);
-        sched_yield();
 
         // we've been asked to exit.
         if (task->f == NULL)
