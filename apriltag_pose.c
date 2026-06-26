@@ -7,20 +7,6 @@
 #include "common/svd33.h"
 
 
-/*
- * Fixed-size 3x3 / 3-vector linear algebra.
- *
- * The pose hot path (orthogonal_iteration / fix_pose_ambiguities) operates
- * exclusively on 3x3 matrices and 3-vectors. Expressing that math through the
- * general-purpose matd library (matd_op, matd_create, matd_svd, ...) heap
- * allocates and frees a fresh matrix for every intermediate result, which
- * dominates the runtime (tens of thousands of allocator ops per pose). The
- * helpers below do the same arithmetic on stack-allocated value types with no
- * heap traffic. Matrices are double[3][3] in row-major order (matching matd's
- * data layout); vectors are double[3]. The 3x3 SVD used by the rotation update
- * lives in common/svd33 (a fixed-size sibling of common/svd22).
- */
-
 static inline void mat3_identity(double R[3][3])
 {
     R[0][0] = 1; R[0][1] = 0; R[0][2] = 0;
