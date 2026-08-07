@@ -4,7 +4,13 @@
 name: ROS-CI
 
 # This determines when this workflow is run
-on: [push, pull_request] # on all pushes and PRs
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+  pull_request:
+    paths-ignore:
+      - "README.md"
 
 jobs:
   CI:
