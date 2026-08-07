@@ -122,6 +122,13 @@ Provided by third-party [here](https://github.com/alddiaz/MATLAB_AprilTag3).
 
 Provided by third-party [here](https://github.com/JuliaRobotics/AprilTags.jl)
 
+### JavaScript / WebAssembly
+
+A browser-based port, compiled with Emscripten, provided by third-party
+[here](https://github.com/AliAlimohamad/apriltag-js). Runs entirely
+client-side with live camera or image-upload detection across all 8 tag
+families - no install, no server.
+
 
 ## Upgrading from AprilTag 2
 For most use-cases this should be a drop in replacement.
