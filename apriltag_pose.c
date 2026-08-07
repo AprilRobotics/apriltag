@@ -4,28 +4,142 @@
 #include "common/debug_print.h"
 #include "apriltag_pose.h"
 #include "common/homography.h"
+#include "common/svd33.h"
 
 
-/**
- * Calculate projection operator from image points.
- */
-matd_t* calculate_F(matd_t* v) {
-    matd_t* outer_product = matd_op("MM'", v, v, v, v);
-    matd_t* inner_product = matd_op("M'M", v, v);
-    matd_scale_inplace(outer_product, 1.0/inner_product->data[0]);
-    matd_destroy(inner_product);
-    return outer_product;
+static inline void mat3_identity(double R[3][3])
+{
+    R[0][0] = 1; R[0][1] = 0; R[0][2] = 0;
+    R[1][0] = 0; R[1][1] = 1; R[1][2] = 0;
+    R[2][0] = 0; R[2][1] = 0; R[2][2] = 1;
+}
+
+static inline void mat3_sub(const double A[3][3], const double B[3][3], double C[3][3])
+{
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            C[i][j] = A[i][j] - B[i][j];
+}
+
+// C = A*B. Safe even if C aliases A or B.
+static inline void mat3_mul(const double A[3][3], const double B[3][3], double C[3][3])
+{
+    double T[3][3];
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            double s = 0;
+            for (int k = 0; k < 3; k++)
+                s += A[i][k] * B[k][j];
+            T[i][j] = s;
+        }
+    }
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            C[i][j] = T[i][j];
+}
+
+// C = A*B'. Safe even if C aliases A or B.
+static inline void mat3_mul_transpose(const double A[3][3], const double B[3][3], double C[3][3])
+{
+    double T[3][3];
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            double s = 0;
+            for (int k = 0; k < 3; k++)
+                s += A[i][k] * B[j][k];
+            T[i][j] = s;
+        }
+    }
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            C[i][j] = T[i][j];
+}
+
+// y = A*x. y must not alias x.
+static inline void mat3_mul_vec(const double A[3][3], const double x[3], double y[3])
+{
+    y[0] = A[0][0]*x[0] + A[0][1]*x[1] + A[0][2]*x[2];
+    y[1] = A[1][0]*x[0] + A[1][1]*x[1] + A[1][2]*x[2];
+    y[2] = A[2][0]*x[0] + A[2][1]*x[1] + A[2][2]*x[2];
+}
+
+// y = A'*x. y must not alias x.
+static inline void mat3_mul_transpose_vec(const double A[3][3], const double x[3], double y[3])
+{
+    y[0] = A[0][0]*x[0] + A[1][0]*x[1] + A[2][0]*x[2];
+    y[1] = A[0][1]*x[0] + A[1][1]*x[1] + A[2][1]*x[2];
+    y[2] = A[0][2]*x[0] + A[1][2]*x[1] + A[2][2]*x[2];
+}
+
+// Determinant of a 3x3 matrix (matches common/matd.c matd_det).
+static inline double mat3_det(const double A[3][3])
+{
+    return  A[0][0]*A[1][1]*A[2][2]
+          - A[0][0]*A[1][2]*A[2][1]
+          + A[0][1]*A[1][2]*A[2][0]
+          - A[0][1]*A[1][0]*A[2][2]
+          + A[0][2]*A[1][0]*A[2][1]
+          - A[0][2]*A[1][1]*A[2][0];
+}
+
+// Inverse of a 3x3 matrix via the adjugate. Returns 0 (and leaves Inv
+// untouched) if the matrix is exactly singular, matching matd_inverse.
+static inline int mat3_inverse(const double A[3][3], double Inv[3][3])
+{
+    double det = mat3_det(A);
+    if (det == 0)
+        return 0;
+    double invdet = 1.0 / det;
+    Inv[0][0] = (A[1][1]*A[2][2] - A[1][2]*A[2][1]) * invdet;
+    Inv[0][1] = (A[0][2]*A[2][1] - A[0][1]*A[2][2]) * invdet;
+    Inv[0][2] = (A[0][1]*A[1][2] - A[0][2]*A[1][1]) * invdet;
+    Inv[1][0] = (A[1][2]*A[2][0] - A[1][0]*A[2][2]) * invdet;
+    Inv[1][1] = (A[0][0]*A[2][2] - A[0][2]*A[2][0]) * invdet;
+    Inv[1][2] = (A[0][2]*A[1][0] - A[0][0]*A[1][2]) * invdet;
+    Inv[2][0] = (A[1][0]*A[2][1] - A[1][1]*A[2][0]) * invdet;
+    Inv[2][1] = (A[0][1]*A[2][0] - A[0][0]*A[2][1]) * invdet;
+    Inv[2][2] = (A[0][0]*A[1][1] - A[0][1]*A[1][0]) * invdet;
+    return 1;
+}
+
+static inline double vec3_dot(const double a[3], const double b[3])
+{
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
+static inline double vec3_norm(const double a[3])
+{
+    return sqrt(vec3_dot(a, a));
+}
+
+// r = a / |a|. Matches matd_vec_normalize (divides by magnitude). r may alias a.
+static inline void vec3_normalize(const double a[3], double r[3])
+{
+    double mag = vec3_norm(a);
+    r[0] = a[0] / mag;
+    r[1] = a[1] / mag;
+    r[2] = a[2] / mag;
+}
+
+// r = a x b. r must not alias a or b.
+static inline void vec3_cross(const double a[3], const double b[3], double r[3])
+{
+    r[0] = a[1]*b[2] - a[2]*b[1];
+    r[1] = a[2]*b[0] - a[0]*b[2];
+    r[2] = a[0]*b[1] - a[1]*b[0];
 }
 
 /**
- * Returns the value of the supplied scalar matrix 'a' and destroys the matrix.
+ * Projection operator from an image point: F = (v v') / (v' v).
+ * Equivalent to the former calculate_F() but writes into a stack 3x3.
  */
-double matd_to_double(matd_t *a)
+static inline void mat3_calculate_F(const double v[3], double F[3][3])
 {
-    assert(matd_is_scalar(a));
-    double d = a->data[0];
-    matd_destroy(a);
-    return d;
+    double inner = vec3_dot(v, v);
+    double s = 1.0 / inner;
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            F[i][j] = v[i] * v[j] * s;
 }
 
 /**
@@ -41,99 +155,125 @@ double matd_to_double(matd_t *a)
  * Implementation of Orthogonal Iteration from Lu, 2000.
  */
 double orthogonal_iteration(matd_t** v, matd_t** p, matd_t** t, matd_t** R, int n_points, int n_steps) {
-    matd_t* p_mean = matd_create(3, 1);
-    for (int i = 0; i < n_points; i++) {
-        matd_add_inplace(p_mean, p[i]);
-    }
-    matd_scale_inplace(p_mean, 1.0/n_points);
+    // The pose model is always the tag's 4 corners; keep the scratch on the
+    // stack so the iteration performs no heap allocation.
+    assert(n_points <= 4);
+    double P[4][3];    // object points
+    double Pres[4][3]; // object points minus their mean
+    double F[4][3][3]; // per-point projection operators
+    double Q[4][3];    // per-step rotated points
 
-    matd_t** p_res = malloc(sizeof(matd_t *)*n_points);
+    double p_mean[3] = {0, 0, 0};
     for (int i = 0; i < n_points; i++) {
-        p_res[i] = matd_op("M-M", p[i], p_mean);
+        for (int k = 0; k < 3; k++) {
+            P[i][k] = p[i]->data[k];
+            p_mean[k] += P[i][k];
+        }
     }
+    for (int k = 0; k < 3; k++)
+        p_mean[k] /= n_points;
 
-    // Compute M1_inv.
-    matd_t** F = malloc(sizeof(matd_t *)*n_points);
-    matd_t *avg_F = matd_create(3, 3);
+    for (int i = 0; i < n_points; i++)
+        for (int k = 0; k < 3; k++)
+            Pres[i][k] = P[i][k] - p_mean[k];
+
+    // Compute M1_inv = (I - mean(F))^-1.
+    double avg_F[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
     for (int i = 0; i < n_points; i++) {
-        F[i] = calculate_F(v[i]);
-        matd_add_inplace(avg_F, F[i]);
+        double vi[3] = { v[i]->data[0], v[i]->data[1], v[i]->data[2] };
+        mat3_calculate_F(vi, F[i]);
+        for (int a = 0; a < 3; a++)
+            for (int b = 0; b < 3; b++)
+                avg_F[a][b] += F[i][a][b];
     }
-    matd_scale_inplace(avg_F, 1.0/n_points);
-    matd_t *I3 = matd_identity(3);
-    matd_t *M1 = matd_subtract(I3, avg_F);
-    matd_t *M1_inv = matd_inverse(M1);
-    matd_destroy(avg_F);
-    matd_destroy(M1);
+    for (int a = 0; a < 3; a++)
+        for (int b = 0; b < 3; b++)
+            avg_F[a][b] /= n_points;
+
+    double I3[3][3];
+    mat3_identity(I3);
+    double M1[3][3], M1_inv[3][3];
+    mat3_sub(I3, avg_F, M1);
+    mat3_inverse(M1, M1_inv);
+
+    // Current rotation estimate (initialized from the supplied guess) and
+    // translation (filled on the first step).
+    double Rcur[3][3];
+    for (int a = 0; a < 3; a++)
+        for (int b = 0; b < 3; b++)
+            Rcur[a][b] = MATD_EL(*R, a, b);
+    double tcur[3] = {0, 0, 0};
 
     double prev_error = HUGE_VAL;
     // Iterate.
     for (int i = 0; i < n_steps; i++) {
         // Calculate translation.
-        matd_t *M2 = matd_create(3, 1);
+        double M2[3] = {0, 0, 0};
         for (int j = 0; j < n_points; j++) {
-            matd_t* M2_update = matd_op("(M - M)*M*M", F[j], I3, *R, p[j]);
-            matd_add_inplace(M2, M2_update);
-            matd_destroy(M2_update);
+            double FmI[3][3], tmp[3][3], upd[3];
+            mat3_sub(F[j], I3, FmI);
+            mat3_mul(FmI, Rcur, tmp);
+            mat3_mul_vec(tmp, P[j], upd);
+            M2[0] += upd[0]; M2[1] += upd[1]; M2[2] += upd[2];
         }
-        matd_scale_inplace(M2, 1.0/n_points);
-        matd_destroy(*t);
-        *t = matd_multiply(M1_inv, M2);
-        matd_destroy(M2);
+        for (int k = 0; k < 3; k++)
+            M2[k] /= n_points;
+        mat3_mul_vec(M1_inv, M2, tcur);
 
         // Calculate rotation.
-        matd_t** q = malloc(sizeof(matd_t *)*n_points);
-        matd_t* q_mean = matd_create(3, 1);
+        double q_mean[3] = {0, 0, 0};
         for (int j = 0; j < n_points; j++) {
-            q[j] = matd_op("M*(M*M+M)", F[j], *R, p[j], *t);
-            matd_add_inplace(q_mean, q[j]);
+            double Rp[3];
+            mat3_mul_vec(Rcur, P[j], Rp);
+            Rp[0] += tcur[0]; Rp[1] += tcur[1]; Rp[2] += tcur[2];
+            mat3_mul_vec(F[j], Rp, Q[j]);
+            q_mean[0] += Q[j][0]; q_mean[1] += Q[j][1]; q_mean[2] += Q[j][2];
         }
-        matd_scale_inplace(q_mean, 1.0/n_points);
+        for (int k = 0; k < 3; k++)
+            q_mean[k] /= n_points;
 
-        matd_t* M3 = matd_create(3, 3);
+        double M3[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
         for (int j = 0; j < n_points; j++) {
-            matd_t *M3_update = matd_op("(M-M)*M'", q[j], q_mean, p_res[j]);
-            matd_add_inplace(M3, M3_update);
-            matd_destroy(M3_update);
+            double d[3] = { Q[j][0] - q_mean[0], Q[j][1] - q_mean[1], Q[j][2] - q_mean[2] };
+            for (int a = 0; a < 3; a++)
+                for (int b = 0; b < 3; b++)
+                    M3[a][b] += d[a] * Pres[j][b];
         }
-        matd_svd_t M3_svd = matd_svd(M3);
-        matd_destroy(M3);
-        matd_destroy(*R);
-        *R = matd_op("M*M'", M3_svd.U, M3_svd.V);
-        double R_det = matd_det(*R);
-        if (R_det < 0) {
-            matd_put(*R, 0, 2, - matd_get(*R, 0, 2));
-            matd_put(*R, 1, 2, - matd_get(*R, 1, 2));
-            matd_put(*R, 2, 2, - matd_get(*R, 2, 2));
-        }
-        matd_destroy(M3_svd.U);
-        matd_destroy(M3_svd.S);
-        matd_destroy(M3_svd.V);
-        matd_destroy(q_mean);
-        for (int j = 0; j < n_points; j++) {
-            matd_destroy(q[j]);
+
+        // Rotation update: the closest rotation to M3 (orthogonal Procrustes).
+        double U[9], S[3], Vm[9];
+        svd33(&M3[0][0], U, S, Vm);
+        // Rcur = U * V'
+        for (int a = 0; a < 3; a++)
+            for (int b = 0; b < 3; b++)
+                Rcur[a][b] = U[a*3+0]*Vm[b*3+0] + U[a*3+1]*Vm[b*3+1] + U[a*3+2]*Vm[b*3+2];
+        // Flip the last column if U*V' came out as a reflection (det < 0), so
+        // Rcur is a proper rotation.
+        if (mat3_det(Rcur) < 0) {
+            Rcur[0][2] = -Rcur[0][2];
+            Rcur[1][2] = -Rcur[1][2];
+            Rcur[2][2] = -Rcur[2][2];
         }
 
         double error = 0;
-        for (int j = 0; j < 4; j++) {
-            matd_t* err_vec = matd_op("(M-M)(MM+M)", I3, F[j], *R, p[j], *t);
-            error += matd_to_double(matd_op("M'M", err_vec, err_vec));
-            matd_destroy(err_vec);
+        for (int j = 0; j < n_points; j++) {
+            double Rp[3], err_vec[3], ImF[3][3];
+            mat3_mul_vec(Rcur, P[j], Rp);
+            Rp[0] += tcur[0]; Rp[1] += tcur[1]; Rp[2] += tcur[2];
+            mat3_sub(I3, F[j], ImF);
+            mat3_mul_vec(ImF, Rp, err_vec);
+            error += vec3_dot(err_vec, err_vec);
         }
         prev_error = error;
-
-        free(q);
     }
 
-    matd_destroy(I3);
-    matd_destroy(M1_inv);
-    for (int i = 0; i < n_points; i++) {
-        matd_destroy(p_res[i]);
-        matd_destroy(F[i]);
-    }
-    free(p_res);
-    free(F);
-    matd_destroy(p_mean);
+    // Write the results back into the supplied matd outputs.
+    for (int a = 0; a < 3; a++)
+        for (int b = 0; b < 3; b++)
+            MATD_EL(*R, a, b) = Rcur[a][b];
+    for (int k = 0; k < 3; k++)
+        (*t)->data[k] = tcur[k];
+
     return prev_error;
 }
 
@@ -169,13 +309,15 @@ void solve_poly_approx(double* p, int degree, double* roots, int* n_roots) {
         return;
     }
 
-    // Calculate roots of derivative.
-    double *p_der = malloc(sizeof(double)*degree);
+    // Calculate roots of derivative. This is only ever called with degree <= 4,
+    // so the scratch fits on the stack.
+    assert(degree <= 4);
+    double p_der[4];
     for (int i = 0; i < degree; i++) {
         p_der[i] = (i + 1) * p[i+1];
     }
 
-    double *der_roots = malloc(sizeof(double)*(degree - 1));
+    double der_roots[4];
     int n_der_roots;
     solve_poly_approx(p_der, degree - 1, der_roots, &n_der_roots);
 
@@ -248,109 +390,141 @@ void solve_poly_approx(double* p, int degree, double* roots, int* n_roots) {
             roots[(*n_roots)++] = max;
         }
     }
-
-    free(der_roots);
-    free(p_der);
 }
 
 /**
  * Given a local minima of the pose error tries to find the other minima.
  */
 matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n_points) {
-    matd_t* I3 = matd_identity(3);
+    double I3[3][3];
+    mat3_identity(I3);
 
     // 1. Find R_t
-    matd_t* R_t_3 = matd_vec_normalize(t);
+    double t_vec[3] = { t->data[0], t->data[1], t->data[2] };
+    double R_t_3[3];
+    vec3_normalize(t_vec, R_t_3);
 
-    matd_t* e_x = matd_create(3, 1);
-    MATD_EL(e_x, 0, 0) = 1;
-    matd_t* R_t_1_tmp = matd_op("M-(M'*M)*M", e_x, e_x, R_t_3, R_t_3);
-    matd_t* R_t_1 = matd_vec_normalize(R_t_1_tmp);
-    matd_destroy(e_x);
-    matd_destroy(R_t_1_tmp);
+    double e_x[3] = {1, 0, 0};
+    double dot_ex = vec3_dot(e_x, R_t_3);
+    double R_t_1_tmp[3] = {
+        e_x[0] - dot_ex*R_t_3[0],
+        e_x[1] - dot_ex*R_t_3[1],
+        e_x[2] - dot_ex*R_t_3[2] };
+    double R_t_1[3];
+    vec3_normalize(R_t_1_tmp, R_t_1);
 
-    matd_t* R_t_2 = matd_crossproduct(R_t_3, R_t_1);
+    double R_t_2[3];
+    vec3_cross(R_t_3, R_t_1, R_t_2);
 
-    matd_t* R_t = matd_create_data(3, 3, (double[]) {
-            MATD_EL(R_t_1, 0, 0), MATD_EL(R_t_1, 0, 1), MATD_EL(R_t_1, 0, 2),
-            MATD_EL(R_t_2, 0, 0), MATD_EL(R_t_2, 0, 1), MATD_EL(R_t_2, 0, 2),
-            MATD_EL(R_t_3, 0, 0), MATD_EL(R_t_3, 0, 1), MATD_EL(R_t_3, 0, 2)});
-    matd_destroy(R_t_1);
-    matd_destroy(R_t_2);
-    matd_destroy(R_t_3);
+    double R_t[3][3] = {
+        { R_t_1[0], R_t_1[1], R_t_1[2] },
+        { R_t_2[0], R_t_2[1], R_t_2[2] },
+        { R_t_3[0], R_t_3[1], R_t_3[2] } };
 
     // 2. Find R_z
-    matd_t* R_1_prime = matd_multiply(R_t, R);
-    double r31 = MATD_EL(R_1_prime, 2, 0);
-    double r32 = MATD_EL(R_1_prime, 2, 1);
+    double Rmat[3][3];
+    for (int a = 0; a < 3; a++)
+        for (int b = 0; b < 3; b++)
+            Rmat[a][b] = MATD_EL(R, a, b);
+    double R_1_prime[3][3];
+    mat3_mul(R_t, Rmat, R_1_prime);
+
+    double r31 = R_1_prime[2][0];
+    double r32 = R_1_prime[2][1];
     double hypotenuse = sqrt(r31*r31 + r32*r32);
     if (hypotenuse < 1e-100) {
         r31 = 1;
         r32 = 0;
         hypotenuse = 1;
     }
-    matd_t* R_z = matd_create_data(3, 3, (double[]) {
-            r31/hypotenuse, -r32/hypotenuse, 0,
-            r32/hypotenuse, r31/hypotenuse, 0,
-            0, 0, 1});
+    double R_z[3][3] = {
+        { r31/hypotenuse, -r32/hypotenuse, 0 },
+        { r32/hypotenuse,  r31/hypotenuse, 0 },
+        { 0, 0, 1 } };
 
     // 3. Calculate parameters of Eos
-    matd_t* R_trans = matd_multiply(R_1_prime, R_z);
-    double sin_gamma = -MATD_EL(R_trans, 0, 1);
-    double cos_gamma = MATD_EL(R_trans, 1, 1);
-    matd_t* R_gamma = matd_create_data(3, 3, (double[]) {
-            cos_gamma, -sin_gamma, 0,
-            sin_gamma, cos_gamma, 0,
-            0, 0, 1});
+    double R_trans[3][3];
+    mat3_mul(R_1_prime, R_z, R_trans);
+    double sin_gamma = -R_trans[0][1];
+    double cos_gamma = R_trans[1][1];
+    double R_gamma[3][3] = {
+        { cos_gamma, -sin_gamma, 0 },
+        { sin_gamma,  cos_gamma, 0 },
+        { 0, 0, 1 } };
 
-    double sin_beta = -MATD_EL(R_trans, 2, 0);
-    double cos_beta = MATD_EL(R_trans, 2, 2);
+    double sin_beta = -R_trans[2][0];
+    double cos_beta = R_trans[2][2];
     double t_initial = atan2(sin_beta, cos_beta);
-    matd_destroy(R_trans);
 
-    matd_t** v_trans = malloc(sizeof(matd_t *)*n_points);
-    matd_t** p_trans = malloc(sizeof(matd_t *)*n_points);
-    matd_t** F_trans = malloc(sizeof(matd_t *)*n_points);
-    matd_t* avg_F_trans = matd_create(3, 3);
+    assert(n_points <= 4);
+    double p_trans[4][3];
+    double F_trans[4][3][3];
+    double avg_F_trans[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
     for (int i = 0; i < n_points; i++) {
-        p_trans[i] = matd_op("M'*M", R_z, p[i]);
-        v_trans[i] = matd_op("M*M", R_t, v[i]);
-        F_trans[i] = calculate_F(v_trans[i]);
-        matd_add_inplace(avg_F_trans, F_trans[i]);
+        double pi[3] = { p[i]->data[0], p[i]->data[1], p[i]->data[2] };
+        mat3_mul_transpose_vec(R_z, pi, p_trans[i]); // R_z' * p[i]
+
+        double vi[3] = { v[i]->data[0], v[i]->data[1], v[i]->data[2] };
+        double v_trans[3];
+        mat3_mul_vec(R_t, vi, v_trans); // R_t * v[i]
+        mat3_calculate_F(v_trans, F_trans[i]);
+
+        for (int a = 0; a < 3; a++)
+            for (int b = 0; b < 3; b++)
+                avg_F_trans[a][b] += F_trans[i][a][b];
     }
-    matd_scale_inplace(avg_F_trans, 1.0/n_points);
+    for (int a = 0; a < 3; a++)
+        for (int b = 0; b < 3; b++)
+            avg_F_trans[a][b] /= n_points;
 
-    matd_t* G = matd_op("(M-M)^-1", I3, avg_F_trans);
-    matd_scale_inplace(G, 1.0/n_points);
+    double ImAvg[3][3], G[3][3];
+    mat3_sub(I3, avg_F_trans, ImAvg);
+    mat3_inverse(ImAvg, G);
+    for (int a = 0; a < 3; a++)
+        for (int b = 0; b < 3; b++)
+            G[a][b] /= n_points;
 
-    matd_t* M1 = matd_create_data(3, 3, (double[]) {
-            0, 0, 2,
-            0, 0, 0,
-            -2, 0, 0});
-    matd_t* M2 = matd_create_data(3, 3, (double[]) {
-            -1, 0, 0,
-            0, 1, 0,
-            0, 0, -1});
+    double M1[3][3] = {
+        { 0, 0, 2 },
+        { 0, 0, 0 },
+        { -2, 0, 0 } };
+    double M2[3][3] = {
+        { -1, 0, 0 },
+        { 0, 1, 0 },
+        { 0, 0, -1 } };
 
-    matd_t* b0 = matd_create(3, 1);
-    matd_t* b1 = matd_create(3, 1);
-    matd_t* b2 = matd_create(3, 1);
+    double b0[3] = {0, 0, 0};
+    double b1[3] = {0, 0, 0};
+    double b2[3] = {0, 0, 0};
     for (int i = 0; i < n_points; i++) {
-        matd_t* op_tmp1 = matd_op("(M-M)MM", F_trans[i], I3, R_gamma, p_trans[i]);
-        matd_t* op_tmp2 = matd_op("(M-M)MMM", F_trans[i], I3, R_gamma, M1, p_trans[i]);
-        matd_t* op_tmp3 = matd_op("(M-M)MMM", F_trans[i], I3, R_gamma, M2, p_trans[i]);
+        double FmI[3][3];
+        mat3_sub(F_trans[i], I3, FmI);
 
-        matd_add_inplace(b0, op_tmp1);
-        matd_add_inplace(b1, op_tmp2);
-        matd_add_inplace(b2, op_tmp3);
+        // op_tmp1 = (F - I) * R_gamma * p_trans
+        double tmpA[3][3], v1[3];
+        mat3_mul(FmI, R_gamma, tmpA);
+        mat3_mul_vec(tmpA, p_trans[i], v1);
 
-        matd_destroy(op_tmp1);
-        matd_destroy(op_tmp2);
-        matd_destroy(op_tmp3);
+        // op_tmp2 = (F - I) * R_gamma * M1 * p_trans
+        double tmpB[3][3], v2[3];
+        mat3_mul(tmpA, M1, tmpB);
+        mat3_mul_vec(tmpB, p_trans[i], v2);
+
+        // op_tmp3 = (F - I) * R_gamma * M2 * p_trans
+        double tmpC[3][3], v3[3];
+        mat3_mul(tmpA, M2, tmpC);
+        mat3_mul_vec(tmpC, p_trans[i], v3);
+
+        for (int k = 0; k < 3; k++) {
+            b0[k] += v1[k];
+            b1[k] += v2[k];
+            b2[k] += v3[k];
+        }
     }
-    matd_t* b0_ = matd_multiply(G, b0);
-    matd_t* b1_ = matd_multiply(G, b1);
-    matd_t* b2_ = matd_multiply(G, b2);
+    double b0_[3], b1_[3], b2_[3];
+    mat3_mul_vec(G, b0, b0_);
+    mat3_mul_vec(G, b1, b1_);
+    mat3_mul_vec(G, b2, b2_);
 
     double a0 = 0;
     double a1 = 0;
@@ -358,39 +532,35 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
     double a3 = 0;
     double a4 = 0;
     for (int i = 0; i < n_points; i++) {
-        matd_t* c0 = matd_op("(M-M)(MM+M)", I3, F_trans[i], R_gamma, p_trans[i], b0_);
-        matd_t* c1 = matd_op("(M-M)(MMM+M)", I3, F_trans[i], R_gamma, M1, p_trans[i], b1_);
-        matd_t* c2 = matd_op("(M-M)(MMM+M)", I3, F_trans[i], R_gamma, M2, p_trans[i], b2_);
+        double ImF[3][3];
+        mat3_sub(I3, F_trans[i], ImF);
 
-        a0 += matd_to_double(matd_op("M'M", c0, c0));
-        a1 += matd_to_double(matd_op("2M'M", c0, c1));
-        a2 += matd_to_double(matd_op("M'M+2M'M", c1, c1, c0, c2));
-        a3 += matd_to_double(matd_op("2M'M", c1, c2));
-        a4 += matd_to_double(matd_op("M'M", c2, c2));
+        // c0 = (I - F) * (R_gamma * p_trans + b0_)
+        double Rg_p[3], inner0[3], c0[3];
+        mat3_mul_vec(R_gamma, p_trans[i], Rg_p);
+        for (int k = 0; k < 3; k++) inner0[k] = Rg_p[k] + b0_[k];
+        mat3_mul_vec(ImF, inner0, c0);
 
-        matd_destroy(c0);
-        matd_destroy(c1);
-        matd_destroy(c2);
+        // c1 = (I - F) * (R_gamma * M1 * p_trans + b1_)
+        double RgM1[3][3], RgM1_p[3], inner1[3], c1[3];
+        mat3_mul(R_gamma, M1, RgM1);
+        mat3_mul_vec(RgM1, p_trans[i], RgM1_p);
+        for (int k = 0; k < 3; k++) inner1[k] = RgM1_p[k] + b1_[k];
+        mat3_mul_vec(ImF, inner1, c1);
+
+        // c2 = (I - F) * (R_gamma * M2 * p_trans + b2_)
+        double RgM2[3][3], RgM2_p[3], inner2[3], c2[3];
+        mat3_mul(R_gamma, M2, RgM2);
+        mat3_mul_vec(RgM2, p_trans[i], RgM2_p);
+        for (int k = 0; k < 3; k++) inner2[k] = RgM2_p[k] + b2_[k];
+        mat3_mul_vec(ImF, inner2, c2);
+
+        a0 += vec3_dot(c0, c0);
+        a1 += 2 * vec3_dot(c0, c1);
+        a2 += vec3_dot(c1, c1) + 2 * vec3_dot(c0, c2);
+        a3 += 2 * vec3_dot(c1, c2);
+        a4 += vec3_dot(c2, c2);
     }
-
-    matd_destroy(b0);
-    matd_destroy(b1);
-    matd_destroy(b2);
-    matd_destroy(b0_);
-    matd_destroy(b1_);
-    matd_destroy(b2_);
-
-    for (int i = 0; i < n_points; i++) {
-        matd_destroy(p_trans[i]);
-        matd_destroy(v_trans[i]);
-        matd_destroy(F_trans[i]);
-    }
-    free(p_trans);
-    free(v_trans);
-    free(F_trans);
-    matd_destroy(avg_F_trans);
-    matd_destroy(G);
-
 
     // 4. Solve for minima of Eos.
     double p0 = a1;
@@ -427,25 +597,31 @@ matd_t* fix_pose_ambiguities(matd_t** v, matd_t** p, matd_t* t, matd_t* R, int n
     matd_t* ret = NULL;
     if (n_minima == 1) {
         double t_cur = minima[0];
-        matd_t* R_beta = matd_copy(M2);
-        matd_scale_inplace(R_beta, t_cur);
-        matd_add_inplace(R_beta, M1);
-        matd_scale_inplace(R_beta, t_cur);
-        matd_add_inplace(R_beta, I3);
-        matd_scale_inplace(R_beta, 1/(1 + t_cur*t_cur));
-        ret = matd_op("M'MMM'", R_t, R_gamma, R_beta, R_z);
-        matd_destroy(R_beta);
+        // R_beta = ((M2 * t_cur + M1) * t_cur + I) / (1 + t_cur^2)
+        double R_beta[3][3];
+        double scale = 1.0 / (1 + t_cur*t_cur);
+        for (int a = 0; a < 3; a++)
+            for (int b = 0; b < 3; b++)
+                R_beta[a][b] = ((M2[a][b]*t_cur + M1[a][b])*t_cur + I3[a][b]) * scale;
+
+        // ret = R_t' * R_gamma * R_beta * R_z'
+        double tmp1[3][3], tmp2[3][3], result[3][3];
+        double R_t_T[3][3];
+        for (int a = 0; a < 3; a++)
+            for (int b = 0; b < 3; b++)
+                R_t_T[a][b] = R_t[b][a];
+        mat3_mul(R_t_T, R_gamma, tmp1);   // R_t' * R_gamma
+        mat3_mul(tmp1, R_beta, tmp2);     // * R_beta
+        mat3_mul_transpose(tmp2, R_z, result); // * R_z'
+
+        ret = matd_create(3, 3);
+        for (int a = 0; a < 3; a++)
+            for (int b = 0; b < 3; b++)
+                MATD_EL(ret, a, b) = result[a][b];
     } else if (n_minima > 1)  {
         // This can happen if our prior pose estimate was not very good.
         debug_print("Error, more than one new minimum found.\n");
     }
-    matd_destroy(I3);
-    matd_destroy(M1);
-    matd_destroy(M2);
-    matd_destroy(R_t);
-    matd_destroy(R_gamma);
-    matd_destroy(R_z);
-    matd_destroy(R_1_prime);
     return ret;
 }
 
