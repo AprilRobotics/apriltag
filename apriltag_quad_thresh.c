@@ -102,6 +102,7 @@ struct cluster_task
     int w;
     int s;
     int nclustermap;
+    int min_cluster_pixels;
     unionfind_t* uf;
     image_u8_t* im;
     zarray_t* clusters;
@@ -1557,7 +1558,7 @@ unionfind_t* connected_components(apriltag_detector_t *td, image_u8_t* threshim,
     return uf;
 }
 
-zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int w, int nclustermap, unionfind_t* uf, zarray_t* clusters) {
+zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int w, int nclustermap, int min_cluster_pixels, unionfind_t* uf, zarray_t* clusters) {
     struct uint64_zarray_entry **clustermap = calloc(nclustermap, sizeof(struct uint64_zarray_entry*));
 
     int mem_chunk_size = 2048;
@@ -1578,7 +1579,7 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
 
             // XXX don't query this until we know we need it?
             uint64_t rep0 = unionfind_get_representative(uf, y*w + x);
-            if (unionfind_get_set_size(uf, rep0) < 25) {
+            if ((int)unionfind_get_set_size(uf, rep0) < min_cluster_pixels) {
                 connected_last = false;
                 continue;
             }
@@ -1610,7 +1611,7 @@ zarray_t* do_gradient_clusters(image_u8_t* threshim, int ts, int y0, int y1, int
                                                                         \
                 if (v0 + v1 == 255) {                                   \
                     uint64_t rep1 = unionfind_get_representative(uf, (y + dy)*w + x + dx); \
-                    if (unionfind_get_set_size(uf, rep1) > 24) {        \
+                    if ((int)unionfind_get_set_size(uf, rep1) >= min_cluster_pixels) { \
                         uint64_t clusterid;                                 \
                         if (rep0 < rep1)                                    \
                             clusterid = (rep1 << 32) + rep0;                \
@@ -1705,7 +1706,7 @@ static void do_cluster_task(void *p)
 {
     struct cluster_task *task = (struct cluster_task*) p;
 
-    do_gradient_clusters(task->im, task->s, task->y0, task->y1, task->w, task->nclustermap, task->uf, task->clusters);
+    do_gradient_clusters(task->im, task->s, task->y0, task->y1, task->w, task->nclustermap, task->min_cluster_pixels, task->uf, task->clusters);
 }
 
 zarray_t* merge_clusters(zarray_t* c1, zarray_t* c2) {
@@ -1768,6 +1769,7 @@ zarray_t* gradient_clusters(apriltag_detector_t *td, image_u8_t* threshim, int w
         tasks[ntasks].uf = uf;
         tasks[ntasks].im = threshim;
         tasks[ntasks].nclustermap = nclustermap/(sz / chunksize + 1);
+        tasks[ntasks].min_cluster_pixels = td->qtp.min_cluster_pixels;
         tasks[ntasks].clusters = zarray_create(sizeof(struct cluster_hash*));
 
         workerpool_add_task(td->wp, do_cluster_task, &tasks[ntasks]);
